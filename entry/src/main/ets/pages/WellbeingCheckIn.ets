@@ -12,32 +12,20 @@ import {
   guardianNamesText,
   WellbeingReport
 } from '../models/Wellbeing';
-import { formatClockTime } from '../models/Safety';
 import { MicrophoneAccess, openMicrophoneSettings, requestMicrophone } from '../platform/Microphone';
 import { FinishReason } from '../providers/backend/WellbeingApi';
 import { describeBackendError, NOT_CONFIGURED_MESSAGE } from '../services/BackendErrors';
 import { apiSession } from '../services/CareApi';
 import { LiveState, LiveVoiceSession } from '../services/LiveVoiceSession';
-import { describeCheckInError, SharedSummary, wellbeingCheckIn } from '../services/WellbeingService';
+import { describeCheckInError, wellbeingCheckIn } from '../services/WellbeingService';
 
 enum Phase {
   Loading,
   Failed,
   NotConfigured,
-  Intro,
   Starting,
   Talk,
   Done
-}
-
-function sharedDateLabel(timestamp: number): string {
-  const date = new Date(timestamp);
-  const today = new Date();
-  if (date.toDateString() === today.toDateString()) {
-    return `Today at ${formatClockTime(timestamp)}`;
-  }
-  return `${date.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })} at ` +
-    formatClockTime(timestamp);
 }
 
 /** Why the conversation stopped, in words. */
@@ -89,12 +77,15 @@ export struct WellbeingCheckIn {
   @State private report: WellbeingReport | undefined = undefined;
   @State private removed: boolean = false;
   @State private removing: boolean = false;
-  @State private lastShared: SharedSummary | undefined = undefined;
   private liveSession: LiveVoiceSession | undefined = undefined;
+  private loadingState: boolean = false;
+  private liveStarting: boolean = false;
   private scroller: Scroller = new Scroller();
 
   aboutToAppear(): void {
-    this.load();
+    if (this.visible) {
+      this.load();
+    }
   }
 
   aboutToDisappear(): void {
@@ -102,7 +93,10 @@ export struct WellbeingCheckIn {
   }
 
   private onRefresh(): void {
-    if (this.phase === Phase.Intro || this.phase === Phase.Failed || this.phase === Phase.NotConfigured) {
+    if (!this.visible) {
+      return;
+    }
+    if (this.phase === Phase.Loading || this.phase === Phase.Failed || this.phase === Phase.NotConfigured) {
       this.load();
     } else {
       this.refreshDetails();
@@ -112,6 +106,10 @@ export struct WellbeingCheckIn {
   private onVisibility(): void {
     if (!this.visible) {
       this.stopLive();
+    } else if (this.phase === Phase.Loading) {
+      this.load();
+    } else if (this.phase === Phase.Talk && !this.live) {
+      this.startLive();
     }
   }
 
@@ -131,31 +129,39 @@ export struct WellbeingCheckIn {
   }
 
   private async load(): Promise<void> {
+    if (this.loadingState || !this.visible) {
+      return;
+    }
     if (!apiSession.configured()) {
       this.phase = Phase.NotConfigured;
       return;
     }
-    if (this.phase !== Phase.Intro) {
-      this.phase = Phase.Loading;
-    }
+    this.loadingState = true;
+    this.phase = Phase.Loading;
     try {
       const state = await wellbeingCheckIn.state();
       this.assistant = state.assistant;
       this.guardians = guardianNamesText(state.guardianNames);
-      this.lastShared = await wellbeingCheckIn.lastShared(this.context());
       if (state.session !== undefined) {
-        // An open check-in (e.g. after a restart) continues with one tap on Continue talking.
+        // Resume an open check-in immediately when the Wellbeing tab is opened.
         this.sessionId = state.session.id;
         this.messages = state.messages;
         this.safetyConcern = state.messages.some((message: ChatMessage) => message.safetyConcern);
         this.phase = Phase.Talk;
         this.scrollToEnd();
+        this.startLive();
+      } else if (this.assistant.live) {
+        // Skip the former explainer screen and enter a new check-in directly.
+        await this.start();
       } else {
-        this.phase = Phase.Intro;
+        this.loadError = 'Talking with Carely is not available right now. Please try again in a few minutes.';
+        this.phase = Phase.Failed;
       }
     } catch (error) {
       this.loadError = describeBackendError(error as Object, 'Something went wrong while opening the check-in.');
       this.phase = Phase.Failed;
+    } finally {
+      this.loadingState = false;
     }
   }
 
@@ -170,22 +176,29 @@ export struct WellbeingCheckIn {
       this.report = undefined;
       this.removed = false;
       this.phase = Phase.Talk;
-      this.startLive();
+      if (this.visible) {
+        this.startLive();
+      }
     } catch (error) {
-      this.notice = describeCheckInError(error as Object, 'The check-in could not start. Please try again.');
-      this.phase = Phase.Intro;
+      this.loadError = describeCheckInError(error as Object, 'The check-in could not start. Please try again.');
+      this.phase = Phase.Failed;
     }
   }
 
   private async startLive(): Promise<void> {
-    if (this.live || this.sessionId === '' || this.finishing) {
+    if (this.live || this.liveStarting || !this.visible || this.sessionId === '' || this.finishing) {
       return;
     }
     this.notice = '';
+    this.liveStarting = true;
     const access = await requestMicrophone(this.context());
+    this.liveStarting = false;
     if (access !== MicrophoneAccess.Granted) {
       this.micDenied = access === MicrophoneAccess.Denied;
       this.notice = 'Carely needs the microphone to hear you.';
+      return;
+    }
+    if (!this.visible) {
       return;
     }
     this.micDenied = false;
@@ -286,15 +299,13 @@ export struct WellbeingCheckIn {
     this.sessionId = '';
     this.messages = [];
     if (report === undefined) {
-      this.notice = 'Nothing was sent, because there were no answers yet.';
-      this.phase = Phase.Intro;
+      this.loadError = 'Nothing was sent because there were no answers yet. Try again when you are ready.';
+      this.phase = Phase.Failed;
       return;
     }
     this.report = report;
     this.removed = false;
     await this.refreshDetails();
-    await wellbeingCheckIn.rememberShared(this.context(), report, this.guardians);
-    this.lastShared = await wellbeingCheckIn.lastShared(this.context());
     this.phase = Phase.Done;
   }
 
@@ -328,133 +339,11 @@ export struct WellbeingCheckIn {
     try {
       await wellbeingCheckIn.withdraw(this.context(), report.id);
       this.removed = true;
-      this.lastShared = undefined;
     } catch (error) {
       this.notice = describeCheckInError(error as Object, 'The summary could not be removed. Please try again.');
     } finally {
       this.removing = false;
     }
-  }
-
-  @Builder
-  infoRow(icon: Resource, accent: Resource, tint: Resource, text: string) {
-    Row({ space: 14 }) {
-      IconBadge({ icon: icon, accent: accent, tint: tint, badgeSize: 44 })
-      Text(text)
-        .fontSize(18)
-        .fontColor($r('app.color.text_primary'))
-        .layoutWeight(1)
-    }
-    .width('100%')
-    .accessibilityGroup(true)
-  }
-
-  @Builder
-  intro() {
-    Scroll() {
-      Column({ space: 20 }) {
-        Column({ space: 10 }) {
-          IconBadge({
-            icon: $r('sys.symbol.heart_fill'),
-            accent: $r('app.color.senior_accent'),
-            tint: $r('app.color.surface'),
-            badgeSize: 56
-          })
-          Text('How are you feeling today?')
-            .fontSize(28)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
-          Text('Talk with Carely about your day. Just speak; there is nothing to press.')
-            .fontSize(19)
-            .fontColor($r('app.color.text_primary'))
-            .opacity(0.85)
-        }
-        .width('100%')
-        .padding(20)
-        .alignItems(HorizontalAlign.Start)
-        .borderRadius(24)
-        .backgroundColor($r('app.color.senior_tint'))
-
-        Column({ space: 16 }) {
-          this.infoRow($r('sys.symbol.doc_text_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
-            `When you finish, a short summary goes to ${this.guardians}.`)
-          this.infoRow($r('sys.symbol.lock_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
-            `${this.guardians} reads the summary, not the whole conversation.`)
-          this.infoRow($r('sys.symbol.mic_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
-            'Carely is an AI assistant (OpenAI) that listens and talks back. It cannot give medical advice.')
-          this.infoRow($r('sys.symbol.exclamationmark_shield_fill'), $r('app.color.sos'), $r('app.color.sos_tint'),
-            'If you need help now, use the red SOS button on the Home screen.')
-        }
-        .width('100%')
-        .padding(16)
-        .borderRadius(20)
-        .backgroundColor($r('app.color.surface'))
-
-        if (this.lastShared !== undefined) {
-          Column({ space: 6 }) {
-            Text('Last check-in')
-              .fontSize(16)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_secondary'))
-            Text(`${sharedDateLabel(this.lastShared.createdAt)} · sent to ${this.lastShared.guardians}`)
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_primary'))
-            if (this.lastShared.summary !== '') {
-              Text(this.lastShared.summary)
-                .fontSize(17)
-                .fontColor($r('app.color.text_secondary'))
-                .maxLines(4)
-                .textOverflow({ overflow: TextOverflow.Ellipsis })
-            }
-          }
-          .width('100%')
-          .padding(16)
-          .alignItems(HorizontalAlign.Start)
-          .borderRadius(20)
-          .backgroundColor($r('app.color.surface'))
-          .accessibilityGroup(true)
-        }
-
-        if (!this.assistant.live) {
-          NoticeBanner({ text: 'Talking with Carely is not available right now. Please try again later.' })
-        }
-        if (this.notice !== '') {
-          NoticeBanner({ text: this.notice })
-        }
-
-        Button() {
-          Row({ space: 10 }) {
-            if (this.phase === Phase.Starting) {
-              LoadingProgress()
-                .width(24)
-                .height(24)
-                .color(Color.White)
-            } else {
-              SymbolGlyph($r('sys.symbol.mic_fill'))
-                .fontSize(22)
-                .fontColor([Color.White])
-            }
-            Text(this.phase === Phase.Starting ? 'Starting…' : 'Talk with Carely')
-              .fontSize(20)
-              .fontWeight(FontWeight.Medium)
-              .fontColor(Color.White)
-          }
-        }
-        .width('100%')
-        .height(64)
-        .attributeModifier(new CareButtonStyle())
-        .enabled(this.assistant.live && this.phase !== Phase.Starting)
-        .onClick(() => this.start())
-      }
-      .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
-    }
-    .width('100%')
-    .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
   }
 
   @Builder
@@ -755,7 +644,7 @@ export struct WellbeingCheckIn {
           .attributeModifier(new CareButtonStyle())
           .onClick(() => {
             this.notice = '';
-            this.phase = Phase.Intro;
+            this.phase = Phase.Loading;
             this.load();
           })
         if (!this.removed) {
@@ -798,7 +687,7 @@ export struct WellbeingCheckIn {
       } else if (this.phase === Phase.Done) {
         this.done()
       } else {
-        this.intro()
+        LoadingMessage({ message: 'Starting your check-in…' })
       }
     }
     .width('100%')
