@@ -39,7 +39,10 @@ export class SeniorStatusApi {
       http.RequestMethod.GET) as RemoteStatusResponse;
     const snapshot = snapshotFromStatus(response, Date.now());
     await this.loadSafeArea(snapshot);
-    snapshot.seniorName = await this.loadSeniorName();
+    const name = await this.loadSeniorName();
+    if (name !== '') {
+      snapshot.seniorName = name;
+    }
     return snapshot;
   }
 
@@ -60,8 +63,8 @@ export class SeniorStatusApi {
     }
   }
 
-  /** The name is cosmetic, so a failure falls back to a generic label. */
-  private async loadSeniorName(): Promise<string> {
+  /** The paired senior's display name, or '' when unknown; the name is cosmetic, so failures are not raised. */
+  async loadSeniorName(): Promise<string> {
     if (this.nameSeniorId === apiSession.seniorId && this.seniorName !== '') {
       return this.seniorName;
     }
@@ -77,7 +80,7 @@ export class SeniorStatusApi {
     } catch (error) {
       console.error('[SeniorStatusApi] could not load the senior name');
     }
-    return 'Your senior';
+    return '';
   }
 }
 

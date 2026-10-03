@@ -14,6 +14,8 @@ import { GUARDIAN_OVERVIEW_ROUTE } from './GuardianOverviewPage';
 import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
 import { CareFocusStyle } from '../components/DesignSystem';
 import { apiSession } from '../services/CareApi';
+import { seniorStatusApi } from '../services/SeniorStatusApi';
+import { greeting } from '../models/Greeting';
 
 @Component
 export struct RoleHome {
@@ -22,6 +24,7 @@ export struct RoleHome {
   @State selectedTab: number = 0;
   /** Bumped whenever a tab or this page becomes visible, so tab content can reload. */
   @State tabRefresh: number = 0;
+  @State private seniorName: string = '';
 
   /** Clears pairing, then returns to setup. Signing out must always take effect. */
   private async signOut(): Promise<void> {
@@ -74,7 +77,7 @@ export struct RoleHome {
         .fontColor(Color.White)
 
       Row({ space: 8 }) {
-        Text(this.profile.hero.summary)
+        Text(this.heroSummary())
           .fontSize(19)
           .fontColor(Color.White)
           .opacity(0.92)
@@ -93,16 +96,24 @@ export struct RoleHome {
     .shadow({ radius: 24, color: $r('app.color.card_shadow'), offsetY: 8 })
     .accessibilityGroup(true)
     .attributeModifier(new CareFocusStyle())
-    .accessibilityText(`${this.heroTitle()}. ${this.profile.hero.summary}`)
+    .accessibilityText(`${this.heroTitle()}. ${this.heroSummary()}`)
     .accessibilityRole(AccessibilityRoleType.BUTTON)
     .onClick(() => this.open(this.profile.hero))
   }
 
+  /** The guardian's hero opens the senior's overview, so it is titled with the senior's name once known. */
   private heroTitle(): string {
-    if (apiSession.displayName === '') {
-      return this.profile.hero.title;
+    return this.seniorName !== '' ? this.seniorName : this.profile.hero.title;
+  }
+
+  private heroSummary(): string {
+    return this.seniorName !== '' ? 'Latest known status and today\'s care' : this.profile.hero.summary;
+  }
+
+  private async loadSeniorName(): Promise<void> {
+    if (this.profile.route === 'guardian') {
+      this.seniorName = await seniorStatusApi.loadSeniorName();
     }
-    return `${this.profile.hero.title}, ${apiSession.displayName}`;
   }
 
   @Builder
@@ -187,7 +198,11 @@ export struct RoleHome {
   /** The visible screen's own heading, shown once in the title bar instead of repeated in the content. */
   private screenTitle(): string | NavDestinationCommonTitle {
     if (this.selectedTab === 0) {
-      return this.profile.headline;
+      const title: NavDestinationCommonTitle = {
+        main: greeting(apiSession.displayName, new Date()),
+        sub: this.profile.headline
+      };
+      return title;
     }
     const feature = this.profile.tabs[this.selectedTab - 1];
     if (feature.id === 'medication') {
@@ -305,7 +320,10 @@ export struct RoleHome {
     .title(this.screenTitle())
     .backgroundColor($r('app.color.page_background'))
     .hideBackButton(true)
-    .onShown(() => this.tabRefresh++)
+    .onShown(() => {
+      this.tabRefresh++;
+      this.loadSeniorName();
+    })
     .onBackPressed(() => this.navStack.size() <= 1)
   }
 }
