@@ -1,9 +1,13 @@
+import { common } from '@kit.AbilityKit';
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
 import { CareAlert } from '../models/Safety';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
+import { loadTakenDoses } from '../platform/DoseLogStore';
+import { dateKey } from '../services/MedicationSchedule';
 import { FeaturePage } from './FeaturePage';
+import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
@@ -16,6 +20,12 @@ import { WatchSafetyPage } from './WatchSafetyPage';
 struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
   @StorageLink('paired') private paired: boolean = false;
+  // Today's taken doses (occurrence ID to time taken), shared by the schedule and detail screens.
+  @Provide('takenDoses') takenDoses: Map<string, number> = new Map<string, number>();
+
+  aboutToAppear(): void {
+    this.takenDoses = loadTakenDoses(this.getUIContext().getHostContext() as common.Context, dateKey(new Date()));
+  }
 
   @Builder
   routes(name: string, param: Object) {
@@ -47,6 +57,8 @@ struct Index {
         this.navStack.pop();
         this.navStack.pushPathByName(role === 'guardian' ? GUARDIAN_PROFILE.route : SENIOR_PROFILE.route, null);
       } })
+    } else if (name === 'medication-detail') {
+      MedicationDetail({ params: param as MedicationDetailParams })
     }
   }
 

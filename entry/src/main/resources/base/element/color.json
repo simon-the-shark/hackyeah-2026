@@ -63,6 +63,14 @@
     {
       "name": "warning_tint",
       "value": "#FEF3C7"
+    },
+    {
+      "name": "success",
+      "value": "#2E7D32"
+    },
+    {
+      "name": "success_tint",
+      "value": "#E3F2E5"
     }
   ]
 }

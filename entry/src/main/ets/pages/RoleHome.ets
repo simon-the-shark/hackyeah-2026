@@ -3,6 +3,7 @@ import common from '@ohos.app.ability.common';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
 import { AlertsList } from './AlertsPage';
+import { MedicationToday } from './MedicationToday';
 
 @Component
 export struct RoleHome {
@@ -184,6 +185,8 @@ export struct RoleHome {
   tabContent(feature: Feature) {
     if (feature.id === 'alerts') {
       AlertsList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'medication') {
+      MedicationToday()
     } else {
       FeaturePlaceholder({ feature: feature })
     }
