@@ -8,6 +8,7 @@ import { AlertsList } from './AlertsPage';
 import { GuardianMedicationList } from './GuardianMedication';
 import { GuardianContactsList } from './GuardianContacts';
 import { GuardianLocationView } from './GuardianLocationPage';
+import { SosBanner } from '../components/SosBanner';
 
 @Component
 export struct RoleHome {
@@ -167,6 +168,10 @@ export struct RoleHome {
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
+
+        if (this.profile.route === 'guardian') {
+          SosBanner()
+        }
 
         this.hero()
 
