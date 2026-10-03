@@ -45,7 +45,7 @@ export struct ConnectionPage {
   build() {
     NavDestination() {
       Scroll() {
-      Column({ space: 16 }) {
+        Column({ space: 16 }) {
           Text(this.guardian ? 'Enter the pairing code from your senior.' : 'Set up your account. Share your guardian code from Home → Settings → Pairing.')
             .fontSize(19).fontColor($r('app.color.text_secondary'))
           Text('Your name').fontSize(19).fontColor($r('app.color.text_primary'))
@@ -57,20 +57,57 @@ export struct ConnectionPage {
           if (this.nameError !== '') {
             Text(this.nameError).fontSize(17).fontColor($r('app.color.sos'))
           }
-          Text('Who uses this phone?').fontSize(19).fontColor($r('app.color.text_primary'))
+          Text('Choose a role')
+            .fontSize(19)
+            .fontColor($r('app.color.text_primary'))
+          Text('Select one option')
+            .fontSize(16)
+            .fontColor($r('app.color.text_secondary'))
           Column({ space: 12 }) {
-            Button('I am a senior')
+            Button() {
+              Row({ space: 10 }) {
+                if (!this.guardian) {
+                  SymbolGlyph($r('sys.symbol.checkmark_circle_fill'))
+                    .fontSize(20)
+                    .fontColor([$r('app.color.senior_accent')])
+                }
+                Text('I am a senior')
+                  .fontSize(19)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.senior_accent'))
+              }
+              .justifyContent(FlexAlign.Center)
+              .width('100%')
+            }
               .type(ButtonType.Capsule)
               .width('100%')
-              .attributeModifier(new CareButtonStyle(!this.guardian ? 'primary' : 'secondary'))
+              .attributeModifier(new CareButtonStyle('secondary'))
               .accessibilitySelected(!this.guardian)
+              .accessibilityText('I am a senior')
+              .accessibilityDescription(!this.guardian ? 'Selected role' : 'Select senior role')
               .enabled(!this.busy)
               .onClick(() => this.guardian = false)
-            Button('I am a guardian')
+            Button() {
+              Row({ space: 10 }) {
+                if (this.guardian) {
+                  SymbolGlyph($r('sys.symbol.checkmark_circle_fill'))
+                    .fontSize(20)
+                    .fontColor([$r('app.color.senior_accent')])
+                }
+                Text('I am a guardian')
+                  .fontSize(19)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.senior_accent'))
+              }
+              .justifyContent(FlexAlign.Center)
+              .width('100%')
+            }
               .type(ButtonType.Capsule)
               .width('100%')
-              .attributeModifier(new CareButtonStyle(this.guardian ? 'primary' : 'secondary'))
+              .attributeModifier(new CareButtonStyle('secondary'))
               .accessibilitySelected(this.guardian)
+              .accessibilityText('I am a guardian')
+              .accessibilityDescription(this.guardian ? 'Selected role' : 'Select guardian role')
               .enabled(!this.busy)
               .onClick(() => this.guardian = true)
           }
@@ -96,8 +133,14 @@ export struct ConnectionPage {
           if (this.message !== '') {
             NoticeBanner({ text: this.message })
           }
-      }.width('100%').alignItems(HorizontalAlign.Start).padding(20)
-      }.width('100%').height('100%')
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+        .padding(20)
+      }
+      .width('100%')
+      .height('100%')
+      .align(Alignment.Top)
     }.title(this.guardian ? 'Pair with your senior' : 'Set up this phone').backgroundColor($r('app.color.page_background'))
   }
 }

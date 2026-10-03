@@ -102,7 +102,7 @@ struct Index {
 
   build() {
     Navigation(this.navStack) {
-      Column({ space: 32 }) {
+      Column() {
         Column({ space: 8 }) {
           Row() {
             SymbolGlyph($r('sys.symbol.heart_fill'))
@@ -145,12 +145,11 @@ struct Index {
           }
           .width('100%')
         }
-
         AlertDeepLink()
-        Blank()
       }
       .width('100%')
       .height('100%')
+      .justifyContent(FlexAlign.SpaceBetween)
       .padding({ left: 24, right: 24, top: 48, bottom: 24 })
     }
     .hideTitleBar(true)

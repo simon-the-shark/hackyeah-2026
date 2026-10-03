@@ -111,7 +111,6 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
         $r('sys.symbol.doc_text_fill'))
     ]),
     new FeatureSection('Account', [
-      guardianFeature('settings', 'Settings', 'Pairing and preferences', $r('sys.symbol.gearshape_fill')),
       new Feature('sign-out', 'Sign out', 'Return this device to setup', $r('sys.symbol.arrow_right'),
         $r('app.color.sos'), $r('app.color.sos_tint'))
     ])
