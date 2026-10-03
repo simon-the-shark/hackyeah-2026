@@ -1,5 +1,7 @@
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
+import { BackendClient } from '../providers/backend/BackendClient';
+import { BackendConfig } from '../providers/backend/BackendConfig';
 import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 
 export function generateEventId(): string {
@@ -37,8 +39,6 @@ export class SafetyEventRequest {
   }
 }
 
-class EmptyResponse {}
-
 export class ApiSession {
   baseUrl: string = BACKEND_BASE_URL;
   token: string = '';
@@ -60,48 +60,19 @@ export class ApiSession {
 
 export const apiSession: ApiSession = new ApiSession();
 
+// Compatibility facade for endpoints not yet moved to typed provider APIs.
+// All transport, serialization, status handling and cleanup live in BackendClient.
 export class CareApi {
   async publicRequest(baseUrl: string, path: string, method: http.RequestMethod, body: Object): Promise<Object> {
-    const request = http.createHttp();
-    try {
-      const response = await request.request(`${baseUrl}/v1${path}`, {
-        method: method,
-        header: { 'Content-Type': 'application/json' },
-        extraData: JSON.stringify(body),
-        expectDataType: http.HttpDataType.STRING,
-        connectTimeout: 10000,
-        readTimeout: 10000
-      });
-      const data = JSON.parse(response.result as string) as Object;
-      if (response.responseCode < 200 || response.responseCode >= 300) throw new Error(JSON.stringify(data));
-      return data;
-    } finally {
-      request.destroy();
-    }
+    return new BackendClient(new BackendConfig(baseUrl, '')).request<Object>(method, `/v1${path}`, body, '');
   }
 
   async request(path: string, method: http.RequestMethod, body?: Object): Promise<Object> {
     if (!apiSession.configured()) {
       throw new Error('Connect this app to the care service first.');
     }
-    const request = http.createHttp();
-    try {
-      const response = await request.request(`${apiSession.baseUrl}/v1${path}`, {
-        method: method,
-        header: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiSession.token}` },
-        extraData: body === undefined ? undefined : JSON.stringify(body),
-        expectDataType: http.HttpDataType.STRING,
-        connectTimeout: 10000,
-        readTimeout: 10000
-      });
-      const data = response.result === '' ? new EmptyResponse() : JSON.parse(response.result as string) as Object;
-      if (response.responseCode < 200 || response.responseCode >= 300) {
-        throw new Error(JSON.stringify(data));
-      }
-      return data;
-    } finally {
-      request.destroy();
-    }
+    return new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token))
+      .request<Object>(method, `/v1${path}`, body);
   }
 }
 

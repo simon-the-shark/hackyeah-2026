@@ -56,6 +56,8 @@ class RawResponse {
   }
 }
 
+class EmptyResponse {}
+
 // For a 2xx response whose payload does not have the documented shape.
 export function invalidResponse(what: string): ApiError {
   return new ApiError(ApiErrorKind.InvalidResponse, 200, '', `The server sent an unreadable ${what}.`);
@@ -87,6 +89,22 @@ export class BackendClient {
     await this.sendRaw(http.RequestMethod.DELETE, path, undefined);
   }
 
+  // Generic request used by legacy feature endpoints that do not have a typed API yet.
+  // Passing an empty token sends an unauthenticated request (for account bootstrap).
+  async request<T>(method: http.RequestMethod, path: string, body?: Object,
+    deviceToken: string = this.config.deviceToken): Promise<T> {
+    const response = await this.sendRaw(method, path, body === undefined ? undefined : JSON.stringify(body), deviceToken);
+    if (response.text.length === 0) {
+      return new EmptyResponse() as T;
+    }
+    try {
+      return JSON.parse(response.text) as T;
+    } catch (err) {
+      throw new ApiError(ApiErrorKind.InvalidResponse, response.status, '',
+        'The server sent a response this app cannot read.');
+    }
+  }
+
   private async send<T>(method: http.RequestMethod, path: string, body: string | undefined): Promise<T> {
     const response = await this.sendRaw(method, path, body);
     if (response.text.length === 0) {
@@ -102,11 +120,12 @@ export class BackendClient {
   }
 
   // Sends one request and returns the 2xx status and body text; any other outcome becomes an ApiError.
-  private async sendRaw(method: http.RequestMethod, path: string, body: string | undefined): Promise<RawResponse> {
-    const headers: Record<string, string> = {
-      'Accept': 'application/json',
-      'Authorization': `Bearer ${this.config.deviceToken}`
-    };
+  private async sendRaw(method: http.RequestMethod, path: string, body: string | undefined,
+    deviceToken: string = this.config.deviceToken): Promise<RawResponse> {
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
+    if (deviceToken !== '') {
+      headers['Authorization'] = `Bearer ${deviceToken}`;
+    }
     if (body !== undefined) {
       headers['Content-Type'] = 'application/json';
     }
