@@ -12,6 +12,7 @@ export struct ConnectionPage {
   @State private name: string = '';
   @State private code: string = '';
   @State private guardian: boolean = false;
+  @State private roleChosen: boolean = false;
   @State private message: string = '';
   @State private busy: boolean = false;
   @State private nameError: string = '';
@@ -43,96 +44,83 @@ export struct ConnectionPage {
     }
   }
 
+  private chooseRole(guardian: boolean): void {
+    this.guardian = guardian;
+    this.codeError = '';
+    this.nameError = '';
+    this.message = '';
+    this.roleChosen = true;
+  }
+
+  @Builder
+  private roleStep() {
+    Text('Who will use this phone?')
+      .fontSize(24)
+      .fontWeight(FontWeight.Medium)
+      .fontColor($r('app.color.text_primary'))
+    Text('Step 1 of 2')
+      .fontSize(17)
+      .fontColor($r('app.color.text_secondary'))
+    Button('I am a senior')
+      .width('100%')
+      .attributeModifier(new CareButtonStyle())
+      .accessibilityDescription('Set up this phone for the senior')
+      .onClick(() => this.chooseRole(false))
+    Button('I am a guardian')
+      .width('100%')
+      .attributeModifier(new CareButtonStyle('secondary'))
+      .accessibilityDescription('Pair this phone with a senior using their code')
+      .onClick(() => this.chooseRole(true))
+  }
+
+  @Builder
+  private detailsStep() {
+    Text(this.guardian ? 'Enter your name and the pairing code from your senior.' :
+      'Enter your name. After setup, share your guardian code from Home → Settings → Pairing.')
+      .fontSize(19).fontColor($r('app.color.text_secondary'))
+    Text('Step 2 of 2')
+      .fontSize(17)
+      .fontColor($r('app.color.text_secondary'))
+    Text('Your name').fontSize(19).fontColor($r('app.color.text_primary'))
+    TextInput({ text: this.name, placeholder: 'Enter your name' })
+      .width('100%')
+      .attributeModifier(new CareInputStyle('Your name', this.nameError))
+      .enabled(!this.busy)
+      .onChange((v: string) => this.name = v)
+    if (this.nameError !== '') {
+      Text(this.nameError).fontSize(17).fontColor($r('app.color.sos'))
+    }
+    if (this.guardian) {
+      Text('Pairing code').fontSize(19).fontColor($r('app.color.text_primary'))
+      TextInput({ text: this.code, placeholder: '6 digits' })
+        .width('100%')
+        .attributeModifier(new CareInputStyle('Six-digit pairing code', this.codeError))
+        .type(InputType.Number)
+        .maxLength(6)
+        .enabled(!this.busy)
+        .onChange((v: string) => this.code = v)
+      if (this.codeError !== '') {
+        Text(this.codeError).fontSize(17).fontColor($r('app.color.sos'))
+      }
+    }
+    Button(this.busy ? 'Connecting…' : this.guardian ? 'Pair with senior' : 'Set up senior phone')
+      .width('100%')
+      .attributeModifier(new CareButtonStyle())
+      .enabled(!this.busy)
+      .onClick(() => this.connect())
+    if (this.message !== '') {
+      NoticeBanner({ text: this.message })
+    }
+  }
+
   build() {
     NavDestination() {
       Scroll() {
         Column({ space: 16 }) {
-          Text(this.guardian ? 'Enter the pairing code from your senior.' : 'Set up your account. Share your guardian code from Home → Settings → Pairing.')
-            .fontSize(19).fontColor($r('app.color.text_secondary'))
-          Text('Your name').fontSize(19).fontColor($r('app.color.text_primary'))
-          TextInput({ text: this.name, placeholder: 'Enter your name' })
-            .width('100%')
-            .attributeModifier(new CareInputStyle('Your name', this.nameError))
-            .enabled(!this.busy)
-            .onChange((v: string) => this.name = v)
-          if (this.nameError !== '') {
-            Text(this.nameError).fontSize(17).fontColor($r('app.color.sos'))
-          }
-          Text('Choose a role')
-            .fontSize(19)
-            .fontColor($r('app.color.text_primary'))
-          Text('Select one option')
-            .fontSize(16)
-            .fontColor($r('app.color.text_secondary'))
-          Column({ space: 12 }) {
-            Button() {
-              Row({ space: 10 }) {
-                if (!this.guardian) {
-                  SymbolGlyph($r('sys.symbol.checkmark_circle_fill'))
-                    .fontSize(20)
-                    .fontColor([$r('app.color.senior_accent')])
-                }
-                Text('I am a senior')
-                  .fontSize(19)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor($r('app.color.senior_accent'))
-              }
-              .justifyContent(FlexAlign.Center)
-              .width('100%')
-            }
-              .type(ButtonType.Capsule)
-              .width('100%')
-              .attributeModifier(new CareButtonStyle('secondary'))
-              .accessibilitySelected(!this.guardian)
-              .accessibilityText('I am a senior')
-              .accessibilityDescription(!this.guardian ? 'Selected role' : 'Select senior role')
-              .enabled(!this.busy)
-              .onClick(() => this.guardian = false)
-            Button() {
-              Row({ space: 10 }) {
-                if (this.guardian) {
-                  SymbolGlyph($r('sys.symbol.checkmark_circle_fill'))
-                    .fontSize(20)
-                    .fontColor([$r('app.color.senior_accent')])
-                }
-                Text('I am a guardian')
-                  .fontSize(19)
-                  .fontWeight(FontWeight.Medium)
-                  .fontColor($r('app.color.senior_accent'))
-              }
-              .justifyContent(FlexAlign.Center)
-              .width('100%')
-            }
-              .type(ButtonType.Capsule)
-              .width('100%')
-              .attributeModifier(new CareButtonStyle('secondary'))
-              .accessibilitySelected(this.guardian)
-              .accessibilityText('I am a guardian')
-              .accessibilityDescription(this.guardian ? 'Selected role' : 'Select guardian role')
-              .enabled(!this.busy)
-              .onClick(() => this.guardian = true)
-          }
-          .width('100%')
-          if (this.guardian) {
-            Text('Pairing code').fontSize(19).fontColor($r('app.color.text_primary'))
-            TextInput({ text: this.code, placeholder: '6 digits' })
-              .width('100%')
-              .attributeModifier(new CareInputStyle('Six-digit pairing code', this.codeError))
-              .type(InputType.Number)
-              .maxLength(6)
-              .enabled(!this.busy)
-              .onChange((v: string) => this.code = v)
-            if (this.codeError !== '') {
-              Text(this.codeError).fontSize(17).fontColor($r('app.color.sos'))
-            }
-          }
-          Button(this.busy ? 'Connecting…' : this.guardian ? 'Pair with senior' : 'Set up senior phone')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle())
-            .enabled(!this.busy)
-            .onClick(() => this.connect())
-          if (this.message !== '') {
-            NoticeBanner({ text: this.message })
+          if (this.roleChosen) {
+            this.detailsStep()
+          } else {
+            this.roleStep()
           }
         }
         .width('100%')
@@ -142,6 +130,13 @@ export struct ConnectionPage {
       .width('100%')
       .height('100%')
       .align(Alignment.Top)
-    }.title(this.guardian ? 'Pair with your senior' : 'Set up this phone').backgroundColor($r('app.color.page_background'))
+    }
+    .title(!this.roleChosen ? 'Set up this phone' : this.guardian ? 'Pair with your senior' : 'Set up senior phone')
+    .backgroundColor($r('app.color.page_background'))
+    .onBackPressed(() => {
+      if (!this.roleChosen || this.busy) return this.busy;
+      this.roleChosen = false;
+      return true;
+    })
   }
 }
