@@ -1,0 +1,269 @@
+import { sql } from "drizzle-orm";
+import {
+  boolean,
+  doublePrecision,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  primaryKey,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["senior", "guardian"]);
+export const deviceKindEnum = pgEnum("device_kind", ["phone", "watch"]);
+export const eventTypeEnum = pgEnum("event_type", [
+  "sos",
+  "sos_cancel",
+  "area_exit",
+  "area_enter",
+  "dose_missed",
+  "trip_arrived",
+  "trip_deviation",
+]);
+export const alertKindEnum = pgEnum("alert_kind", [
+  "sos",
+  "area_exit",
+  "dose_missed",
+  "trip_deviation",
+  "trip_not_completed",
+  "monitoring_lost",
+]);
+export const pushStatusEnum = pgEnum("push_status", ["none", "sent", "failed", "simulated"]);
+export const doseStatusEnum = pgEnum("dose_status", ["taken", "skipped", "snoozed"]);
+export const monitoringStateEnum = pgEnum("monitoring_state", [
+  "inside",
+  "outside",
+  "unknown",
+  "unavailable",
+]);
+export const reportSourceEnum = pgEnum("report_source", ["ai", "structured", "simulated"]);
+export const tripStatusEnum = pgEnum("trip_status", ["planned", "active", "completed", "missed"]);
+
+const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+
+export type GeoPoint = {
+  lat: number;
+  lng: number;
+  accuracyM?: number;
+  /** ISO timestamp of the location sample; lets guardians judge freshness. */
+  sampledAt?: string;
+};
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  role: roleEnum("role").notNull(),
+  displayName: text("display_name").notNull(),
+  createdAt: createdAt(),
+});
+
+export const careLinks = pgTable(
+  "care_links",
+  {
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    guardianId: uuid("guardian_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.seniorId, t.guardianId] })],
+);
+
+export const pairingCodes = pgTable("pairing_codes", {
+  code: text("code").primaryKey(),
+  seniorId: uuid("senior_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+});
+
+export const devices = pgTable(
+  "devices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: deviceKindEnum("kind").notNull(),
+    pushToken: text("push_token"),
+    /** sha256 of the opaque bearer token; the token itself is never stored. */
+    tokenHash: text("token_hash").notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("devices_token_hash_idx").on(t.tokenHash), index("devices_user_idx").on(t.userId)],
+);
+
+export const safeAreas = pgTable("safe_areas", {
+  seniorId: uuid("senior_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  radiusM: integer("radius_m").notNull(),
+  version: integer("version").notNull().default(1),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const contacts = pgTable(
+  "contacts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    phone: text("phone").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    version: integer("version").notNull().default(1),
+  },
+  (t) => [index("contacts_senior_idx").on(t.seniorId)],
+);
+
+export const medications = pgTable(
+  "medications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** User-confirmed dose text; never inferred from a barcode. */
+    doseText: text("dose_text"),
+    instructions: text("instructions"),
+    barcode: text("barcode"),
+    modelAssetKey: text("model_asset_key"),
+    /** Local times of day, e.g. ["08:00", "20:00"]. */
+    times: jsonb("times").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
+    timezone: text("timezone").notNull(),
+    version: integer("version").notNull().default(1),
+  },
+  (t) => [index("medications_senior_idx").on(t.seniorId)],
+);
+
+export const doseRecords = pgTable("dose_records", {
+  /** Client-generated stable occurrence id (medication + scheduled time). */
+  occurrenceId: text("occurrence_id").primaryKey(),
+  medicationId: uuid("medication_id")
+    .notNull()
+    .references(() => medications.id, { onDelete: "cascade" }),
+  seniorId: uuid("senior_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  status: doseStatusEnum("status").notNull(),
+  scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+});
+
+export const events = pgTable(
+  "events",
+  {
+    /** Client-generated; makes retries idempotent. */
+    id: uuid("id").primaryKey(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id")
+      .notNull()
+      .references(() => devices.id, { onDelete: "cascade" }),
+    type: eventTypeEnum("type").notNull(),
+    cancelsEventId: uuid("cancels_event_id"),
+    /** Set for trip_arrived / trip_deviation events. */
+    tripId: uuid("trip_id"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    location: jsonb("location").$type<GeoPoint>(),
+  },
+  (t) => [index("events_senior_idx").on(t.seniorId, t.receivedAt)],
+);
+
+export const alerts = pgTable(
+  "alerts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id").references(() => events.id, { onDelete: "set null" }),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: alertKindEnum("kind").notNull(),
+    createdAt: createdAt(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    /** Request accepted by the push provider. Not proof a guardian saw it. */
+    pushStatus: pushStatusEnum("push_status").notNull().default("none"),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
+    acknowledgedBy: uuid("acknowledged_by").references(() => users.id, { onDelete: "set null" }),
+    /** Dedup key for server-generated alerts (monitoring_lost, trip_not_completed). */
+    dedupKey: text("dedup_key"),
+  },
+  (t) => [
+    index("alerts_senior_idx").on(t.seniorId, t.createdAt),
+    uniqueIndex("alerts_dedup_idx").on(t.dedupKey),
+    uniqueIndex("alerts_event_idx").on(t.eventId),
+  ],
+);
+
+export const statusHeartbeats = pgTable("status_heartbeats", {
+  seniorId: uuid("senior_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
+  monitoringState: monitoringStateEnum("monitoring_state").notNull(),
+  location: jsonb("location").$type<GeoPoint>(),
+  battery: integer("battery"),
+  reportedAt: timestamp("reported_at", { withTimezone: true }).notNull(),
+  /** Set when a monitoring_lost alert was raised for the current gap; cleared by a fresh heartbeat. */
+  staleAlertedAt: timestamp("stale_alerted_at", { withTimezone: true }),
+});
+
+export const reports = pgTable(
+  "reports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    period: text("period"),
+    structured: jsonb("structured").$type<Record<string, unknown>>().notNull(),
+    summary: text("summary"),
+    source: reportSourceEnum("source").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("reports_senior_idx").on(t.seniorId, t.createdAt)],
+);
+
+export const trips = pgTable(
+  "trips",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    destLat: doublePrecision("dest_lat").notNull(),
+    destLng: doublePrecision("dest_lng").notNull(),
+    radiusM: integer("radius_m").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
+    status: tripStatusEnum("status").notNull().default("planned"),
+    version: integer("version").notNull().default(1),
+  },
+  (t) => [index("trips_senior_idx").on(t.seniorId)],
+);
+
+/** Synthetic demo data only; barcodes identify a candidate, never a prescription. */
+export const medicationCatalog = pgTable("medication_catalog", {
+  barcode: text("barcode").primaryKey(),
+  name: text("name").notNull(),
+  form: text("form"),
+  modelAssetKey: text("model_asset_key"),
+  isSynthetic: boolean("is_synthetic").notNull().default(true),
+});
+
+export type PushStatus = (typeof pushStatusEnum.enumValues)[number];

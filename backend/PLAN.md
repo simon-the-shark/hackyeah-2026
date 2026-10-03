@@ -144,3 +144,13 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
   - a push failure still stores the alert
 - Manual: run `pnpm dev`, then a curl script: create senior → claim → set safe area → post SOS twice → guardian lists alerts (one) → ack.
 - Real Push Kit end-to-end: put AGC service-account credentials in a git-ignored `.env`, take a push token from the guardian app on the DevEco HarmonyOS emulator, send an SOS and confirm the notification shows on the emulator. This needs the user's AGC project and the mobile app switched to HarmonyOS signing. Until that is done it is reported as unverified.
+
+## Implementation notes (deviations from the plan above)
+
+- Postgres runs from docker-compose on the default port 5432.
+- Push Kit credentials come from a single service-account key file (`PUSH_KIT_KEY_FILE`) rather than four env vars; the file already holds `project_id`, `key_id`, `sub_account` and `private_key`.
+- Added `POST /v1/devices` (senior adds a watch device and gets its token) and `events.trip_id` for trip events.
+- `status_heartbeats.reported_at` is server receipt time; the device's own sample time lives in `location.sampledAt`.
+- Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
+- Push Kit notification click-through data is not sent yet (payload shape unverified).
+- The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.
