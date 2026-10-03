@@ -8,6 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "dev:tmux": "bash scripts/dev-tmux.sh",
     "start": "tsx --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
