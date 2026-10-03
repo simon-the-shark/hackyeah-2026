@@ -115,8 +115,8 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/pairing/watch-claim` `{code}` | none | The senior's watch claims a code from `POST /v1/pairing/watch-codes` and becomes another device **of the senior** (`kind: watch`). Returns `seniorId, deviceId, token`. Only watch codes are accepted (a guardian code returns 410 and is not consumed). Failed guesses share the `/pairing/claim` rate limit |
 | `DELETE /v1/seniors/:id` `{confirm: "DELETE"}` | that senior | Deletes the senior's account and everything stored for them (devices, configuration, events, alerts, doses, reports, routines, heart-rate samples). Guardian accounts remain but lose the link. Irreversible (204) |
 | `DELETE /v1/care-links/:seniorId/:guardianId` | that senior or guardian | Ends the relationship (204); the guardian immediately loses access. A guardian left with no seniors keeps their account and can link again by claiming a new code with their token |
-| `POST /v1/pairing/codes` | senior | Active guardian pairing code; creates one only when none is valid |
-| `POST /v1/pairing/watch-codes` | senior | Active **watch** pairing code (lives 5 min, because it yields a senior token); creates one only when none is valid. Never the same code as the guardian one. No body |
+| `POST /v1/pairing/codes?rotate=` | senior | Active guardian pairing code; creates one only when none is valid. `rotate=true` expires the active code and always issues a new one |
+| `POST /v1/pairing/watch-codes?rotate=` | senior | Active **watch** pairing code (lives 5 min, because it yields a senior token); creates one only when none is valid; `rotate=true` expires it and issues a new one. Never the same code as the guardian one. No body |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token. A watch that cannot receive a token this way uses the watch pairing code instead |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
 | `GET /v1/devices?seniorId=` | any | Own devices, or (guardian) a linked senior's devices: `id, kind, createdAt, lastSeenAt, hasPushToken, isCurrent`. Never returns tokens |

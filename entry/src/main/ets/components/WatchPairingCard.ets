@@ -42,10 +42,11 @@ export struct WatchPairingCard {
     }
   }
 
-  private async showCode(): Promise<void> {
-    this.message = 'Getting a code…';
+  /** `rotate` replaces a shown code, so the old one stops working on any watch. */
+  private async showCode(rotate: boolean): Promise<void> {
+    this.message = rotate ? 'Getting a new code…' : 'Getting a code…';
     try {
-      const result = await this.api().watchCode();
+      const result = await this.api().watchCode(rotate);
       this.code = result.pairingCode;
       const expires = Date.parse(result.pairingExpiresAt);
       this.expiresAt = isFinite(expires) ? expires : 0;
@@ -106,7 +107,7 @@ export struct WatchPairingCard {
           .fontColor($r('app.color.senior_accent'))
           .attributeModifier(new CareButtonStyle('secondary'))
           .onClick(() => {
-            this.showCode();
+            this.showCode(this.code !== '');
             this.loadWatches();
           })
 

@@ -26,6 +26,27 @@ describe("watch pairing", () => {
     expect(guardianCode.pairingCode).not.toBe(first.body.pairingCode);
   });
 
+  it("rotates a live code on request so the old one stops working", async () => {
+    const { seniorToken } = await t.pair();
+    for (const path of ["/v1/pairing/codes", "/v1/pairing/watch-codes"]) {
+      const old = (await t.call("POST", path, seniorToken)).body.pairingCode;
+      const rotated = await t.call("POST", `${path}?rotate=true`, seniorToken);
+      expect(rotated.status).toBe(201);
+      expect(rotated.body.pairingCode).toMatch(/^\d{6}$/);
+      expect(rotated.body.pairingCode).not.toBe(old);
+      // Without rotate, the new code is the live one.
+      expect((await t.call("POST", path, seniorToken)).body.pairingCode).toBe(rotated.body.pairingCode);
+    }
+    const guardianCode = (await t.call("POST", "/v1/pairing/codes", seniorToken)).body.pairingCode;
+    const watchCode = (await t.call("POST", "/v1/pairing/watch-codes", seniorToken)).body.pairingCode;
+    await t.call("POST", "/v1/pairing/codes?rotate=true", seniorToken);
+    await t.call("POST", "/v1/pairing/watch-codes?rotate=true", seniorToken);
+    const claim = await t.call("POST", "/v1/pairing/claim", undefined, { code: guardianCode, displayName: "Eve" });
+    expect(claim.status).toBe(410);
+    expect((await t.call("POST", "/v1/pairing/watch-claim", undefined, { code: watchCode })).status).toBe(410);
+    expect((await t.call("POST", "/v1/pairing/codes?rotate=maybe", seniorToken)).status).toBe(400);
+  });
+
   it("turns a claimed code into a watch device of the senior that can report its own location", async () => {
     const { seniorId, seniorToken, guardianToken } = await t.pair();
     const code = (await t.call("POST", "/v1/pairing/watch-codes", seniorToken)).body.pairingCode;

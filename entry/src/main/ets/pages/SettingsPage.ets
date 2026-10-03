@@ -18,21 +18,25 @@ export struct SettingsPage {
 
   aboutToAppear(): void {
     if (apiSession.role === 'senior') {
-      this.loadPairingCode();
+      this.loadPairingCode(false);
     }
   }
 
-  private async loadPairingCode(): Promise<void> {
+  /** `rotate` expires the current code on the server, so a code shared by mistake stops working. */
+  private async loadPairingCode(rotate: boolean): Promise<void> {
     if (this.loadingPairingCode) return;
     this.loadingPairingCode = true;
-    this.pairingMessage = 'Loading pairing code...';
+    this.pairingMessage = rotate ? 'Creating a new pairing code…' : 'Loading pairing code…';
     try {
-      const result = await careApi.request('/pairing/codes', http.RequestMethod.POST) as Record<string, string>;
+      const path = rotate ? '/pairing/codes?rotate=true' : '/pairing/codes';
+      const result = await careApi.request(path, http.RequestMethod.POST) as Record<string, string>;
       this.pairingCode = result['pairingCode'];
-      this.pairingMessage = 'Share this code with your guardian.';
+      this.pairingMessage = rotate ? 'New code ready. The old code no longer works.' :
+        'Share this code with your guardian.';
     } catch (error) {
       this.pairingCode = '';
-      this.pairingMessage = 'Could not load a pairing code.';
+      this.pairingMessage = rotate ? 'Could not create a new code. Try again.' :
+        'Could not load a pairing code.';
     } finally {
       this.loadingPairingCode = false;
     }
@@ -92,12 +96,12 @@ export struct SettingsPage {
                     .attributeModifier(new CareButtonStyle())
                     .enabled(this.pairingCode !== '' && !this.loadingPairingCode)
                     .onClick(() => this.copyPairingCode())
-                  Button(this.loadingPairingCode ? 'Loading…' : 'Refresh code')
+                  Button(this.loadingPairingCode ? 'Loading…' : 'New code')
                     .layoutWeight(1)
                     .fontColor($r('app.color.senior_accent'))
                     .attributeModifier(new CareButtonStyle('secondary'))
                     .enabled(!this.loadingPairingCode)
-                    .onClick(() => this.loadPairingCode())
+                    .onClick(() => this.loadPairingCode(this.pairingCode !== ''))
                 }
                 .width('100%')
               }
