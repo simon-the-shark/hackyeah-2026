@@ -64,23 +64,27 @@ export struct PairingView {
   keyButton(key: string) {
     Button(this.keyLabel(key))
       .width(42)
-      .height(30)
+      .height(40)
       .padding(0)
-      .fontSize(key === 'del' || key === 'ok' ? 14 : 17)
+      .fontSize(key === 'del' || key === 'ok' ? 15 : 19)
       .fontWeight(FontWeight.Medium)
       .fontColor(key === 'ok' ? Color.Black : $r('app.color.watch_text'))
       .backgroundColor(key === 'ok' ? $r('app.color.watch_accent') : $r('app.color.watch_surface'))
+      .borderRadius(20)
       .enabled(key !== 'ok' || this.code.length === CODE_LENGTH)
       .opacity(key === 'ok' && this.code.length !== CODE_LENGTH ? 0.4 : 1)
+      .accessibilityRole(AccessibilityRoleType.BUTTON)
       .accessibilityText(this.keyAccessibility(key))
+      .accessibilityDescription(key === 'ok' && this.code.length !== CODE_LENGTH ?
+        'Enter all six digits before pairing.' : '')
       .onClick(() => this.press(key))
   }
 
   // Sized for a ~233 vp round screen: everything stays inside the circle without scrolling.
   build() {
-    Column({ space: 6 }) {
+    Column({ space: 8 }) {
       Text(this.code.padEnd(CODE_LENGTH, '•'))
-        .fontSize(22)
+        .fontSize(24)
         .fontWeight(FontWeight.Bold)
         .letterSpacing(4)
         .fontColor($r('app.color.watch_text'))
@@ -96,12 +100,12 @@ export struct PairingView {
       .columnsGap(5)
       .rowsGap(4)
       .width(136)
-      .height(132)
+      .height(164)
       Text(this.message)
-        .fontSize(11)
+        .fontSize(13)
         .fontColor($r('app.color.watch_text_secondary'))
         .textAlign(TextAlign.Center)
-        .width(124)
+        .width(150)
         .maxLines(2)
     }
     .width('100%')

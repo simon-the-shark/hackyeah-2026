@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { CareButtonStyle, CareFocusStyle, CareInputStyle, CareTextAreaStyle } from '../components/DesignSystem';
 import { IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { CatalogProduct, Medication } from '../models/Medication';
 import {
@@ -309,7 +310,7 @@ export struct MedicationFormPage {
   @Builder
   fieldLabel(label: string) {
     Text(label)
-      .fontSize(15)
+      .fontSize(19)
       .fontColor($r('app.color.text_secondary'))
   }
 
@@ -339,42 +340,42 @@ export struct MedicationFormPage {
         .width('100%')
         .height(56)
         .enabled(!this.scanning && this.lookupState !== LookupState.Looking)
-        .backgroundColor($r('app.color.guardian_accent'))
+        .attributeModifier(new CareButtonStyle())
         .onClick(() => this.scan())
 
         if (this.scanUnavailable) {
           NoticeBanner({ text: 'The camera scanner is not available on this device. Enter the barcode instead.' })
         }
 
-        Row({ space: 8 }) {
+        Column({ space: 12 }) {
           Button() {
             Row({ space: 6 }) {
               SymbolGlyph($r('sys.symbol.keyboard'))
                 .fontSize(18)
                 .fontColor([$r('app.color.guardian_accent')])
               Text('Enter barcode manually')
-                .fontSize(15)
+                .fontSize(19)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.guardian_accent'))
             }
           }
-          .layoutWeight(1)
-          .height(48)
-          .backgroundColor($r('app.color.guardian_tint'))
+          .width('100%')
+          .height(56)
+          .attributeModifier(new CareButtonStyle('secondary'))
           .onClick(() => {
             this.showManualBarcode = !this.showManualBarcode;
           })
 
           Button() {
             Text('Use demo barcode (simulated)')
-              .fontSize(15)
+              .fontSize(19)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .textAlign(TextAlign.Center)
           }
-          .layoutWeight(1)
-          .height(48)
-          .backgroundColor($r('app.color.page_background'))
+          .width('100%')
+          .height(56)
+          .attributeModifier(new CareButtonStyle('secondary'))
           .enabled(this.lookupState !== LookupState.Looking)
           .accessibilityText('Use demo barcode. Simulated, not a real scan.')
           .onClick(() => this.identify(DEMO_BARCODE, BarcodeSource.Demo))
@@ -382,7 +383,7 @@ export struct MedicationFormPage {
         .width('100%')
 
         Text('Demo only: the demo barcode is a synthetic code for emulators without a camera. It is not a real scan.')
-          .fontSize(13)
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
 
         if (this.showManualBarcode) {
@@ -397,6 +398,8 @@ export struct MedicationFormPage {
                 .maxLength(BARCODE_MAX)
                 .backgroundColor($r('app.color.page_background'))
                 .border({ width: this.manualBarcodeError ? 2 : 0, color: $r('app.color.sos') })
+                .attributeModifier(new CareInputStyle('Digits under the barcode',
+                  this.manualBarcodeError ? 'Enter the digits printed under the barcode.' : ''))
                 .onChange((value: string) => {
                   this.manualBarcode = value;
                 })
@@ -407,7 +410,7 @@ export struct MedicationFormPage {
                 .height(52)
                 .fontSize(17)
                 .enabled(this.lookupState !== LookupState.Looking)
-                .backgroundColor($r('app.color.guardian_accent'))
+                .attributeModifier(new CareButtonStyle())
                 .onClick(() => this.lookUpManual())
             }
             .width('100%')
@@ -458,13 +461,14 @@ export struct MedicationFormPage {
           .alignItems(HorizontalAlign.Start)
 
           Button() {
-            SymbolGlyph($r('sys.symbol.xmark'))
-              .fontSize(18)
-              .fontColor([$r('app.color.text_secondary')])
+            Row({ space: 6 }) {
+              SymbolGlyph($r('sys.symbol.xmark'))
+                .fontSize(18)
+                .fontColor([$r('app.color.text_secondary')])
+              Text('Remove').fontSize(17).fontColor($r('app.color.senior_accent'))
+            }
           }
-          .width(44)
-          .height(44)
-          .backgroundColor($r('app.color.page_background'))
+          .attributeModifier(new CareButtonStyle('secondary'))
           .accessibilityText('Remove barcode')
           .onClick(() => this.clearBarcode())
         }
@@ -516,6 +520,7 @@ export struct MedicationFormPage {
             .maxLength(NAME_MAX)
             .backgroundColor($r('app.color.page_background'))
             .border({ width: this.showErrors && this.errors().name !== '' ? 2 : 0, color: $r('app.color.sos') })
+            .attributeModifier(new CareInputStyle('Medicine name', this.showErrors ? this.errors().name : ''))
             .onChange((value: string) => {
               this.name = value;
             })
@@ -523,12 +528,18 @@ export struct MedicationFormPage {
           if (this.candidate !== undefined) {
             Row({ space: 10 }) {
               Toggle({ type: ToggleType.Checkbox, isOn: this.nameConfirmed })
-                .selectedColor($r('app.color.guardian_accent'))
+                .selectedColor($r('app.color.action_primary'))
+                .width(56)
+                .height(56)
+                .attributeModifier(new CareFocusStyle())
+                .accessibilityText('I checked this name against the package')
+                .accessibilityDescription(this.showErrors ? this.confirmError() : '')
+                .id('medicine-name-confirmation')
                 .onChange((isOn: boolean) => {
                   this.nameConfirmed = isOn;
                 })
               Text('I checked this name against the package')
-                .fontSize(16)
+                .fontSize(19)
                 .fontColor($r('app.color.text_primary'))
                 .layoutWeight(1)
                 .onClick(() => {
@@ -536,6 +547,10 @@ export struct MedicationFormPage {
                 })
             }
             .width('100%')
+            .accessibilityGroup(true, {
+              stateControllerId: 'medicine-name-confirmation',
+              actionControllerId: 'medicine-name-confirmation'
+            })
             this.errorText(this.confirmError())
           }
         }
@@ -551,11 +566,12 @@ export struct MedicationFormPage {
             .maxLength(DOSE_MAX)
             .backgroundColor($r('app.color.page_background'))
             .border({ width: this.showErrors && this.errors().doseText !== '' ? 2 : 0, color: $r('app.color.sos') })
+            .attributeModifier(new CareInputStyle('Prescribed dose', this.showErrors ? this.errors().doseText : ''))
             .onChange((value: string) => {
               this.doseText = value;
             })
           Text('Write the dose exactly as prescribed. It is never taken from the barcode.')
-            .fontSize(13)
+            .fontSize(17)
             .fontColor($r('app.color.text_secondary'))
           this.errorText(this.errors().doseText)
         }
@@ -570,6 +586,8 @@ export struct MedicationFormPage {
             .fontSize(18)
             .maxLength(INSTRUCTIONS_MAX)
             .backgroundColor($r('app.color.page_background'))
+            .attributeModifier(new CareTextAreaStyle())
+            .accessibilityText('Instructions, optional')
             .onChange((value: string) => {
               this.instructions = value;
             })
@@ -589,20 +607,23 @@ export struct MedicationFormPage {
 
   @Builder
   timeChip(time: string) {
-    Row({ space: 6 }) {
-      Text(time)
-        .fontSize(19)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.guardian_accent'))
-      SymbolGlyph($r('sys.symbol.xmark'))
-        .fontSize(16)
-        .fontColor([$r('app.color.guardian_accent')])
+    Button() {
+      Row({ space: 6 }) {
+        Text(`Remove ${time}`)
+          .fontSize(19)
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.guardian_accent'))
+        SymbolGlyph($r('sys.symbol.xmark'))
+          .fontSize(20)
+          .fontColor([$r('app.color.guardian_accent')])
+      }
     }
-    .height(48)
+    .height(56)
     .padding({ left: 16, right: 12 })
     .margin({ right: 8, bottom: 8 })
     .borderRadius(24)
     .backgroundColor($r('app.color.guardian_tint'))
+    .attributeModifier(new CareButtonStyle('secondary'))
     .accessibilityGroup(true)
     .accessibilityText(`Remove ${time}`)
     .onClick(() => this.removeTime(time))
@@ -610,20 +631,23 @@ export struct MedicationFormPage {
 
   @Builder
   suggestionChip(time: string) {
-    Row({ space: 4 }) {
-      SymbolGlyph($r('sys.symbol.plus'))
-        .fontSize(16)
-        .fontColor([$r('app.color.text_primary')])
-      Text(time)
-        .fontSize(17)
-        .fontWeight(FontWeight.Medium)
-        .fontColor($r('app.color.text_primary'))
+    Button() {
+      Row({ space: 4 }) {
+        SymbolGlyph($r('sys.symbol.plus'))
+          .fontSize(20)
+          .fontColor([$r('app.color.senior_accent')])
+        Text(`Add ${time}`)
+          .fontSize(19)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.senior_accent'))
+      }
     }
-    .height(44)
+    .height(56)
     .padding({ left: 14, right: 16 })
     .margin({ right: 8, bottom: 8 })
     .borderRadius(22)
     .backgroundColor($r('app.color.page_background'))
+    .attributeModifier(new CareButtonStyle('secondary'))
     .accessibilityGroup(true)
     .accessibilityText(`Add ${time}`)
     .onClick(() => this.addTime(time))
@@ -655,6 +679,7 @@ export struct MedicationFormPage {
             .maxLength(5)
             .backgroundColor($r('app.color.page_background'))
             .border({ width: this.timeError !== '' ? 2 : 0, color: $r('app.color.sos') })
+            .attributeModifier(new CareInputStyle('Dose time, 24-hour format HH:MM', this.timeError))
             .onChange((value: string) => {
               this.newTime = value;
               this.timeError = '';
@@ -663,7 +688,7 @@ export struct MedicationFormPage {
           Button('Add time')
             .height(52)
             .fontSize(17)
-            .backgroundColor($r('app.color.guardian_accent'))
+            .attributeModifier(new CareButtonStyle())
             .onClick(() => this.addTime(this.newTime))
         }
         .width('100%')
@@ -693,10 +718,10 @@ export struct MedicationFormPage {
         .width('100%')
         if (this.timezone !== this.phoneZone) {
           Button(`Use this phone's time zone`)
-            .height(40)
+            .height(56)
             .fontSize(15)
             .fontColor($r('app.color.guardian_accent'))
-            .backgroundColor($r('app.color.guardian_tint'))
+            .attributeModifier(new CareButtonStyle('secondary'))
             .onClick(() => {
               this.timezone = this.phoneZone;
             })
@@ -758,7 +783,7 @@ export struct MedicationFormPage {
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
             .enabled(!this.saving && isGuardianPaired())
-            .backgroundColor($r('app.color.guardian_accent'))
+            .attributeModifier(new CareButtonStyle())
             .onClick(() => this.save())
         }
         .width('100%')

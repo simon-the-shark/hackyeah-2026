@@ -72,9 +72,9 @@ export const SENIOR_PROFILE: RoleProfile = new RoleProfile(
   $r('sys.symbol.person_crop_circle_fill_1'),
   $r('app.color.senior_accent'),
   $r('app.color.senior_tint'),
-  new Feature('sos', 'SOS', 'Ask your guardian for help with one tap',
+  new Feature('sos', 'SOS · Ask for help', 'Starts a 5-second countdown. You can send now or cancel.',
     $r('sys.symbol.exclamationmark_shield_fill'), $r('app.color.sos'), $r('app.color.sos_tint')),
-  $r('app.color.sos'),
+  $r('app.color.action_danger'),
   [
     new FeatureSection('Safety and setup', [
       seniorFeature('safe-area', 'Safe Area', 'Home area monitoring status', $r('sys.symbol.house_shield_fill')),
@@ -98,7 +98,7 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
   $r('app.color.guardian_accent'),
   $r('app.color.guardian_tint'),
   guardianFeature('overview', 'Overview', 'Latest known status of your senior', $r('sys.symbol.person_2_fill')),
-  $r('app.color.guardian_accent'),
+  $r('app.color.action_primary'),
   [
     new FeatureSection('Safety', [
       guardianFeature('watch-vitals', 'Watch & vitals', 'Watch location and heart rate', $r('sys.symbol.watch_fill')),
@@ -113,6 +113,7 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
         $r('sys.symbol.doc_text_fill'))
     ]),
     new FeatureSection('Account', [
+      guardianFeature('settings', 'Settings', 'Pairing and developer tools', $r('sys.symbol.gearshape_fill')),
       new Feature('sign-out', 'Sign out', 'Return this device to setup', $r('sys.symbol.arrow_right'),
         $r('app.color.sos'), $r('app.color.sos_tint'))
     ])

@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { CareButtonStyle } from '../components/DesignSystem';
 import { mapCommon, petalMaps } from '@kit.MapKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { MapScene, SeniorMap } from '../components/SeniorMap';
@@ -288,7 +289,7 @@ export struct GuardianLocationView {
       }
       .width('100%')
       .height(56)
-      .backgroundColor($r('app.color.guardian_accent'))
+      .attributeModifier(new CareButtonStyle())
       .enabled(!this.loading)
       .onClick(() => this.reload())
 
@@ -306,7 +307,7 @@ export struct GuardianLocationView {
         }
         .width('100%')
         .height(56)
-        .backgroundColor($r('app.color.surface'))
+        .attributeModifier(new CareButtonStyle('secondary'))
         .onClick(() => this.openInPetalMaps(this.current()))
       }
     }
@@ -358,7 +359,7 @@ export struct GuardianLocationView {
         }
 
         Text(this.footerText())
-          .fontSize(13)
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)

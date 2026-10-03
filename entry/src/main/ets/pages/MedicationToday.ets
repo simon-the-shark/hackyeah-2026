@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 import { DoseAction } from '../components/DoseAction';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { CatalogProduct, DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
@@ -96,6 +97,8 @@ struct MedicationCard {
       .width('100%')
       .accessibilityGroup(true)
       .accessibilityText(`${this.medication.name}. Open details`)
+      .attributeModifier(new CareFocusStyle())
+      .accessibilityRole(AccessibilityRoleType.BUTTON)
       .onClick(() => this.onOpen())
 
       if (openDose(this.doses, this.doseRecords) !== undefined) {
@@ -365,7 +368,7 @@ export struct MedicationToday {
                 .fontSize(26)
                 .fontColor([Color.White])
             }
-            Text('Scan medicine')
+            Text(this.scanning ? 'Opening scanner…' : 'Scan medicine')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
@@ -374,7 +377,7 @@ export struct MedicationToday {
         .height(64)
         .padding({ left: 24, right: 28 })
         .margin({ right: 20, bottom: 20 })
-        .backgroundColor($r('app.color.senior_accent'))
+        .attributeModifier(new CareButtonStyle())
         .shadow({ radius: 16, color: $r('app.color.card_shadow'), offsetY: 6 })
         .enabled(!this.scanning)
         .accessibilityText('Scan a medicine box to check it against your list')

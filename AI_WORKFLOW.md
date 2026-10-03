@@ -11,12 +11,14 @@ endpoints, or confidential prompts.
 | OpenCode | `openai/gpt-5.6-terra` | Repository setup, implementation, and validation assistance |
 | OpenCode | `openai/gpt-6-astra` | Product documentation and mobile implementation planning |
 | OpenCode | `openai/gpt-6.1-sol` | Backend container startup diagnosis, deployment fix, and senior medication 3D viewer |
+| OpenCode | `openai/gpt-6-luna` | Accessibility/design-system audit, implementation, rebase conflict resolution, and emulator validation |
 | context7-mcp Agent Skill | Local skill | Current pnpm configuration documentation for the deployment fix |
 | Cursor Agent | Claude Opus 5.5 | Navigation baseline and build validation |
 | Claude Code | Claude Opus 5.5 | Senior home navigation refinements and build validation |
 | Claude Code | Claude Opus 5.5, Claude Sonnet 5.5 | Backend planning, implementation, tests, PR review fixes, and documentation |
 | Prelint | GitHub app (prelint.com) | Automated AI code and product-decision review on pull requests |
 | Context7 MCP | Context7 | Current third-party library documentation when required |
+| TypeUI MCP | Hosted MCP | Design-system setup guidance consulted during the consistency audit; no package installed |
 | Cursor Agent | Composer 2.5 | SOS UX polish, pairing-aware navigation, and AI workflow logging |
 
 ## Important Prompts And Instructions
@@ -39,6 +41,7 @@ endpoints, or confidential prompts.
 
 | Date | Tool/model | Request or task | Generated or changed | Human review and validation |
 | --- | --- | --- | --- | --- |
+| 2026-10-03 | OpenCode / `openai/gpt-6-luna`, Context7 MCP, HarmonyOS SDK declarations | Audit and unify app controls/navigation/colors; remove redundant post-pairing screen; add guardian alert pull-to-refresh; resolve rebase overlap with map picker/watch work | Added shared ArkUI button/input/focus styles, semantic light/dark palettes and contrast checker; standardized phone/watch control copy and selected/error/loading states; pairing now opens role home directly; guardian Alerts wraps its list in Refresh and offers an explicit refresh button; retained shared map-layer and smartwatch changes while resolving conflicts; added `docs/DESIGN_SYSTEM_AUDIT.md` | Official HarmonyOS Refresh and accessibility references consulted. Combined phone+watch HAP build passes. Installed and launched the final phone HAP on the connected emulator; captured guardian home and populated Alerts with the refresh action visible. The pull gesture did not produce a distinguishable screenshot state, so it was not asserted as manually verified. `python3 scripts/check-design-contrast.py` passes light, dark, and wearable semantic pairs; `git diff --check` is clean. Existing two `CareApi.ets` ArkTS warnings remain. Medication API was returning an error during visual review. No physical watch, screen-reader, full WCAG conformance, or font-scaling evaluation performed. |
 | 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Align project with the HackYeah challenge starter and requirements | Challenge documentation, resource references, skills archive, SDK policy, and starter screen | Build verification pending |
 | 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Configure DevEco environment and build across several sessions | Located DevEco's bundled hvigor and SDK root, resolved SDK sync configuration, added the macOS build wrapper, and assessed API 23 installation | `assembleHap` completed successfully with API 24; API 23 is being installed through DevEco Studio. Signing, emulator installation, and launch remain unverified. |
 | 2026-10-03 | OpenCode / `openai/gpt-6-astra` | Document selected concept and plan mobile delivery | Updated README, brief, repository instructions, technical stack, and AI disclosure; added `MOBILE_PLAN.md` with priorities, role flows, architecture, feasibility gates, integration needs, and validation plan | Reviewed against the current official challenge statement and checked documentation diff; documentation-only work, no new build or runtime validation. Platform APIs, watch support, push transport, and local inference remain unverified. |

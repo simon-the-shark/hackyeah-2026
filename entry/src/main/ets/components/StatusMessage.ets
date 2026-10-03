@@ -1,4 +1,5 @@
 // Full-screen loading, error and empty states for senior screens that load from the backend.
+import { CareButtonStyle } from './DesignSystem';
 @Component
 export struct StatusMessage {
   @Require icon: Resource;
@@ -18,7 +19,7 @@ export struct StatusMessage {
         .fontColor($r('app.color.text_primary'))
         .textAlign(TextAlign.Center)
       Text(this.message)
-        .fontSize(17)
+        .fontSize(19)
         .fontColor($r('app.color.text_secondary'))
         .textAlign(TextAlign.Center)
       if (this.onRetry !== undefined) {
@@ -26,7 +27,7 @@ export struct StatusMessage {
           .height(56)
           .padding({ left: 32, right: 32 })
           .fontSize(18)
-          .backgroundColor($r('app.color.senior_accent'))
+          .attributeModifier(new CareButtonStyle())
           .margin({ top: 8 })
           .onClick(() => this.onRetry?.())
       }

@@ -44,7 +44,7 @@ export struct MedicationDetail {
           .fontColor($r('app.color.success'))
         Text(this.params.simulated ? `Simulated scan · code ${this.params.scannedCode}` :
           `Scanned code ${this.params.scannedCode}`)
-          .fontSize(14)
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
       }
       .layoutWeight(1)
@@ -111,12 +111,12 @@ export struct MedicationDetail {
             }
             if (this.params.medication.instructions.length > 0) {
               Text(this.params.medication.instructions)
-                .fontSize(17)
+                .fontSize(19)
                 .fontColor($r('app.color.text_secondary'))
             }
             if (this.params.medication.barcode.length > 0) {
               Text(`Box code ${this.params.medication.barcode}`)
-                .fontSize(14)
+                .fontSize(17)
                 .fontColor($r('app.color.text_secondary'))
                 .margin({ top: 4 })
             }

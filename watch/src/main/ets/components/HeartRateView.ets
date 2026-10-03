@@ -74,7 +74,7 @@ export struct HeartRateView {
           .fontColor([$r('app.color.watch_heart')])
         if (this.simulated) {
           Text('SIMULATED')
-            .fontSize(11)
+            .fontSize(13)
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.Black)
             .backgroundColor($r('app.color.watch_simulated'))
@@ -92,31 +92,31 @@ export struct HeartRateView {
         .width(170)
       if (this.hasReading()) {
         Text('bpm')
-          .fontSize(14)
+          .fontSize(16)
           .fontColor($r('app.color.watch_text_secondary'))
       }
       if (this.alerting) {
-        Text('Outside the set range. Your guardian was told.')
-          .fontSize(12)
+        Text('Outside the set range. This watch is trying to share an alert with the care service.')
+          .fontSize(14)
           .fontColor($r('app.color.watch_warning'))
           .textAlign(TextAlign.Center)
           .width(170)
       }
       Text(this.caption())
-        .fontSize(12)
+        .fontSize(14)
         .fontColor($r('app.color.watch_text_secondary'))
         .textAlign(TextAlign.Center)
         .width(170)
       if (this.state === MonitorState.DENIED) {
         Button('Allow')
-          .height(32)
-          .fontSize(14)
+          .height(40)
+          .fontSize(16)
           .fontColor(Color.Black)
           .backgroundColor($r('app.color.watch_accent'))
           .onClick(() => this.allowInSettings())
       }
       Text('Not a medical device')
-        .fontSize(10)
+        .fontSize(13)
         .fontColor($r('app.color.watch_text_secondary'))
         .margin({ top: 4 })
     }

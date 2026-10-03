@@ -1,4 +1,5 @@
 import { Feature, GUARDIAN_PROFILE, SENIOR_PROFILE } from '../models/Features';
+import { CareButtonStyle } from '../components/DesignSystem';
 import { DoseRecord, Medication } from '../models/Medication';
 import { CareAlert } from '../models/Safety';
 import { apiSession } from '../services/CareApi';
@@ -134,11 +135,12 @@ struct Index {
               .fontColor($r('app.color.text_secondary'))
               .width('100%')
               .textAlign(TextAlign.Center)
-            Button('Set up Care Companion')
+            Button('Set up Carely')
               .width('100%')
               .height(56)
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
+              .attributeModifier(new CareButtonStyle())
               .onClick(() => this.navStack.pushPathByName('connection', null))
           }
           .width('100%')

@@ -4,6 +4,7 @@ import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/Back
 import { BackendConfig } from '../providers/backend/BackendConfig';
 import { RemoteDevice, WatchVitalsApi } from '../providers/backend/WatchVitalsApi';
 import { apiSession } from '../services/CareApi';
+import { CareButtonStyle } from './DesignSystem';
 import { sectionTitle } from './Common';
 
 /**
@@ -93,16 +94,17 @@ export struct WatchPairingCard {
             .accessibilityText(`Watch code ${this.code.split('').join(' ')}`)
         }
         Text(this.message)
-          .fontSize(15)
+          .fontSize(19)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)
         Button(this.code === '' ? 'Pair a watch' : 'New code')
+          .type(ButtonType.Capsule)
           .width('100%')
-          .height(48)
-          .fontSize(17)
+          .height(56)
+          .fontSize(19)
           .fontColor($r('app.color.senior_accent'))
-          .backgroundColor($r('app.color.senior_tint'))
+          .attributeModifier(new CareButtonStyle('secondary'))
           .onClick(() => {
             this.showCode();
             this.loadWatches();
@@ -115,20 +117,24 @@ export struct WatchPairingCard {
               .fontColor([$r('app.color.senior_accent')])
             Column({ space: 2 }) {
               Text('Paired watch')
-                .fontSize(16)
+                .fontSize(19)
                 .fontWeight(FontWeight.Medium)
                 .fontColor($r('app.color.text_primary'))
               Text(this.lastSeen(watch))
-                .fontSize(14)
+                .fontSize(17)
                 .fontColor($r('app.color.text_secondary'))
             }
             .alignItems(HorizontalAlign.Start)
             .layoutWeight(1)
             Button(this.confirmRemoveId === watch.id ? 'Tap to confirm' : 'Remove')
-              .height(40)
-              .fontSize(15)
+              .type(ButtonType.Capsule)
+              .height(48)
+              .fontSize(17)
               .fontColor($r('app.color.sos'))
               .backgroundColor($r('app.color.sos_tint'))
+              .border({ width: 2, color: $r('app.color.sos') })
+              .accessibilityRole(AccessibilityRoleType.BUTTON)
+              .accessibilityText(this.confirmRemoveId === watch.id ? 'Confirm removal of paired watch' : 'Remove paired watch')
               .onClick(() => this.remove(watch))
           }
           .width('100%')

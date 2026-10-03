@@ -1,4 +1,5 @@
 import { image } from '@kit.ImageKit';
+import { CareButtonStyle } from './DesignSystem';
 import { formatDistance } from '../models/SeniorLocation';
 import { MIN_ZOOM, MapViewport, TILE_SIZE_VP, mapTileCache, metersPerVp, tileKey } from '../services/MapTiles';
 
@@ -181,14 +182,18 @@ export struct MapScaleBar {
 
 @Builder
 export function mapZoomButton(icon: Resource, label: string, onTap: () => void) {
-  Button({ type: ButtonType.Circle }) {
-    SymbolGlyph(icon)
-      .fontSize(22)
-      .fontColor([$r('app.color.text_primary')])
+  Button() {
+    Row({ space: 6 }) {
+      SymbolGlyph(icon)
+        .fontSize(22)
+        .fontColor([$r('app.color.senior_accent')])
+      Text(label).fontSize(15).fontColor($r('app.color.senior_accent'))
+    }
   }
-  .width(44)
-  .height(44)
-  .backgroundColor($r('app.color.surface'))
+  .width(120)
+  .height(56)
+  .attributeModifier(new CareButtonStyle('secondary'))
+  .padding(8)
   .shadow({ radius: 8, color: $r('app.color.card_shadow'), offsetY: 2 })
   .accessibilityText(label)
   .onClick(() => onTap())
@@ -200,9 +205,9 @@ export function mapAttribution(mapHeight: number) {
   Row() {
     Text('© OpenStreetMap contributors')
       .fontSize(11)
-      .fontColor('#1C1B1A')
+      .fontColor($r('app.color.text_primary'))
       .padding({ left: 6, right: 6, top: 2, bottom: 2 })
-      .backgroundColor('#CCFFFFFF')
+      .backgroundColor($r('app.color.surface'))
   }
   .width('100%')
   .justifyContent(FlexAlign.End)

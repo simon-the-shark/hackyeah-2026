@@ -100,8 +100,8 @@ export struct SeniorMap {
           width: this.radiusVp(this.scene.areaRadiusM) * 2,
           height: this.radiusVp(this.scene.areaRadiusM) * 2
         })
-          .fill('#260F766E')
-          .stroke('#0F766E')
+          .fill($r('app.color.map_area_fill'))
+          .stroke($r('app.color.action_primary'))
           .strokeWidth(3)
           .strokeDashArray([10, 6])
           .position({
@@ -116,8 +116,8 @@ export struct SeniorMap {
           width: this.radiusVp(this.scene.accuracyM) * 2,
           height: this.radiusVp(this.scene.accuracyM) * 2
         })
-          .fill('#264338CA')
-          .stroke('#804338CA')
+          .fill($r('app.color.map_accuracy_fill'))
+          .stroke($r('app.color.action_primary'))
           .strokeWidth(1)
           .position({
             x: this.screenX(this.scene.markerLng) - this.radiusVp(this.scene.accuracyM),
@@ -136,7 +136,7 @@ export struct SeniorMap {
         .height(36)
         .borderRadius(18)
         .justifyContent(FlexAlign.Center)
-        .backgroundColor(this.scene.stale ? $r('app.color.text_secondary') : $r('app.color.guardian_accent'))
+        .backgroundColor(this.scene.stale ? $r('app.color.action_danger') : $r('app.color.action_primary'))
         .border({ width: 3, color: Color.White })
         .shadow({ radius: 8, color: $r('app.color.card_shadow'), offsetY: 2 })
         .position({ x: this.screenX(this.scene.markerLng) - 18, y: this.screenY(this.scene.markerLat) - 18 })
@@ -144,14 +144,14 @@ export struct SeniorMap {
       }
 
       if (this.failedTiles > 0) {
-        mapTilesUnavailable(Math.max(120, this.viewWidth - 80))
+        mapTilesUnavailable(Math.max(120, this.viewWidth - 156))
       }
 
       Column({ space: 8 }) {
         mapZoomButton($r('sys.symbol.plus'), 'Zoom in', () => this.changeZoom(1))
         mapZoomButton($r('sys.symbol.minus'), 'Zoom out', () => this.changeZoom(-1))
       }
-      .position({ x: this.viewWidth - 56, y: 12 })
+      .position({ x: this.viewWidth - 132, y: 12 })
 
       MapScaleBar({ lat: this.centerLat(), zoom: this.viewport.zoom })
         .position({ x: 12, y: MAP_HEIGHT - 50 })

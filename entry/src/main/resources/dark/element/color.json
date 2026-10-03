@@ -2,27 +2,27 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#000000"
+      "value": "#071D1A"
     },
     {
       "name": "page_background",
-      "value": "#121212"
+      "value": "#071D1A"
     },
     {
       "name": "surface",
-      "value": "#1E1E1E"
+      "value": "#14332F"
     },
     {
       "name": "text_primary",
-      "value": "#F2F2F2"
+      "value": "#FAF8F3"
     },
     {
       "name": "text_secondary",
-      "value": "#B5B0A8"
+      "value": "#B8CCC6"
     },
     {
       "name": "divider",
-      "value": "#2E2E2E"
+      "value": "#48625B"
     },
     {
       "name": "pressed",
@@ -34,43 +34,54 @@
     },
     {
       "name": "senior_accent",
-      "value": "#5EEAD4"
+      "value": "#8CD9CD"
     },
     {
       "name": "senior_tint",
-      "value": "#123A35"
+      "value": "#20463E"
     },
     {
       "name": "guardian_accent",
-      "value": "#A5B4FC"
+      "value": "#8CD9CD"
     },
     {
       "name": "guardian_tint",
-      "value": "#26254D"
+      "value": "#20463E"
     },
     {
       "name": "sos",
-      "value": "#D32F2F"
+      "value": "#FFB4AE"
     },
     {
       "name": "sos_tint",
-      "value": "#3D1A1A"
+      "value": "#492725"
     },
     {
       "name": "warning",
-      "value": "#FBBF24"
+      "value": "#F1C783"
     },
     {
       "name": "warning_tint",
-      "value": "#3A2E12"
+      "value": "#3C301C"
     },
     {
       "name": "success",
-      "value": "#81C784"
+      "value": "#91D8AF"
     },
     {
       "name": "success_tint",
-      "value": "#1B3A1E"
-    }
+      "value": "#1E4031"
+    },
+    { "name": "action_primary", "value": "#155E5A" },
+    { "name": "action_danger", "value": "#A33F3F" },
+    { "name": "focus_ring", "value": "#8CD9CD" },
+    { "name": "control_border", "value": "#7E9C92" },
+    { "name": "watch_background", "value": "#071D1A" },
+    { "name": "watch_surface", "value": "#14332F" },
+    { "name": "watch_text", "value": "#FAF8F3" },
+    { "name": "watch_secondary", "value": "#B8CCC6" },
+    { "name": "map_area_fill", "value": "#26155E5A" },
+    { "name": "map_accuracy_fill", "value": "#40155E5A" },
+    { "name": "model_background", "value": "#FAF8F3" }
   ]
 }

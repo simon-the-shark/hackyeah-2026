@@ -76,7 +76,7 @@ export struct SosView {
       this.phase = SosPhase.Sent;
     } catch (error) {
       const status = error instanceof WatchApiError ? error.status : 0;
-      this.failure = status === 0 ? 'Not sent: no connection.' : `Not sent (error ${status}).`;
+      this.failure = status === 0 ? 'Not sent. Check your connection.' : 'Not sent. Please try again.';
       this.phase = SosPhase.Failed;
     }
   }
@@ -99,11 +99,11 @@ export struct SosView {
       case SosPhase.Counting:
         return 'Tap to cancel';
       case SosPhase.Sending:
-        return 'Sending to your guardian…';
+        return 'Sending SOS to the care service…';
       case SosPhase.Sent:
-        return `Sent ${formatClock(this.sentAt)}. Your guardian is being notified.`;
+        return `Accepted by care service at ${formatClock(this.sentAt)}. This does not confirm your guardian has seen it.`;
       case SosPhase.Failed:
-        return `${this.failure} Tap to retry.`;
+        return `${this.failure} Tap Retry.`;
       default:
         return 'Tap for help';
     }
@@ -121,13 +121,14 @@ export struct SosView {
       .height(124)
       .borderRadius(62)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor(this.phase === SosPhase.Counting ? '#8E1B1B' : $r('app.color.watch_sos'))
+        .backgroundColor($r('app.color.watch_sos'))
       .enabled(this.phase !== SosPhase.Sending)
-      .accessibilityText(this.phase === SosPhase.Counting ? 'Cancel SOS' : 'Send SOS to your guardian')
+        .accessibilityText(this.phase === SosPhase.Counting ? 'Cancel SOS' : 'Send SOS to your guardian')
+        .accessibilityRole(AccessibilityRoleType.BUTTON)
       .onClick(() => this.onTap())
 
       Text(this.caption())
-        .fontSize(13)
+        .fontSize(15)
         .fontColor($r('app.color.watch_text'))
         .textAlign(TextAlign.Center)
         .width(160)

@@ -136,8 +136,8 @@ export struct AreaPickerMap {
 
         if (this.circleDrawable()) {
           Circle({ width: this.radiusVp() * 2, height: this.radiusVp() * 2 })
-            .fill('#260F766E')
-            .stroke('#0F766E')
+            .fill($r('app.color.map_area_fill'))
+            .stroke($r('app.color.action_primary'))
             .strokeWidth(3)
             .strokeDashArray([10, 6])
             .position({ x: this.viewport.width / 2 - this.radiusVp(), y: MAP_HEIGHT / 2 - this.radiusVp() })
@@ -157,21 +157,21 @@ export struct AreaPickerMap {
       .height(PIN_SIZE)
       .borderRadius(PIN_SIZE / 2)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor($r('app.color.guardian_accent'))
+      .backgroundColor($r('app.color.action_primary'))
       .border({ width: 3, color: Color.White })
       .shadow({ radius: 8, color: $r('app.color.card_shadow'), offsetY: 2 })
       .position({ x: this.viewport.width / 2 - PIN_SIZE / 2, y: MAP_HEIGHT / 2 - PIN_SIZE / 2 })
       .accessibilityLevel('no')
 
       if (this.failedTiles > 0) {
-        mapTilesUnavailable(Math.max(120, this.viewport.width - 80))
+        mapTilesUnavailable(Math.max(120, this.viewport.width - 156))
       }
 
       Column({ space: 8 }) {
         mapZoomButton($r('sys.symbol.plus'), 'Zoom in', () => this.changeZoom(1))
         mapZoomButton($r('sys.symbol.minus'), 'Zoom out', () => this.changeZoom(-1))
       }
-      .position({ x: this.viewport.width - 56, y: 12 })
+      .position({ x: this.viewport.width - 132, y: 12 })
 
       MapScaleBar({ lat: this.centerLat, zoom: this.viewport.zoom })
         .position({ x: 12, y: MAP_HEIGHT - 50 })

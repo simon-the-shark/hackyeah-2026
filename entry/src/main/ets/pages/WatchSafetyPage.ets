@@ -1,5 +1,6 @@
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { formatClockTime, safetyStore } from '../models/Safety';
+import { CareButtonStyle } from '../components/DesignSystem';
 
 @Component
 export struct WatchSafetyPage {
@@ -17,14 +18,14 @@ export struct WatchSafetyPage {
         Circle()
           .width(8)
           .height(8)
-          .fill(this.connected ? '#34D399' : '#9CA3AF')
-        Text(this.connected ? 'Connected' : 'Not connected')
-          .fontSize(13)
+          .fill($r('app.color.watch_secondary'))
+        Text(this.connected ? 'Simulation on' : 'Simulation off')
+          .fontSize(16)
           .fontColor(Color.White)
           .opacity(0.85)
       }
 
-      Column() {
+      Button({ type: ButtonType.Circle }) {
         Text('SOS')
           .fontSize(36)
           .fontWeight(FontWeight.Bold)
@@ -33,15 +34,16 @@ export struct WatchSafetyPage {
       .width(116)
       .height(116)
       .borderRadius(58)
-      .justifyContent(FlexAlign.Center)
-      .backgroundColor($r('app.color.sos'))
+      .attributeModifier(new CareButtonStyle('danger'))
+      .type(ButtonType.Circle)
+      .borderRadius(58)
       .opacity(this.connected ? 1 : 0.35)
       .enabled(this.connected)
-      .accessibilityText('Watch SOS')
+      .accessibilityText('Simulate watch SOS. Saves an alert on this phone only.')
       .onClick(() => this.activateSos())
 
-      Text(this.lastSosAt === 0 ? (this.connected ? 'Tap for help' : 'Connect first') : `Sent ${formatClockTime(this.lastSosAt)}`)
-        .fontSize(13)
+      Text(this.lastSosAt === 0 ? (this.connected ? 'Tap to simulate SOS' : 'Start simulation first') : `Saved locally ${formatClockTime(this.lastSosAt)}`)
+        .fontSize(16)
         .fontColor(Color.White)
         .opacity(0.85)
     }
@@ -49,8 +51,8 @@ export struct WatchSafetyPage {
     .height(248)
     .borderRadius(124)
     .justifyContent(FlexAlign.Center)
-    .backgroundColor('#111111')
-    .border({ width: 10, color: '#3F3F46' })
+    .backgroundColor($r('app.color.watch_background'))
+    .border({ width: 10, color: $r('app.color.watch_surface') })
     .shadow({ radius: 24, color: $r('app.color.card_shadow'), offsetY: 8 })
   }
 
@@ -89,19 +91,19 @@ export struct WatchSafetyPage {
             if (this.lastSosAt !== 0) {
               NoticeBanner({
                 icon: $r('sys.symbol.checkmark_circle_fill'),
-                text: 'SOS alert saved on this phone. Open Alerts in the Guardian view to see it.',
+                text: 'Simulated SOS saved on this phone only. No guardian was notified.',
                 accent: $r('app.color.senior_accent'),
                 tint: $r('app.color.senior_tint')
               })
             }
 
-            Button(this.connected ? 'Disconnect watch' : 'Connect watch')
+            Button(this.connected ? 'Stop watch simulation' : 'Start watch simulation')
               .width('100%')
               .height(56)
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .fontColor(this.connected ? $r('app.color.text_primary') : Color.White)
-              .backgroundColor(this.connected ? $r('app.color.surface') : $r('app.color.senior_accent'))
+              .attributeModifier(new CareButtonStyle(this.connected ? 'secondary' : 'primary'))
               .onClick(() => {
                 this.connected = !this.connected;
               })

@@ -24,12 +24,12 @@ export struct FeaturePlaceholder {
         .textAlign(TextAlign.Center)
 
       Text(this.feature.summary)
-        .fontSize(17)
+        .fontSize(19)
         .fontColor($r('app.color.text_secondary'))
         .textAlign(TextAlign.Center)
 
-      Text('Coming soon')
-        .fontSize(15)
+      Text('Coming soon · This feature is not available yet')
+        .fontSize(17)
         .fontWeight(FontWeight.Medium)
         .fontColor(this.feature.accent)
         .padding({ left: 16, right: 16, top: 8, bottom: 8 })
@@ -49,7 +49,9 @@ export struct FeaturePage {
 
   build() {
     NavDestination() {
+      Scroll() {
       FeaturePlaceholder({ feature: this.feature })
+      }.width('100%').height('100%')
     }
     .title('')
     .backgroundColor($r('app.color.page_background'))

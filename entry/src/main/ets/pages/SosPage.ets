@@ -1,6 +1,7 @@
 import { http } from '@kit.NetworkKit';
 import { formatClockTime } from '../models/Safety';
 import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
+import { CareButtonStyle } from '../components/DesignSystem';
 
 const COUNTDOWN_SECONDS: number = 5;
 
@@ -35,6 +36,7 @@ export struct SosPage {
   }
 
   private async send(): Promise<void> {
+    if (this.sendState === 'sending' || this.sendState === 'sent') return;
     this.stopTimer();
     this.sentAt = Date.now();
     this.sendState = 'sending';
@@ -55,11 +57,11 @@ export struct SosPage {
   countdown() {
     Column({ space: 32 }) {
       Column({ space: 8 }) {
-        Text('Calling for help')
+        Text('Requesting help')
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
-        Text('Your guardian will be alerted when the countdown ends.')
+        Text('We will send an SOS to the care service when the countdown ends. This does not call emergency services.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
@@ -82,7 +84,7 @@ export struct SosPage {
         .height(180)
         .borderRadius(90)
         .justifyContent(FlexAlign.Center)
-        .backgroundColor($r('app.color.sos'))
+        .backgroundColor($r('app.color.action_danger'))
       }
       .accessibilityGroup(true)
       .accessibilityText(`SOS will be sent in ${this.secondsLeft} seconds`)
@@ -93,16 +95,16 @@ export struct SosPage {
           .height(64)
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
-          .backgroundColor($r('app.color.sos'))
+          .attributeModifier(new CareButtonStyle('danger'))
           .onClick(() => this.send())
-        Button('Cancel')
+        Button('Cancel SOS')
           .width('100%')
           .height(64)
           .fontSize(22)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
           .backgroundColor($r('app.color.surface'))
-          .border({ width: 2, color: $r('app.color.divider') })
+          .attributeModifier(new CareButtonStyle('secondary'))
           .onClick(() => this.navStack.pop())
       }
       .width('100%')
@@ -114,9 +116,13 @@ export struct SosPage {
   sent() {
     Column({ space: 24 }) {
       Row() {
+        if (this.sendState === 'sending') {
+          LoadingProgress().width(72).height(72).color($r('app.color.senior_accent'))
+        } else {
         SymbolGlyph(this.sendState === 'sent' ? $r('sys.symbol.checkmark_circle_fill') : $r('sys.symbol.exclamationmark_circle_fill'))
           .fontSize(72)
           .fontColor([$r('app.color.sos')])
+        }
       }
       .width(128)
       .height(128)
@@ -129,17 +135,19 @@ export struct SosPage {
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
-        Text(this.sendState === 'sent' ? `SOS sent at ${formatClockTime(this.sentAt)}` : 'Your guardian has not been notified yet.')
+        Text(this.sendState === 'sent' ? `Care service accepted your SOS at ${formatClockTime(this.sentAt)}. This does not confirm that your guardian has seen it.` :
+          this.sendState === 'sending' ? 'Please wait while we contact the care service.' : 'Could not send your SOS. Check your connection and try again.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
       }
 
-      Button(this.sendState === 'failed' ? 'Try again' : 'Done')
+      Button(this.sendState === 'failed' ? 'Retry SOS' : this.sendState === 'sending' ? 'Sending SOS…' : 'Return home')
         .width('100%')
         .height(64)
         .fontSize(22)
         .fontWeight(FontWeight.Bold)
-        .backgroundColor($r('app.color.senior_accent'))
+        .attributeModifier(new CareButtonStyle())
+        .enabled(this.sendState !== 'sending')
         .onClick(() => {
           if (this.sendState === 'failed') {
             this.send();
@@ -153,6 +161,7 @@ export struct SosPage {
 
   build() {
     NavDestination() {
+      Scroll() {
       Column() {
         if (this.sentAt === 0) {
           this.countdown()
@@ -161,9 +170,10 @@ export struct SosPage {
         }
       }
       .width('100%')
-      .height('100%')
+      .constraintSize({ minHeight: '100%' })
       .justifyContent(FlexAlign.Center)
       .padding({ left: 24, right: 24, top: 12, bottom: 32 })
+      }.width('100%').height('100%')
     }
     .title('SOS')
     .backgroundColor($r('app.color.page_background'))

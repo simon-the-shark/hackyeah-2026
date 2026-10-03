@@ -1,3 +1,5 @@
+import { CareFocusStyle } from './DesignSystem';
+
 @Component
 export struct IconBadge {
   @Prop icon: Resource = $r('sys.symbol.info_circle');
@@ -16,13 +18,14 @@ export struct IconBadge {
     .borderRadius(this.badgeSize * 0.3)
     .justifyContent(FlexAlign.Center)
     .backgroundColor(this.tint)
+    .accessibilityLevel('no')
   }
 }
 
 @Builder
 export function sectionTitle(title: string) {
   Text(title)
-    .fontSize(15)
+    .fontSize(19)
     .fontWeight(FontWeight.Medium)
     .fontColor($r('app.color.text_secondary'))
     .padding({ left: 4 })
@@ -38,10 +41,11 @@ export struct NoticeBanner {
   build() {
     Row({ space: 12 }) {
       SymbolGlyph(this.icon)
-        .fontSize(20)
+        .fontSize(24)
         .fontColor([this.accent])
+        .accessibilityLevel('no')
       Text(this.text)
-        .fontSize(14)
+        .fontSize(19)
         .fontColor($r('app.color.text_primary'))
         .layoutWeight(1)
     }
@@ -73,12 +77,12 @@ export struct ActionRow {
 
         Column({ space: 2 }) {
           Text(this.title)
-            .fontSize(18)
+            .fontSize(19)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
           if (this.summary !== '') {
             Text(this.summary)
-              .fontSize(14)
+              .fontSize(17)
               .fontColor($r('app.color.text_secondary'))
           }
         }
@@ -102,6 +106,9 @@ export struct ActionRow {
       }
     }
     .accessibilityGroup(true)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
+    .accessibilityText(this.title + (this.summary === '' ? '' : `. ${this.summary}`))
     .stateStyles({
       normal: {
         .backgroundColor(Color.Transparent)

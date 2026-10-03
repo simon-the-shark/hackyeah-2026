@@ -27,7 +27,7 @@ export struct DeveloperToolsPage {
   private replay(status: GeofenceStatus): void {
     this.alertCreated = safetyStore.recordDemoLocation(status) !== undefined;
     this.result = this.alertCreated
-      ? `${safetyStore.lastLocationMessage}. A safe-area alert was created; open Alerts in the Guardian view to see it.`
+      ? `${safetyStore.lastLocationMessage}. A simulated safe-area alert was saved on this phone only. No guardian was notified.`
       : `${safetyStore.lastLocationMessage}.`;
   }
 

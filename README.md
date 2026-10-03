@@ -102,6 +102,8 @@ To try it on the DevEco Studio emulator (team images use API 23):
 - `MOBILE_PLAN.md` defines mobile priorities, screens, architecture, feasibility
   gates, integration needs, and acceptance tests.
 - `docs/TECH_STACK.md` records platform choices and unresolved capabilities.
+- `docs/DESIGN_SYSTEM_AUDIT.md` records the app-wide control, navigation, color,
+  accessibility and validation audit.
 - `backend/README.md` is the backend setup guide and the API contract for the
   mobile app; `backend/PLAN.md` records the backend scope.
 - `AI_WORKFLOW.md` records AI-assisted development and validation.

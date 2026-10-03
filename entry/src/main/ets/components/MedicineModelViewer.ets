@@ -1,4 +1,5 @@
 import { Camera, EnvironmentBackgroundType, Light, LightType, Scene } from '@kit.ArkGraphics3D';
+import { CareButtonStyle } from './DesignSystem';
 
 // Framing is specific to the supplied bottle: x=-0.55, y=-0.038..2.794.
 // Keep the model intact and orbit the camera around its centre.
@@ -44,7 +45,7 @@ export struct MedicineModelViewer {
       camera.enabled = true;
       camera.nearPlane = 0.1;
       camera.farPlane = 100;
-      camera.clearColor = { r: 0.95, g: 0.97, b: 0.98, a: 1 };
+      camera.clearColor = { r: 250 / 255, g: 248 / 255, b: 243 / 255, a: 1 };
       const environment = await factory.createEnvironment({ name: 'MedicineBackground' });
       environment.backgroundType = EnvironmentBackgroundType.BACKGROUND_NONE;
       scene.environment = environment;
@@ -109,8 +110,7 @@ export struct MedicineModelViewer {
     Button(label, { type: ButtonType.Normal })
       .fontSize(18)
       .fontColor($r('app.color.senior_accent'))
-      .backgroundColor($r('app.color.senior_tint'))
-      .borderRadius(14)
+      .attributeModifier(new CareButtonStyle('secondary'))
       .constraintSize({ minHeight: 56 })
       .layoutWeight(1)
       .enabled(this.options !== undefined)
@@ -148,7 +148,7 @@ export struct MedicineModelViewer {
             Button('Try again')
               .fontSize(18)
               .constraintSize({ minHeight: 56 })
-              .backgroundColor($r('app.color.senior_accent'))
+              .attributeModifier(new CareButtonStyle())
               .onClick(() => this.loadModel())
           }
           .padding(20)
@@ -166,7 +166,7 @@ export struct MedicineModelViewer {
       }
       .width('100%')
       .height(300)
-      .backgroundColor('#F2F7FA')
+      .backgroundColor($r('app.color.model_background'))
       .borderRadius(20)
       .clip(true)
 
@@ -185,8 +185,7 @@ export struct MedicineModelViewer {
         .constraintSize({ minHeight: 56 })
         .fontSize(18)
         .fontColor($r('app.color.senior_accent'))
-        .backgroundColor($r('app.color.senior_tint'))
-        .borderRadius(14)
+        .attributeModifier(new CareButtonStyle('secondary'))
         .enabled(this.options !== undefined)
         .onClick(() => this.setAngle(0))
 

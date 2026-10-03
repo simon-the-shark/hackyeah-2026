@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { CareFocusStyle } from './DesignSystem';
 import { formatAlertTime } from '../models/Safety';
 import { notifications } from '../platform/Notifications';
 import { guardianAlertWatcher, sosCareAlert } from '../services/GuardianAlertWatcher';
@@ -45,7 +46,7 @@ export struct SosBanner {
         Row() {
           SymbolGlyph($r('sys.symbol.exclamationmark_shield_fill'))
             .fontSize(28)
-            .fontColor([$r('app.color.sos')])
+            .fontColor([$r('app.color.action_danger')])
         }
         .width(52)
         .height(52)
@@ -59,11 +60,11 @@ export struct SosBanner {
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.White)
           Text(this.timeLabel())
-            .fontSize(15)
+            .fontSize(17)
             .fontColor(Color.White)
             .opacity(0.92)
           Text('Tap to open and respond')
-            .fontSize(15)
+            .fontSize(19)
             .fontWeight(FontWeight.Medium)
             .fontColor(Color.White)
         }
@@ -77,9 +78,11 @@ export struct SosBanner {
       .width('100%')
       .padding(18)
       .borderRadius(24)
-      .backgroundColor($r('app.color.sos'))
+      .backgroundColor($r('app.color.action_danger'))
       .shadow({ radius: 24, color: $r('app.color.card_shadow'), offsetY: 8 })
       .accessibilityGroup(true)
+      .attributeModifier(new CareFocusStyle())
+      .accessibilityRole(AccessibilityRoleType.BUTTON)
       .accessibilityText(`SOS from ${this.seniorName}, ${this.timeLabel()}. Open alert.`)
       .onClick(() => {
         this.navStack.pushPathByName('alert-detail', sosCareAlert(this.alertId, this.seniorName, this.createdAt));

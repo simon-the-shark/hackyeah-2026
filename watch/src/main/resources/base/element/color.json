@@ -2,43 +2,43 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#000000"
+      "value": "#071D1A"
     },
     {
       "name": "watch_background",
-      "value": "#000000"
+      "value": "#071D1A"
     },
     {
       "name": "watch_surface",
-      "value": "#1F1F1F"
+      "value": "#14332F"
     },
     {
       "name": "watch_text",
-      "value": "#FFFFFF"
+      "value": "#FAF8F3"
     },
     {
       "name": "watch_text_secondary",
-      "value": "#C7C7C7"
+      "value": "#B8CCC6"
     },
     {
       "name": "watch_accent",
-      "value": "#2DD4BF"
+      "value": "#8CD9CD"
     },
     {
       "name": "watch_sos",
-      "value": "#E53935"
+      "value": "#BC5049"
     },
     {
       "name": "watch_heart",
-      "value": "#FF6B6B"
+      "value": "#FFB4AE"
     },
     {
       "name": "watch_warning",
-      "value": "#FBBF24"
+      "value": "#F1C783"
     },
     {
       "name": "watch_simulated",
-      "value": "#FBBF24"
+      "value": "#F1C783"
     }
   ]
 }
