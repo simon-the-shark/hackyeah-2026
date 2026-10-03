@@ -1,4 +1,4 @@
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { generatePairingCode, generateToken, hashToken } from "../auth/tokens.js";
@@ -12,6 +12,15 @@ import { validate } from "../validate.js";
 const PAIRING_TTL_MS = 10 * 60 * 1000;
 
 async function issueCode(deps: Deps, seniorId: string) {
+  const now = deps.clock();
+  const [activeCode] = await deps.db
+    .select({ code: pairingCodes.code, expiresAt: pairingCodes.expiresAt })
+    .from(pairingCodes)
+    .where(and(eq(pairingCodes.seniorId, seniorId), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
+    .orderBy(desc(pairingCodes.expiresAt))
+    .limit(1);
+  if (activeCode) return { pairingCode: activeCode.code, pairingExpiresAt: activeCode.expiresAt };
+
   const expiresAt = new Date(deps.clock().getTime() + PAIRING_TTL_MS);
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generatePairingCode();
