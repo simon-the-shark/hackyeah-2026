@@ -1,4 +1,17 @@
 import { http } from '@kit.NetworkKit';
+import { util } from '@kit.ArkTS';
+
+export function generateEventId(): string {
+  const platformId = util.generateRandomUUID(true);
+  if (platformId.length === 36) {
+    return platformId;
+  }
+  // preview runtime returns an empty UUID (their entropy source is unavailable).
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character: string): string => {
+    const value = Math.floor(Math.random() * 16);
+    return (character === 'x' ? value : (value & 0x3) | 0x8).toString(16);
+  });
+}
 
 export class BootstrapRequest {
   displayName: string;

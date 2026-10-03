@@ -1,8 +1,7 @@
 import { NoticeBanner } from '../components/Common';
-import { util } from '@kit.ArkTS';
 import { http } from '@kit.NetworkKit';
 import { formatClockTime } from '../models/Safety';
-import { apiSession, careApi, SafetyEventRequest } from '../services/CareApi';
+import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
 
 const COUNTDOWN_SECONDS: number = 5;
 
@@ -46,7 +45,7 @@ export struct SosPage {
       return;
     }
     try {
-      const event = new SafetyEventRequest(util.generateRandomUUID(), 'sos');
+      const event = new SafetyEventRequest(generateEventId(), 'sos');
       const result = await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event) as Record<string, Object>;
       this.deliveryMessage = result['alert'] === undefined
         ? 'SOS accepted by the care service.'
