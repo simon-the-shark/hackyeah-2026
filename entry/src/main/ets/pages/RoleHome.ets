@@ -7,6 +7,7 @@ import { MedicationToday } from './MedicationToday';
 import { AlertsList } from './AlertsPage';
 import { GuardianMedicationList } from './GuardianMedication';
 import { GuardianContactsList } from './GuardianContacts';
+import { GuardianLocationView } from './GuardianLocationPage';
 
 @Component
 export struct RoleHome {
@@ -196,6 +197,11 @@ export struct RoleHome {
       ContactsList()
     } else if (feature.id === 'trusted-contacts') {
       GuardianContactsList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'location') {
+      GuardianLocationView({
+        refreshKey: this.tabRefresh,
+        visible: this.selectedTab > 0 && this.profile.tabs[this.selectedTab - 1].id === 'location'
+      })
     } else {
       FeaturePlaceholder({ feature: feature })
     }
