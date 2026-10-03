@@ -1,5 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
+import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 
 export function generateEventId(): string {
   const platformId = util.generateRandomUUID(true);
@@ -39,7 +40,7 @@ export class SafetyEventRequest {
 class EmptyResponse {}
 
 export class ApiSession {
-  baseUrl: string = 'http://localhost:8787';
+  baseUrl: string = BACKEND_BASE_URL;
   token: string = '';
   seniorId: string = '';
   role: string = '';

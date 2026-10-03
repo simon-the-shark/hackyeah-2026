@@ -48,10 +48,10 @@ export class ContactsService {
 
 let sharedService: ContactsService | undefined = undefined;
 
-// Undefined until the device has a backend configuration (see entry/backend.example.json).
+// Undefined until this phone is paired with a Carely care plan.
 export function contactsService(context: common.Context): ContactsService | undefined {
   if (sharedService === undefined) {
-    const account = seniorAccount(context);
+    const account = seniorAccount();
     if (account !== undefined) {
       sharedService = new ContactsService(account, new ContactsCacheStore(context));
     }

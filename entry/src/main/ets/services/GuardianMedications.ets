@@ -36,9 +36,8 @@ export function describeGuardianError(err: Object, fallback: string): string {
 }
 
 // Guardian medication management for the senior linked through pairing. It reuses the senior feature's
-// MedicationApi and BackendClient, but authenticates with the paired guardian session (apiSession) instead
-// of the senior's development backend.json. The client is built per call, so sign-out or re-pairing takes
-// effect immediately.
+// MedicationApi and BackendClient, but authenticates with the paired guardian session (apiSession). The client
+// is built per call, so sign-out or re-pairing takes effect immediately.
 export class GuardianMedications {
   private api(): MedicationApi {
     if (!isGuardianPaired()) {

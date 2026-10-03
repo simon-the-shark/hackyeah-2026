@@ -14,6 +14,4 @@ export function describeBackendError(err: Object, fallback: string): string {
   return fallback;
 }
 
-export const NOT_CONFIGURED_MESSAGE = 'This phone is not connected to a Carely care plan yet. For development, ' +
-  'add the server address and device token in entry/src/main/resources/rawfile/backend.json ' +
-  '(see entry/backend.example.json).';
+export const NOT_CONFIGURED_MESSAGE = 'This phone is not connected to a Carely care plan yet. Complete setup and pairing first.';

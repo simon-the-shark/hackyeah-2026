@@ -130,10 +130,10 @@ export class MedicationService {
 
 let sharedService: MedicationService | undefined = undefined;
 
-// Undefined until the device has a backend configuration (see entry/backend.example.json).
+// Undefined until this phone is paired with a Carely care plan.
 export function medicationService(context: common.Context): MedicationService | undefined {
   if (sharedService === undefined) {
-    const account = seniorAccount(context);
+    const account = seniorAccount();
     if (account !== undefined) {
       sharedService = new MedicationService(account, new DoseOutboxStore(context));
     }

@@ -1,10 +1,9 @@
 import { common } from '@kit.AbilityKit';
 import { apiSession } from './CareApi';
 import { SafePreferences } from './SafePreferences';
+import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 
 const STORE_NAME = 'carely_api_session';
-const DEFAULT_BASE_URL = 'http://localhost:8787';
-
 /**
  * Persists the paired device session so SOS and location sharing survive an app
  * restart. Storage failures fall back to an empty session, which shows setup
@@ -14,7 +13,7 @@ export class ApiSessionStore {
   private readonly store = new SafePreferences(STORE_NAME);
 
   async restore(context: common.Context): Promise<void> {
-    apiSession.baseUrl = await this.store.getString(context, 'baseUrl', DEFAULT_BASE_URL);
+    apiSession.baseUrl = BACKEND_BASE_URL;
     apiSession.token = await this.store.getString(context, 'token', '');
     apiSession.seniorId = await this.store.getString(context, 'seniorId', '');
     apiSession.role = await this.store.getString(context, 'role', '');

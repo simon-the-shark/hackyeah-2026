@@ -1,7 +1,7 @@
-import { common } from '@kit.AbilityKit';
 import { AccountApi } from '../providers/backend/AccountApi';
 import { BackendClient } from '../providers/backend/BackendClient';
-import { loadBackendConfig } from '../providers/backend/BackendConfig';
+import { BackendConfig } from '../providers/backend/BackendConfig';
+import { apiSession } from './CareApi';
 
 // The senior this device is paired with, shared by every senior feature that talks to the backend.
 export class SeniorAccount {
@@ -25,12 +25,11 @@ export class SeniorAccount {
 
 let sharedAccount: SeniorAccount | undefined = undefined;
 
-// Undefined until the device has a backend configuration (see entry/backend.example.json).
-export function seniorAccount(context: common.Context): SeniorAccount | undefined {
+// Undefined until this phone is paired with a Carely care plan.
+export function seniorAccount(): SeniorAccount | undefined {
   if (sharedAccount === undefined) {
-    const config = loadBackendConfig(context);
-    if (config !== undefined) {
-      sharedAccount = new SeniorAccount(new BackendClient(config));
+    if (apiSession.configured()) {
+      sharedAccount = new SeniorAccount(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
     }
   }
   return sharedAccount;
