@@ -29,10 +29,10 @@ export class SafetyEventRequest {
   occurredAt: string;
   location?: Object;
 
-  constructor(id: string, type: string) {
+  constructor(id: string, type: string, occurredAt?: string) {
     this.id = id;
     this.type = type;
-    this.occurredAt = new Date().toISOString();
+    this.occurredAt = occurredAt ?? new Date().toISOString();
   }
 }
 

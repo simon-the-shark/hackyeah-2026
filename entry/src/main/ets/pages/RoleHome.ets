@@ -1,5 +1,6 @@
 import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/Features';
-import { apiSession } from '../services/CareApi';
+import common from '@ohos.app.ability.common';
+import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
 
 @Component
@@ -10,7 +11,7 @@ export struct RoleHome {
 
   private open(feature: Feature): void {
     if (feature.id === 'sign-out') {
-      apiSession.clear();
+      apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
       AppStorage.set('paired', false);
       this.navStack.clear();
     } else if (feature.id === 'sos') {

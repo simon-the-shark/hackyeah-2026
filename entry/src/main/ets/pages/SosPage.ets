@@ -13,8 +13,10 @@ export struct SosPage {
   @State private deliveryMessage: string = '';
   @State private sendState: string = '';
   private timerId: number = -1;
+  private sosEventId: string = '';
 
   aboutToAppear(): void {
+    this.sosEventId = generateEventId();
     this.timerId = setInterval(() => {
       this.secondsLeft--;
       if (this.secondsLeft <= 0) {
@@ -45,7 +47,7 @@ export struct SosPage {
       return;
     }
     try {
-      const event = new SafetyEventRequest(generateEventId(), 'sos');
+      const event = new SafetyEventRequest(this.sosEventId, 'sos');
       const result = await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event) as Record<string, Object>;
       this.deliveryMessage = result['alert'] === undefined
         ? 'SOS accepted by the care service.'

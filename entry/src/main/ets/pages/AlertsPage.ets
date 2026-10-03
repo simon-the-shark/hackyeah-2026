@@ -4,6 +4,7 @@ import {
   CareAlert,
   deliveryLabel,
   formatAlertTime,
+  remoteAlertCopy,
 } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
 import { apiSession, careApi } from '../services/CareApi';
@@ -25,7 +26,19 @@ interface RemoteAlertList {
 }
 
 function alertIcon(alert: CareAlert): Resource {
-  return alert.type === AlertType.Sos ? $r('sys.symbol.exclamationmark_shield_fill') : $r('sys.symbol.house_shield_fill');
+  if (alert.type === AlertType.Sos) {
+    return $r('sys.symbol.exclamationmark_shield_fill');
+  }
+  if (alert.type === AlertType.DoseMissed) {
+    return $r('sys.symbol.calendar_badge_clock');
+  }
+  if (alert.type === AlertType.MonitoringLost) {
+    return $r('sys.symbol.watch_fill');
+  }
+  if (alert.type === AlertType.TripDeviation || alert.type === AlertType.TripNotCompleted) {
+    return $r('sys.symbol.figure_walk');
+  }
+  return $r('sys.symbol.house_shield_fill');
 }
 
 function alertAccent(alert: CareAlert): Resource {
@@ -61,9 +74,8 @@ export struct AlertsPage {
   }
 
   private fromRemote(item: RemoteAlert): CareAlert {
-    const type = item.kind === 'sos' ? AlertType.Sos : AlertType.SafeAreaExit;
-    const alert = new CareAlert(item.id, type, item.kind === 'sos' ? 'SOS requested' : 'Safe area exit',
-      item.kind === 'sos' ? 'The senior requested help.' : 'The senior left the safe area.', 'Care service');
+    const copy = remoteAlertCopy(item.kind);
+    const alert = new CareAlert(item.id, copy.type, copy.title, copy.detail, 'Care service');
     alert.createdAt = Date.parse(item.createdAt);
     alert.acknowledged = item.acknowledgedAt !== undefined;
     alert.remote = true;
@@ -137,7 +149,7 @@ export struct AlertsPage {
         .fontSize(22)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
-      Text('SOS requests and safe-area exits will appear here.')
+      Text('SOS, safe-area, medication, and monitoring alerts will appear here.')
         .fontSize(16)
         .fontColor($r('app.color.text_secondary'))
         .textAlign(TextAlign.Center)

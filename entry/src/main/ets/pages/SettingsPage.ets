@@ -1,7 +1,9 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
+import common from '@ohos.app.ability.common';
 import { apiSession, careApi } from '../services/CareApi';
+import { apiSessionStore } from '../services/ApiSessionStore';
 
 @Component
 export struct SettingsPage {
@@ -79,7 +81,7 @@ export struct SettingsPage {
             .fontColor($r('app.color.sos'))
             .backgroundColor($r('app.color.sos_tint'))
             .onClick(() => {
-              apiSession.clear();
+              apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
               AppStorage.set('paired', false);
               this.navStack.clear();
             })

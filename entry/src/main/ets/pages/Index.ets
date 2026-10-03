@@ -1,6 +1,5 @@
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
 import { CareAlert } from '../models/Safety';
-import { apiSession } from '../services/CareApi';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
@@ -11,8 +10,6 @@ import { SafetyPage } from './SafetyPage';
 import { SettingsPage } from './SettingsPage';
 import { SosPage } from './SosPage';
 import { WatchSafetyPage } from './WatchSafetyPage';
-
-AppStorage.setOrCreate('paired', apiSession.configured());
 
 @Entry
 @Component

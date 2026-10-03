@@ -5,6 +5,7 @@ import { http } from '@kit.NetworkKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
 import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
+import { pendingSafetyEvents } from '../services/PendingSafetyEvents';
 
 @Component
 export struct SafetyPage {
@@ -21,21 +22,41 @@ export struct SafetyPage {
       this.reportLocation(location.latitude, location.longitude, location.accuracy, safetyStore.didLeaveSafeArea);
     };
 
+  private hostContext(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
+  }
+
   private async reportLocation(latitude: number, longitude: number, accuracy: number, exited: boolean): Promise<void> {
     if (!apiSession.configured() || apiSession.role !== 'senior') {
       return;
     }
     const point = new LocationPoint(latitude, longitude, accuracy);
+    const context = this.hostContext();
     try {
       await careApi.request(`/seniors/${apiSession.seniorId}/status`, http.RequestMethod.PUT,
         new StatusReport(this.backendStatus(), point));
+      await pendingSafetyEvents.flush(context);
       if (exited) {
         const event = new SafetyEventRequest(generateEventId(), 'area_exit');
         event.location = point;
-        await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+        try {
+          await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+        } catch (postError) {
+          pendingSafetyEvents.enqueue(context, event);
+          this.errorMessage = 'Left the safe area, but the alert is queued until the care service is reachable.';
+        }
+      } else {
+        this.errorMessage = '';
       }
     } catch (error) {
-      this.errorMessage = 'Location was checked, but could not reach the care service.';
+      if (exited) {
+        const event = new SafetyEventRequest(generateEventId(), 'area_exit');
+        event.location = point;
+        pendingSafetyEvents.enqueue(context, event);
+        this.errorMessage = 'Left the safe area. The alert is saved and will be sent when connection returns.';
+      } else {
+        this.errorMessage = 'Location was checked, but could not reach the care service.';
+      }
     }
   }
 
@@ -225,7 +246,7 @@ export struct SafetyPage {
       }
       .width('100%')
 
-      Text('When on, your guardian is alerted if you leave the safe area. It works only while this app is open.')
+      Text('When on, your guardian is alerted if you leave the safe area. Active only while this app is open on screen.')
         .fontSize(16)
         .fontColor($r('app.color.text_secondary'))
 
@@ -288,7 +309,12 @@ export struct SafetyPage {
     }
     .title('Safe Area')
     .backgroundColor($r('app.color.page_background'))
-    .onShown(() => this.syncFromStore())
+    .onShown(() => {
+      this.syncFromStore();
+      if (apiSession.configured() && apiSession.role === 'senior') {
+        pendingSafetyEvents.flush(this.hostContext());
+      }
+    })
   }
 }
 
