@@ -13,7 +13,8 @@ interface RemoteAlert {
   id: string;
   kind: string;
   createdAt: string;
-  acknowledgedAt?: string;
+  // The care service sends null, not an absent field, for an unacknowledged alert.
+  acknowledgedAt?: string | null;
   event?: RemoteEvent;
 }
 
@@ -26,13 +27,13 @@ interface RemoteAlertList {
 }
 
 function alertIcon(alert: CareAlert): Resource {
-  if (alert.type === AlertType.Sos) {
+  if (alert.type === AlertType.Sos || alert.type === AlertType.Fall) {
     return $r('sys.symbol.exclamationmark_shield_fill');
   }
   if (alert.type === AlertType.DoseMissed) {
     return $r('sys.symbol.calendar_badge_clock');
   }
-  if (alert.type === AlertType.MonitoringLost) {
+  if (alert.type === AlertType.MonitoringLost || alert.type === AlertType.LowBattery) {
     return $r('sys.symbol.watch_fill');
   }
   if (alert.type === AlertType.TripDeviation || alert.type === AlertType.TripNotCompleted) {
@@ -41,12 +42,16 @@ function alertIcon(alert: CareAlert): Resource {
   return $r('sys.symbol.house_shield_fill');
 }
 
+function isUrgent(alert: CareAlert): boolean {
+  return alert.type === AlertType.Sos || alert.type === AlertType.Fall;
+}
+
 function alertAccent(alert: CareAlert): Resource {
-  return alert.type === AlertType.Sos ? $r('app.color.sos') : $r('app.color.warning');
+  return isUrgent(alert) ? $r('app.color.sos') : $r('app.color.warning');
 }
 
 function alertTint(alert: CareAlert): Resource {
-  return alert.type === AlertType.Sos ? $r('app.color.sos_tint') : $r('app.color.warning_tint');
+  return isUrgent(alert) ? $r('app.color.sos_tint') : $r('app.color.warning_tint');
 }
 
 /** Guardian alert inbox; used both as a standalone page and as the guardian Alerts tab. */
@@ -88,7 +93,7 @@ export struct AlertsList {
     const copy = remoteAlertCopy(item.kind);
     const alert = new CareAlert(item.id, copy.type, copy.title, copy.detail, 'Care service');
     alert.createdAt = Date.parse(item.createdAt);
-    alert.acknowledged = item.acknowledgedAt !== undefined;
+    alert.acknowledged = item.acknowledgedAt !== undefined && item.acknowledgedAt !== null;
     alert.remote = true;
     return alert;
   }

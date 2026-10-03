@@ -1,11 +1,12 @@
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { generatePairingCode, generateToken, hashToken } from "../auth/tokens.js";
-import { requireRole } from "../auth/middleware.js";
-import { careLinks, devices, pairingCodes, users } from "../db/schema.js";
+import { assertLinked, bearerToken, findAuth, requireRole } from "../auth/middleware.js";
+import { clientIp, FixedWindow, limitByIp, tooManyRequests } from "../auth/rate-limit.js";
+import { careLinks, devices, pairingCodes, statusHeartbeats, users } from "../db/schema.js";
 import { ApiError } from "../errors.js";
-import { deviceKind } from "../schemas.js";
+import { deviceKind, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -46,9 +47,15 @@ async function createDevice(deps: Deps, userId: string, kind: "phone" | "watch")
 /** Unauthenticated bootstrap: create a senior, or claim a pairing code as a guardian. */
 export function publicIdentityRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
+  const nowMs = () => deps.clock().getTime();
+  const bootstrapLimit = new FixedWindow(deps.rateLimits.bootstrapPerMinute, 60_000, nowMs);
+  // Only failed claims count, so a family pairing several devices is never locked out, while guessing
+  // 6-digit codes is capped at a handful of tries per window.
+  const claimFailures = new FixedWindow(deps.rateLimits.claimFailuresPer15Min, 15 * 60_000, nowMs);
 
   app.post(
     "/seniors",
+    limitByIp(bootstrapLimit),
     validate("json", z.object({ displayName: z.string().min(1).max(80), deviceKind: deviceKind.default("phone") })),
     async (c) => {
       const body = c.req.valid("json");
@@ -74,14 +81,32 @@ export function publicIdentityRoutes(deps: Deps) {
     ),
     async (c) => {
       const body = c.req.valid("json");
+      const ip = clientIp(c);
+      const wait = claimFailures.blockedFor(ip);
+      if (wait > 0) throw tooManyRequests(wait);
       const now = deps.clock();
+      // An already-paired guardian sends their token to link another senior to the same account.
+      const token = bearerToken(c.req.header("authorization"));
+      const existing = token ? await findAuth(deps.db, token) : null;
+      if (token && !existing) throw new ApiError(401, "unauthorized", "Invalid token");
+      if (existing) requireRole(existing, "guardian");
       // Atomic claim: only one request can flip used_at for a live code.
       const [claimed] = await deps.db
         .update(pairingCodes)
         .set({ usedAt: now })
         .where(and(eq(pairingCodes.code, body.code), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
         .returning();
-      if (!claimed) throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+      if (!claimed) {
+        claimFailures.hit(ip);
+        throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+      }
+      if (existing) {
+        await deps.db
+          .insert(careLinks)
+          .values({ seniorId: claimed.seniorId, guardianId: existing.userId })
+          .onConflictDoNothing();
+        return c.json({ guardianId: existing.userId, seniorId: claimed.seniorId, deviceId: existing.deviceId }, 201);
+      }
       const [guardian] = await deps.db
         .insert(users)
         .values({ role: "guardian", displayName: body.displayName })
@@ -141,6 +166,79 @@ export function identityRoutes(deps: Deps) {
     const device = await createDevice(deps, auth.userId, c.req.valid("json").kind);
     return c.json(device, 201);
   });
+
+  /** Own devices, or (guardian, ?seniorId=) a linked senior's devices. Never returns tokens. */
+  app.get("/devices", validate("query", z.object({ seniorId: uuid.optional() })), async (c) => {
+    const auth = c.get("auth");
+    const { seniorId } = c.req.valid("query");
+    if (seniorId) await assertLinked(deps.db, auth, seniorId);
+    const rows = await deps.db
+      .select()
+      .from(devices)
+      .where(and(eq(devices.userId, seniorId ?? auth.userId), isNull(devices.revokedAt)))
+      .orderBy(asc(devices.createdAt));
+    return c.json({
+      items: rows.map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        createdAt: d.createdAt,
+        lastSeenAt: d.lastSeenAt,
+        hasPushToken: d.pushToken !== null,
+        isCurrent: d.id === auth.deviceId,
+      })),
+    });
+  });
+
+  /** Revoke one of your other devices, e.g. a lost watch. Its events are kept; it can no longer sign in. */
+  app.delete("/devices/:id", validate("param", z.object({ id: uuid })), async (c) => {
+    const auth = c.get("auth");
+    const { id } = c.req.valid("param");
+    if (id === auth.deviceId) throw new ApiError(400, "validation_error", "A device cannot revoke itself");
+    const [revoked] = await deps.db
+      .update(devices)
+      .set({ revokedAt: deps.clock(), pushToken: null })
+      .where(and(eq(devices.id, id), eq(devices.userId, auth.userId), isNull(devices.revokedAt)))
+      .returning({ id: devices.id });
+    if (!revoked) throw new ApiError(404, "not_found", "Device not found");
+    // A revoked device must not keep the senior "monitored".
+    await deps.db.delete(statusHeartbeats).where(eq(statusHeartbeats.deviceId, id));
+    return c.body(null, 204);
+  });
+
+  /**
+   * The senior deletes their account and all data held for them (devices, configuration, events,
+   * alerts, doses, reports, routines). Guardians keep their own accounts but lose the link.
+   */
+  app.delete(
+    "/seniors/:seniorId",
+    validate("param", z.object({ seniorId: uuid })),
+    validate("json", z.object({ confirm: z.literal("DELETE") })),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "senior");
+      const { seniorId } = c.req.valid("param");
+      if (auth.userId !== seniorId) throw new ApiError(403, "forbidden", "Not your account");
+      await deps.db.delete(users).where(eq(users.id, seniorId));
+      return c.body(null, 204);
+    },
+  );
+
+  /** Either side ends a care relationship; the guardian loses all access to that senior. */
+  app.delete(
+    "/care-links/:seniorId/:guardianId",
+    validate("param", z.object({ seniorId: uuid, guardianId: uuid })),
+    async (c) => {
+      const auth = c.get("auth");
+      const { seniorId, guardianId } = c.req.valid("param");
+      if (auth.userId !== seniorId && auth.userId !== guardianId) throw new ApiError(403, "forbidden", "Not your link");
+      const deleted = await deps.db
+        .delete(careLinks)
+        .where(and(eq(careLinks.seniorId, seniorId), eq(careLinks.guardianId, guardianId)))
+        .returning();
+      if (deleted.length === 0) throw new ApiError(404, "not_found", "Care link not found");
+      return c.body(null, 204);
+    },
+  );
 
   app.post("/pairing/codes", async (c) => {
     const auth = c.get("auth");

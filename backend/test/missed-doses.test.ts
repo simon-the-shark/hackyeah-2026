@@ -170,3 +170,75 @@ describe("server-side missed doses", () => {
     expect((await post(`${medId}@2026-10-03T08:00`)).status).toBe(201);
   });
 });
+
+describe("dose schedule and per-medication rules", () => {
+  async function med(ctx: Awaited<ReturnType<typeof t.pair>>, extra: Record<string, unknown> = {}) {
+    return (
+      await t.call("POST", `/v1/seniors/${ctx.seniorId}/medications`, ctx.guardianToken, {
+        name: "Demo",
+        times: ["08:00", "20:00"],
+        timezone: "Europe/Warsaw",
+        ...extra,
+      })
+    ).body;
+  }
+  const record = (ctx: { seniorId: string; seniorToken: string }, medId: string, time: string, status: string, recordedAt: string) =>
+    t.call("POST", `/v1/seniors/${ctx.seniorId}/doses`, ctx.seniorToken, {
+      occurrenceId: `${medId}@2026-10-03T${time}`,
+      medicationId: medId,
+      status,
+      recordedAt,
+    });
+
+  it("lists occurrences with their status", async () => {
+    at("2026-10-02T12:00:00Z");
+    const ctx = await t.pair();
+    const m = await med(ctx);
+    const other = await med(ctx, { name: "Evening", times: ["21:00"] });
+    at("2026-10-03T12:00:00Z");
+    await record(ctx, m.id, "08:00", "taken", "2026-10-03T06:05:00Z");
+    const res = await t.call(
+      "GET",
+      `/v1/seniors/${ctx.seniorId}/dose-schedule?from=2026-10-03T00:00:00Z&to=2026-10-04T00:00:00Z`,
+      ctx.guardianToken,
+    );
+    expect(res.status).toBe(200);
+    expect(res.body.items.map((i: { localTime: string; status: string; medicationId: string }) => [i.medicationId === other.id, i.localTime, i.status])).toEqual([
+      [false, "08:00", "taken"],
+      [false, "20:00", "pending"],
+      [true, "21:00", "pending"],
+    ]);
+    at("2026-10-03T19:30:00Z");
+    const later = (await t.call("GET", `/v1/seniors/${ctx.seniorId}/dose-schedule?from=2026-10-03T00:00:00Z&to=2026-10-04T00:00:00Z`, ctx.seniorToken)).body;
+    expect(later.items[1].status).toBe("missed"); // 20:00 local = 18:00Z, grace 60 min
+  });
+
+  it("rejects a range over 7 days", async () => {
+    const ctx = await t.pair();
+    const res = await t.call("GET", `/v1/seniors/${ctx.seniorId}/dose-schedule?from=2026-10-01T00:00:00Z&to=2026-10-09T00:00:00Z`, ctx.guardianToken);
+    expect(res.status).toBe(400);
+  });
+
+  it("uses a per-medication grace period", async () => {
+    at("2026-10-03T05:00:00Z");
+    const ctx = await t.pair();
+    await med(ctx, { times: ["08:00"], missedGraceMinutes: 15 });
+    at("2026-10-03T06:14:00Z");
+    expect(await checkMissedDoses(t.deps)).toBe(0);
+    at("2026-10-03T06:15:00Z");
+    expect(await checkMissedDoses(t.deps)).toBe(1);
+  });
+
+  it("stops snoozes past the cap from delaying a missed dose", async () => {
+    at("2026-10-03T05:00:00Z");
+    const ctx = await t.pair();
+    const m = await med(ctx, { times: ["08:00"], maxSnoozes: 1 });
+    at("2026-10-03T06:10:00Z");
+    await record(ctx, m.id, "08:00", "snoozed", "2026-10-03T06:10:00Z"); // counted: grace until 07:10
+    at("2026-10-03T07:00:00Z");
+    const second = await record(ctx, m.id, "08:00", "snoozed", "2026-10-03T07:00:00Z"); // over the cap
+    expect(second.body.snoozeCount).toBe(2);
+    at("2026-10-03T07:10:00Z");
+    expect(await checkMissedDoses(t.deps)).toBe(1);
+  });
+});

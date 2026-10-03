@@ -25,8 +25,9 @@ Push Kit** (the DevEco Studio emulator supports push, per
 | Medication (P1) | Schedule CRUD (guardian-edited, versioned). Dose records (taken/skipped/snoozed, idempotent by occurrence ID). Optional "dose missed" event → alert. Small **synthetic** barcode catalog (`barcode → name, form, modelAssetKey`) | Local reminders, barcode scanning (camera), 3D rendering of bundled models |
 | Easy contacts (P1) | Contacts CRUD (guardian-managed, synced) | Dialing, voice call handoff, speech |
 | AI assistant (P1) | Stores **user-approved** reports only (structured fields plus summary, with `source: ai\|structured\|simulated`). Guardian reads them | All inference (on-device LLM), raw check-ins, prompts, history |
-| Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event | Route tracking, deviation detection |
-| Learned routines v2, fall detection (P2) | Out of scope for now | Out of scope / feasibility spike |
+| Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event. Stores an optional route and corridor | Route tracking, deviation detection |
+| Learned routines v2 (P2) | Stores device-computed routine suggestions (summary only, never raw history). Guardian accepts or rejects them into versioned routines. The watchdog turns each routine into daily planned trips | Learning routines from consented history on the device, suggesting them |
+| Fall detection (P2) | Accepts `fall_detected` events, which must declare their `source`. Raises an urgent `fall` alert, which can be cancelled | Sensor feasibility spike, detection, false-positive evaluation |
 
 Principle: the backend never evaluates raw location or health data. It stores configuration,
 relays events and delivers alerts, which keeps private data on the device as the mobile plan requires.
@@ -70,16 +71,18 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 
 `users(id, role senior|guardian, display_name, created_at)`, `care_links(senior_id, guardian_id, created_at)`,
 `pairing_codes(code, senior_id, expires_at, used_at)`,
-`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, created_at)`,
+`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, revoked_at, created_at)`,
 `safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
-`contacts(id, senior_id, name, phone, sort_order, version)`,
-`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version, schedule_updated_at)`,
-`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, scheduled_for, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null)`,
-`alerts(id, event_id, senior_id, kind sos|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost, created_at, cancelled_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
-`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at (server receipt time), stale_alerted_at)`,
+`contacts(id, senior_id, name, phone, sort_order, is_emergency, version)`,
+`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, missed_grace_minutes, max_snoozes, version, schedule_updated_at)`,
+`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, snooze_count, scheduled_for, recorded_at)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|cancel|fall_detected|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null, source device|trace_replay|simulated)`,
+`alerts(id, event_id, senior_id, kind sos|fall|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost|low_battery, created_at, cancelled_at, resolved_at, resolved_by_event_id, push_status none|sent|failed|simulated, push_attempts, last_push_at, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
+`status_heartbeats(device_id PK, senior_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, source, reported_at (server receipt time), stale_alerted_at, low_battery_alerted_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
-`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, window_start, window_end, status planned|active|completed|missed, version)`,
+`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, route jsonb, corridor_m, window_start, window_end, status planned|active|completed|missed, version, routine_id, local_date; unique (routine_id, local_date))`,
+`routine_suggestions(id, senior_id, label, destination, route, weekdays, start_time, end_time, timezone, source, status pending|accepted|rejected, created_at, decided_at, decided_by)`,
+`routines(id, senior_id, label, destination, route, corridor_m, weekdays, start_time, end_time, timezone, active, suggestion_id, version, created_at)`,
 `medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic boolean)`.
 
 `src/db/schema.ts` is the source of truth; this list is a summary.
@@ -160,3 +163,21 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 - Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
 - Push Kit notification click-through data is not sent yet (payload shape unverified); `GET /v1/alerts` covers the tap case.
 - The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.
+
+## Gap work after the first release (2026-10-03)
+
+The gaps against `MOBILE_PLAN.md` were tracked as tiers A to C, one commit each, with the README updated in the same commit:
+
+- Provenance: `source` on events and heartbeats (`device | trace_replay | simulated`) and `measuredBy` on locations; simulated pushes are titled `[Simulation]`.
+- Heartbeats are stored per device; `monitoring_lost` needs every device stale.
+- Alert resolution (`resolvedAt`) for area exit, trips, monitoring and missed doses, with one push.
+- Delivery loop: the senior is told when an SOS or fall is acknowledged, unacknowledged urgent alerts get up to 3 reminders, and a failed push is retried once.
+- An existing guardian can claim further seniors; care links can be deleted; devices can be listed and revoked (soft, events kept).
+- Dose schedule view with statuses; per-medication `missedGraceMinutes` and `maxSnoozes`.
+- Guardian overview, emergency contacts, and a config bundle with an ETag.
+- Report withdrawal by the senior (seniors still cannot read reports back), catalog name search, and senior account deletion.
+- Fall alerts (explicit `source` required) and a generic `cancel` event.
+- Trip routes and corridor; learned routines (device suggestions, guardian-confirmed, materialized into daily trips by the watchdog).
+- Per-IP rate limits on bootstrap and failed pairing claims; low-battery alerts per device; `pnpm demo`.
+
+Not done: Push Kit click-through data and invalid-token cleanup, because the HarmonyOS Push Kit payload and result codes could not be verified against official documentation. There is also no "config changed" data push, for the same reason.

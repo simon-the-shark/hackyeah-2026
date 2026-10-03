@@ -1,11 +1,13 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { contacts, medications, safeAreas, trips } from "../db/schema.js";
+import { contacts, medications, routines, safeAreas, trips } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, lat, lng, phone, radiusM, seniorParam, timeOfDay, timezone, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
+import { corridorField, corridorNeedsRoute, needsStoredRoute, routeField, routeUpdate } from "./route-fields.js";
 import { validate } from "../validate.js";
 
 const conflict = (current: unknown) =>
@@ -15,7 +17,12 @@ const rowParam = z.object({ seniorId: uuid, id: uuid });
 const version = z.number().int().min(1);
 
 const safeAreaBody = z.object({ lat, lng, radiusM, version: version.optional() });
-const contactBody = z.object({ name: z.string().min(1).max(80), phone, sortOrder: z.number().int().default(0) });
+const contactBody = z.object({
+  name: z.string().min(1).max(80),
+  phone,
+  sortOrder: z.number().int().default(0),
+  isEmergency: z.boolean().default(false),
+});
 const medicationBody = z.object({
   name: z.string().min(1).max(120),
   doseText: z.string().max(200).optional(),
@@ -24,6 +31,8 @@ const medicationBody = z.object({
   modelAssetKey: z.string().max(64).optional(),
   times: z.array(timeOfDay).max(12),
   timezone,
+  missedGraceMinutes: z.number().int().min(5).max(24 * 60).optional(),
+  maxSnoozes: z.number().int().min(1).max(10).optional(),
 });
 const tripBody = z
   .object({
@@ -31,15 +40,52 @@ const tripBody = z
     destLat: lat,
     destLng: lng,
     radiusM,
+    route: routeField,
+    corridorM: corridorField,
     windowStart: isoDate,
     windowEnd: isoDate,
   })
-  .refine((t) => t.windowEnd > t.windowStart, { message: "windowEnd must be after windowStart", path: ["windowEnd"] });
+  .refine((t) => t.windowEnd > t.windowStart, { message: "windowEnd must be after windowStart", path: ["windowEnd"] })
+  .refine(corridorNeedsRoute.check, corridorNeedsRoute.message);
 
 /** Guardian-managed configuration. Reads: linked senior or guardian. Writes: guardian. */
 export function careConfigRoutes(deps: Deps) {
   const { db } = deps;
   const app = new Hono<AppEnv>();
+
+  // ---- whole configuration, for the senior device to sync and reschedule reminders ----
+  app.get("/seniors/:seniorId/config", validate("param", seniorParam), async (c) => {
+    const { seniorId } = c.req.valid("param");
+    await assertLinked(db, c.get("auth"), seniorId);
+    const [[safeArea], contactRows, medicationRows, tripRows, routineRows] = await Promise.all([
+      db.select().from(safeAreas).where(eq(safeAreas.seniorId, seniorId)),
+      db.select().from(contacts).where(eq(contacts.seniorId, seniorId)).orderBy(asc(contacts.sortOrder), asc(contacts.name)),
+      db.select().from(medications).where(eq(medications.seniorId, seniorId)).orderBy(asc(medications.name), asc(medications.id)),
+      db
+        .select()
+        .from(trips)
+        .where(and(eq(trips.seniorId, seniorId), inArray(trips.status, ["planned", "active"])))
+        .orderBy(asc(trips.windowStart), asc(trips.id)),
+      db
+        .select()
+        .from(routines)
+        .where(and(eq(routines.seniorId, seniorId), eq(routines.active, true)))
+        .orderBy(asc(routines.startTime), asc(routines.id)),
+    ]);
+    const config = {
+      safeArea: safeArea ?? null,
+      contacts: contactRows,
+      medications: medicationRows,
+      trips: tripRows,
+      routines: routineRows,
+    };
+    // Content hash: any create, edit or delete changes it, and an unchanged config can be skipped with 304.
+    const configVersion = createHash("sha256").update(JSON.stringify(config)).digest("hex").slice(0, 16);
+    const etag = `"${configVersion}"`;
+    c.header("ETag", etag);
+    if (c.req.header("if-none-match") === etag) return c.body(null, 304);
+    return c.json({ ...config, configVersion });
+  });
 
   // ---- safe area ----
   app.get("/seniors/:seniorId/safe-area", validate("param", seniorParam), async (c) => {
@@ -197,6 +243,8 @@ export function careConfigRoutes(deps: Deps) {
           modelAssetKey: fields.modelAssetKey ?? null,
           times: fields.times,
           timezone: fields.timezone,
+          missedGraceMinutes: fields.missedGraceMinutes ?? null,
+          maxSnoozes: fields.maxSnoozes ?? null,
           version: sql`${medications.version} + 1`,
           ...(scheduleChanged ? { scheduleUpdatedAt: deps.clock() } : {}),
         })
@@ -239,9 +287,13 @@ export function careConfigRoutes(deps: Deps) {
     requireRole(auth, "guardian");
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, auth, seniorId);
+    const body = c.req.valid("json");
+    if (body.corridorM != null && body.route == null) {
+      throw new ApiError(400, "validation_error", "corridorM needs a route");
+    }
     const [row] = await db
       .insert(trips)
-      .values({ seniorId, ...c.req.valid("json") })
+      .values({ seniorId, ...body })
       .returning();
     return c.json(row, 201);
   });
@@ -255,15 +307,23 @@ export function careConfigRoutes(deps: Deps) {
       requireRole(auth, "guardian");
       const { seniorId, id } = c.req.valid("param");
       await assertLinked(db, auth, seniorId);
-      const { version: v, ...fields } = c.req.valid("json");
+      const { version: v, route, corridorM, ...fields } = c.req.valid("json");
       const [updated] = await db
         .update(trips)
-        .set({ ...fields, version: sql`${trips.version} + 1` })
-        .where(and(eq(trips.id, id), eq(trips.seniorId, seniorId), eq(trips.version, v)))
+        .set({ ...fields, ...routeUpdate({ route, corridorM }), version: sql`${trips.version} + 1` })
+        .where(
+          and(
+            eq(trips.id, id),
+            eq(trips.seniorId, seniorId),
+            eq(trips.version, v),
+            needsStoredRoute({ route, corridorM }) ? isNotNull(trips.route) : undefined,
+          ),
+        )
         .returning();
       if (updated) return c.json(updated);
       const [current] = await db.select().from(trips).where(and(eq(trips.id, id), eq(trips.seniorId, seniorId)));
       if (!current) throw notFound("Trip");
+      if (current.version === v) throw new ApiError(400, "validation_error", "corridorM needs a route");
       throw conflict(current);
     },
   );

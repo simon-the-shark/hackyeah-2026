@@ -57,6 +57,20 @@ these per-request diagnostic logs.
 From a HarmonyOS emulator the host is not `localhost`; use the host's LAN IP
 (or an HDC port-forward) as the API base URL. Not yet verified on an emulator.
 
+## Demo scenario
+
+`pnpm demo` drives the mobile plan's deterministic demo script through the
+HTTP API against `DEMO_BASE_URL` (default `http://localhost:8787`). It creates a
+synthetic senior and guardian with synthetic push tokens, sets up a safe area,
+contact and medication, replays a trace (exit, then re-entry), raises an SOS
+that the guardian acknowledges, and prints the dose schedule, the overview and
+the guardian's alert timeline. Every event and heartbeat it sends has
+`source: "simulated"`, so all of it is labelled as a simulation. Run the server
+with `PUSH_PROVIDER=log` to see each notification in the server log. A
+shorter `WATCHDOG_INTERVAL_MS` (default 30000) makes watchdog effects appear
+sooner. Missed doses are not part of the script, because detection ignores doses
+scheduled before a medication was created.
+
 ## Push delivery
 
 `PUSH_PROVIDER` defaults to `pushkit` (HarmonyOS Push Kit REST v3). It needs
@@ -73,7 +87,10 @@ and community write-ups and has NOT been verified against a live project or
 emulator.** `pushStatus: "sent"` means only that Push Kit accepted the request,
 never that a guardian saw it. Guardian acknowledgement (`acknowledgedAt`) is the
 only proof of a human seeing an alert. Notification click-through data (deep
-link payload) is not sent yet, because its format is unverified. On a
+link payload) is not sent yet, because its format is unverified. Invalid push
+tokens are not cleared automatically for the same reason: the HarmonyOS Push Kit
+result codes could not be confirmed (the official reference pages render only
+client-side, and search results describe the older HMS Core API). On a
 notification tap the guardian app should open and call
 `GET /v1/alerts?unacknowledged=true`, then show the newest entry; this needs no
 push payload data.
@@ -85,7 +102,8 @@ bootstrap/pairing and stored only as a SHA-256 hash. Errors always look like
 `{"error":{"code","message","details?"}}` with codes `validation_error` (400),
 `unauthorized` (401), `forbidden` (403), `not_found` (404),
 `version_conflict` (409, `details.current` holds the stored entity),
-`pairing_expired` (410, also for unknown or used codes), `internal_error` (500).
+`pairing_expired` (410, also for unknown or used codes), `rate_limited` (429,
+`details.retryAfterSeconds`), `internal_error` (500).
 Timestamps are ISO 8601 with offset.
 
 | Method and path | Who | Notes |
@@ -93,27 +111,79 @@ Timestamps are ISO 8601 with offset.
 | `GET /health` | none | |
 | `POST /v1/seniors` `{displayName, deviceKind?}` | none | Returns `seniorId, deviceId, token, pairingCode, pairingExpiresAt` (code lives 10 min) |
 | `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token` |
+| `POST /v1/pairing/claim` with a guardian bearer token | guardian | Links the **existing** guardian to the code's senior (no new account or token; `displayName` is ignored). Returns `guardianId, seniorId, deviceId`. Invalid token: 401; senior token: 403 (the code is not consumed) |
+| `DELETE /v1/seniors/:id` `{confirm: "DELETE"}` | that senior | Deletes the senior's account and everything stored for them (devices, configuration, events, alerts, doses, reports, routines). Guardian accounts remain but lose the link. Irreversible (204) |
+| `DELETE /v1/care-links/:seniorId/:guardianId` | that senior or guardian | Ends the relationship (204); the guardian immediately loses access. A guardian left with no seniors keeps their account and can link again by claiming a new code with their token |
 | `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
+| `GET /v1/devices?seniorId=` | any | Own devices, or (guardian) a linked senior's devices: `id, kind, createdAt, lastSeenAt, hasPushToken, isCurrent`. Never returns tokens |
+| `DELETE /v1/devices/:id` | owner | Revokes one of your **other** devices (a device cannot revoke itself: 400). Its token stops working (401) and its push token and heartbeat are removed; its events and alerts are kept. Monitoring then counts only the remaining devices: if they are all stale, the next watchdog pass raises `monitoring_lost`, which is intended, because nobody is being monitored |
 | `GET /v1/me` | any | Role and linked seniors (guardian) or guardians (senior) |
+| `GET /v1/seniors/:id/config` | linked | Everything the senior device needs to run offline: `safeArea` (or null), `contacts`, `medications`, planned or active `trips`, active `routines`, plus `configVersion` (a content hash). The response carries `ETag: "<configVersion>"`; send it back as `If-None-Match` to get `304` when nothing changed. Poll this to reschedule reminders after guardian edits; there is no "config changed" push yet. Suggested: on app start and foreground, and at most every 15 minutes in the background (unvalidated); with `If-None-Match` an unchanged poll is a bodiless 304. Doses record `snoozeCount`, so the app can warn when a snooze past `maxSnoozes` no longer delays the missed-dose alert |
 | `GET/PUT /v1/seniors/:id/safe-area` `{lat,lng,radiusM,version?}` | read: linked, write: guardian | First PUT omits `version` (201). Later PUTs need the current `version` |
-| `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | PUT needs `version` |
-| `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered |
-| `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
-| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?}`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
-| `GET /v1/alerts?unacknowledged=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set |
+| `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | `{name, phone, sortOrder?, isEmergency?}`. `isEmergency` marks the person to offer first when an SOS cannot be delivered (stored only; no app screen uses it yet). PUT needs `version` and, like `sortOrder`, resets an omitted `isEmergency` to `false` |
+| `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered. Optional `missedGraceMinutes` and `maxSnoozes`, see Missed doses |
+| `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. `{label, destLat, destLng, radiusM, windowStart, windowEnd, route?, corridorM?}`: `route` is 2 to 200 `{lat,lng}` points and `corridorM` (20 to 2000, needs a route) the allowed distance from it. The server only stores the route; the device detects deviation and sends `trip_deviation`. On PUT, an omitted `route` or `corridorM` keeps the stored value and `null` clears it; clearing the route also clears the corridor, and a corridor without a route is rejected (400). Editing only the time window therefore never drops the route. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
+| `POST /v1/seniors/:id/routine-suggestions` | senior | P2 learned routines. A routine the device inferred **on the device**: `{label, destLat, destLng, radiusM, route?, weekdays, startTime, endTime, timezone, source?}`. `weekdays` are ISO (1 = Monday ... 7 = Sunday), times are local `HH:MM` with `endTime` after `startTime` on the same day. Send only this summary, never raw location history |
+| `GET /v1/seniors/:id/routine-suggestions?status=` | linked | Newest first; `status` is `pending`, `accepted` or `rejected` |
+| `POST .../routine-suggestions/:sid/accept`, `.../reject` | guardian | Decides a pending suggestion once (409 with `details.current` after that). Accept returns `{suggestion, routine}` |
+| `GET/POST /v1/seniors/:id/routines`, `PUT/DELETE .../routines/:id` | read: linked, write: guardian | Recurring trips, same fields as a suggestion plus `corridorM?` and `active` (default true). PUT needs `version`. The watchdog creates one planned trip per matching day (today and tomorrow, local dates) before its window starts; those trips carry `routineId` and `localDate` and follow the normal trip lifecycle. Trips exist only for today and tomorrow, so a trip list shows a weekly routine's later days only once they come within that window; show the routine itself for the week view. `route`/`corridorM` follow the trip PUT rules. Editing a routine rebuilds its upcoming trips; deleting it removes them and keeps past ones |
+| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `fall_detected`, `cancel` / `sos_cancel` (needs `cancelsEventId` of an `sos` or `fall_detected` event; `sos_cancel` is kept as an alias), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `fall_detected` (alert kind `fall`), `area_exit` and `trip_deviation` create an alert. `fall_detected` **must** send `source` explicitly (400 otherwise), so a synthetic trigger can never pass as sensor data. SOS and fall alerts are "urgent": they can be cancelled, get reminders and tell the senior when acknowledged. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
+| `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
-| `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins |
-| `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?}` | senior | Heartbeat. `reportedAt` is server receipt time. No heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900) raises one `monitoring_lost` alert per gap, see the note below |
-| `GET /v1/seniors/:id/status` | linked | `{status, serverTime}`; `status` is null before the first heartbeat. Show age, never an unqualified "safe" |
+| `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins. Acknowledging an uncancelled `sos` sends one push to the senior's devices ("<guardian> has seen your SOS"), so seniors should register a push token too |
+| `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. When **no** device of the senior has sent a heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900), one `monitoring_lost` alert is raised per gap, with each device's last `reportedAt` in `details.devices`. A heartbeat from any device ends the gap. See the note below |
+| `GET /v1/seniors/:id/status` | linked | `{status, devices, serverTime}`. Heartbeats are stored per device, so phone and watch never overwrite each other: `devices` lists the latest heartbeat of each device (newest first, with `deviceKind`), and `status` is the newest of them (null before the first heartbeat). Show age, never an unqualified "safe" |
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
-| `POST /v1/seniors/:id/reports`, `GET .../reports` | POST: senior, GET: guardian | The senior submits but cannot read reports back. Only user-approved content. `source` is `ai`, `structured` or `simulated` |
+| `GET /v1/seniors/:id/overview` | linked | One call for the guardian overview: `senior`, `status` and `devices` (as in `/status`), `alerts {unacknowledged, unresolved}` (uncancelled counts), `nextDoses` (up to 3 open occurrences from the dose schedule), `missedDosesLast24h`, `latestReportAt`, `safeAreaVersion`, `plannedOrActiveTrips`, `serverTime` |
+| `GET /v1/seniors/:id/dose-schedule?from=&to=` | linked | Scheduled occurrences with `from < scheduledFor <= to` (default: 12 h ago to 24 h ahead, at most 7 days), oldest first. Each item: `occurrenceId, medicationId, medicationName, doseText, localTime, timezone, scheduledFor, status, recordedAt`. `status` is `pending`, `taken`, `skipped`, `snoozed` or `missed` (same rule as the alert). Occurrences before a medication's last schedule change are left out |
+| `POST /v1/seniors/:id/reports`, `GET .../reports?before=&limit=` | POST: senior, GET: guardian | Only user-approved content. `source` is `ai`, `structured` or `simulated`. The guardian list is newest first; page with `before` (an ISO time, exclusive) |
+| `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report (id from the POST response); guardians no longer see it and are not told (204). Seniors still cannot read reports back; the app keeps its own record of what it shared |
+| `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 
+### Low battery
+
+A heartbeat with `battery` at or below `LOW_BATTERY_PERCENT` (default 15,
+unvalidated) raises one `low_battery` alert for that device, with
+`details {deviceId, deviceKind, battery}`. No new alert fires for the same
+device until its battery has climbed to the threshold plus 10, so a battery
+hovering around the threshold does not flood guardians. The watch matters most
+here, because it is the intended SOS surface.
+
+### Re-sends
+
+The watchdog re-sends pushes that may not have reached anyone. Alerts expose
+`pushAttempts` and `lastPushAt`:
+
+- An `sos` or `fall` that is not acknowledged, cancelled or resolved is pushed again every
+  `SOS_REPUSH_SECONDS` (default 300, unvalidated; long enough that a delayed
+  first push and its reminders do not arrive in a burst) as "Reminder: … (not yet
+  acknowledged)", at most 3 times.
+- Any other alert whose push `failed` is retried once, a minute later.
+
+### Alert resolution
+
+An alert is **resolved** when its condition ends. Resolution is separate from
+acknowledgement (a guardian still acknowledges), never deletes the alert, and
+sends one push to guardians:
+
+| Alert | Resolved by | Push title |
+| --- | --- | --- |
+| `area_exit` | an `area_enter` event (`resolvedByEventId` set) | "… is back in the safe area" |
+| `trip_not_completed`, `trip_deviation` | `trip_arrived` for the same trip | "… arrived at the trip destination" |
+| `monitoring_lost` | the next heartbeat from any device | "Monitoring restored for …" |
+| `low_battery` | a heartbeat from that device with battery at least `LOW_BATTERY_PERCENT` + 10 | "…'s device is charged again" |
+| `dose_missed` | a late `taken` or `skipped` record for that occurrence | "… took/skipped the missed dose of …" |
+
+Alerts expose `resolvedAt` and `resolvedByEventId` (null when not resolved, or
+resolved by a heartbeat or dose record). `sos` is ended by cancellation
+(`cancelledAt`), not resolution.
+
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
-`trip_not_completed`, `monitoring_lost`. Alert `pushStatus`: `none` (no guardian
+`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`. Alert `pushStatus`: `none` (no guardian
 device had a push token), `sent`, `failed`, `simulated`.
 
 ## Missed doses
@@ -140,11 +210,12 @@ the grace period from the snooze's `recordedAt`.
 - These alerts have no source event (`event: null`). Instead `details` holds
   `medicationId`, `medicationName`, `occurrenceId`, `scheduledFor` (UTC),
   `localTime` and `timezone`.
-- The 60-minute default is unvalidated, like the heartbeat threshold, and one
-  grace period applies to every medication. Time-sensitive medicines may need a
-  shorter, per-medication window; that is not implemented.
-- Snoozes are not capped: a dose snoozed again before each grace period ends
-  is never reported. A snooze limit is not implemented.
+- The 60-minute default is unvalidated, like the heartbeat threshold. A
+  medication can override it with `missedGraceMinutes` (5 to 1440).
+- A medication's `maxSnoozes` (1 to 10, null means no cap) limits how many
+  snoozes restart the grace period. Later snoozes are still recorded
+  (`snoozeCount` on the dose record) but no longer delay the alert. Without a cap,
+  a dose snoozed again before each grace period ends is never reported.
 
 ## Heartbeat threshold
 
@@ -157,18 +228,31 @@ device testing.
 ## Limitations
 
 - Pairing and the demo bootstrap are unauthenticated and meant for the hackathon
-  demo, not production: no rate limiting, token rotation or revocation.
-- `POST /v1/pairing/claim` always creates a new guardian, so one guardian cannot
-  yet be linked to several seniors through the API (the data model and
-  `GET /v1/alerts` already support it).
-- One alert is stored before pushing; a failed push is not retried. Clients
-  recover by refreshing alerts.
+  demo, not production: no token rotation. A lost device can be revoked from
+  another device of the same user.
+- Rate limits are per client IP and in memory (one process, reset on restart):
+  `POST /v1/seniors` allows `RATE_LIMIT_BOOTSTRAP_PER_MINUTE` (default 10)
+  requests a minute, and `POST /v1/pairing/claim` blocks an IP for the rest of a
+  15-minute window after `RATE_LIMIT_CLAIM_FAILURES_PER_15MIN` (default 10)
+  failed claims. Successful claims never count. Forwarded headers are not
+  trusted, so behind a reverse proxy every client shares the proxy's limit.
+- Push retries are limited: one retry for a failed non-SOS push, and at most
+  three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.
 
 ## Breaking changes
 
 Changes to request or response shapes, error codes or semantics are recorded
 here with a date so the mobile side can follow.
+
+- 2026-10-03: `sos_cancel` (and the new `cancel`) only cancels `sos` and
+  `fall` alerts; pointing it at another event returns 404. Before, it cancelled
+  whatever alert that event had.
+
+- 2026-10-03: heartbeats are stored per device. `GET .../status` adds
+  `devices` (`status` keeps its meaning: the newest heartbeat). `monitoring_lost`
+  now fires only when every device of the senior is stale, so a working watch
+  covers a phone left at home.
 
 - 2026-10-03: `GET /v1/seniors/:id/reports` is now guardian-only (a senior gets
   403). Previously any linked user could read.

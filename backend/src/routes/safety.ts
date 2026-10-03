@@ -4,23 +4,41 @@ import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
-import { geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
-import { ingestEvent } from "../services/alerts.js";
+import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
+import { ingestEvent, isUrgent, pushToSenior, resolveAlerts } from "../services/alerts.js";
+import { checkBattery } from "../services/battery.js";
+import { seniorStatus } from "../services/status.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
 const eventBody = z
   .object({
     id: uuid,
-    type: z.enum(["sos", "sos_cancel", "area_exit", "area_enter", "dose_missed", "trip_started", "trip_arrived", "trip_deviation"]),
+    type: z.enum([
+      "sos",
+      "sos_cancel",
+      "cancel",
+      "fall_detected",
+      "area_exit",
+      "area_enter",
+      "dose_missed",
+      "trip_started",
+      "trip_arrived",
+      "trip_deviation",
+    ]),
     occurredAt: isoDate,
     cancelsEventId: uuid.optional(),
     tripId: uuid.optional(),
     location: geoPoint.optional(),
+    // Optional, except for falls: a fall must say whether it came from a sensor or a demo trigger.
+    source: eventSource.unwrap().optional(),
   })
   .superRefine((e, ctx) => {
-    if (e.type === "sos_cancel" && !e.cancelsEventId) {
-      ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: "Required for sos_cancel" });
+    if ((e.type === "sos_cancel" || e.type === "cancel") && !e.cancelsEventId) {
+      ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: `Required for ${e.type}` });
+    }
+    if (e.type === "fall_detected" && !e.source) {
+      ctx.addIssue({ code: "custom", path: ["source"], message: "Required for fall_detected" });
     }
     if ((e.type === "trip_started" || e.type === "trip_arrived" || e.type === "trip_deviation") && !e.tripId) {
       ctx.addIssue({ code: "custom", path: ["tripId"], message: "Required for trip events" });
@@ -31,6 +49,7 @@ const statusBody = z.object({
   monitoringState: z.enum(["inside", "outside", "unknown", "unavailable"]),
   location: geoPoint.optional(),
   battery: z.number().int().min(0).max(100).optional(),
+  source: eventSource,
 });
 
 const alertView = (row: {
@@ -42,7 +61,11 @@ const alertView = (row: {
   kind: row.alert.kind,
   createdAt: row.alert.createdAt,
   cancelledAt: row.alert.cancelledAt,
+  resolvedAt: row.alert.resolvedAt,
+  resolvedByEventId: row.alert.resolvedByEventId,
   pushStatus: row.alert.pushStatus,
+  pushAttempts: row.alert.pushAttempts,
+  lastPushAt: row.alert.lastPushAt,
   details: row.alert.details,
   acknowledgedAt: row.alert.acknowledgedAt,
   acknowledgedBy: row.alert.acknowledgedBy,
@@ -53,6 +76,7 @@ const alertView = (row: {
     receivedAt: row.event.receivedAt,
     deviceId: row.event.deviceId,
     location: row.event.location,
+    source: row.event.source,
   },
 });
 
@@ -75,7 +99,7 @@ export function safetyRoutes(deps: Deps) {
       if (!trip) throw new ApiError(404, "not_found", "Trip not found");
     }
 
-    const result = await ingestEvent(deps, auth, seniorId, body);
+    const result = await ingestEvent(deps, auth, seniorId, { ...body, source: body.source ?? "device" });
     if (result.created && body.type === "trip_started" && body.tripId) {
       // Only a planned trip becomes active; a missed or completed trip is never revived.
       await db
@@ -108,13 +132,14 @@ export function safetyRoutes(deps: Deps) {
       z.object({
         since: isoDate.optional(),
         unacknowledged: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+        unresolved: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       }),
     ),
     async (c) => {
       const auth = c.get("auth");
       requireRole(auth, "guardian");
-      const { since, unacknowledged, limit } = c.req.valid("query");
+      const { since, unacknowledged, unresolved, limit } = c.req.valid("query");
       const rows = await db
         .select({ alert: alerts, event: events, seniorName: users.displayName })
         .from(careLinks)
@@ -126,6 +151,7 @@ export function safetyRoutes(deps: Deps) {
             eq(careLinks.guardianId, auth.userId),
             since ? gt(alerts.createdAt, since) : undefined,
             unacknowledged ? isNull(alerts.acknowledgedAt) : undefined,
+            unresolved ? and(isNull(alerts.resolvedAt), isNull(alerts.cancelledAt)) : undefined,
           ),
         )
         .orderBy(desc(alerts.createdAt))
@@ -180,10 +206,21 @@ export function safetyRoutes(deps: Deps) {
     const row = await loadAlert(id);
     await assertLinked(db, auth, row.alert.seniorId);
     // Idempotent: the first acknowledgement wins and later ones return it unchanged.
-    await db
+    const [acked] = await db
       .update(alerts)
       .set({ acknowledgedAt: deps.clock(), acknowledgedBy: auth.userId })
-      .where(and(eq(alerts.id, id), isNull(alerts.acknowledgedAt)));
+      .where(and(eq(alerts.id, id), isNull(alerts.acknowledgedAt)))
+      .returning();
+    // Tell the senior a person has seen their SOS or fall alert (the "guardian acknowledged" state), once.
+    if (acked && isUrgent(acked.kind) && !acked.cancelledAt) {
+      const [guardian] = await db.select({ name: users.displayName }).from(users).where(eq(users.id, auth.userId));
+      const what = acked.kind === "sos" ? "your SOS" : "your fall alert";
+      const simulated = row.event && row.event.source !== "device" ? "[Simulation] " : "";
+      await pushToSenior(deps, acked.seniorId, `${simulated}${guardian?.name ?? "Your guardian"} has seen ${what}`, {
+        alertId: acked.id,
+        kind: acked.kind,
+      });
+    }
     return c.json(alertView(await loadAlert(id)));
   });
 
@@ -194,27 +231,33 @@ export function safetyRoutes(deps: Deps) {
     await assertLinked(db, auth, seniorId);
     const body = c.req.valid("json");
     const values = {
-      deviceId: auth.deviceId,
+      seniorId,
       monitoringState: body.monitoringState,
       location: body.location ?? null,
       battery: body.battery ?? null,
+      source: body.source,
       // Server receipt time, so a skewed device clock cannot hide a stale gap.
       reportedAt: deps.clock(),
-      staleAlertedAt: null,
     };
     const [row] = await db
       .insert(statusHeartbeats)
-      .values({ seniorId, ...values })
-      .onConflictDoUpdate({ target: statusHeartbeats.seniorId, set: values })
+      .values({ deviceId: auth.deviceId, ...values })
+      .onConflictDoUpdate({ target: statusHeartbeats.deviceId, set: values })
       .returning();
-    return c.json(row);
+    // Any live device ends the senior's monitoring gap and re-arms monitoring_lost.
+    await db.update(statusHeartbeats).set({ staleAlertedAt: null }).where(eq(statusHeartbeats.seniorId, seniorId));
+    await resolveAlerts(deps, seniorId, eq(alerts.kind, "monitoring_lost"), {
+      title: (n) => `Monitoring restored for ${n}`,
+      source: body.source,
+    });
+    await checkBattery(deps, seniorId, auth.deviceId, body.battery, body.source);
+    return c.json({ ...row!, staleAlertedAt: null });
   });
 
   app.get("/seniors/:seniorId/status", validate("param", seniorParam), async (c) => {
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, c.get("auth"), seniorId);
-    const [row] = await db.select().from(statusHeartbeats).where(eq(statusHeartbeats.seniorId, seniorId));
-    return c.json({ status: row ?? null, serverTime: deps.clock() });
+    return c.json({ ...(await seniorStatus(db, seniorId)), serverTime: deps.clock() });
   });
 
   return app;

@@ -22,6 +22,83 @@
       "when": 1791034532967,
       "tag": "0002_next_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791037495714,
+      "tag": "0003_complete_cloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791037567055,
+      "tag": "0004_plain_lockheed",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791037649328,
+      "tag": "0005_smooth_shadowcat",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791038036103,
+      "tag": "0006_silky_squadron_supreme",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791038793532,
+      "tag": "0007_mushy_odin",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791038876940,
+      "tag": "0008_opposite_ken_ellis",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791038946968,
+      "tag": "0009_pink_triathlon",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791039033030,
+      "tag": "0010_tense_electro",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791039069511,
+      "tag": "0011_cheerful_goliath",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791039152438,
+      "tag": "0012_striped_serpent_society",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791039353270,
+      "tag": "0013_medical_riptide",
+      "breakpoints": true
     }
   ]
 }
