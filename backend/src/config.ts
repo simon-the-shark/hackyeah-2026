@@ -23,7 +23,7 @@ const schema = z
     OPENAI_TTS_MODEL: z.string().min(1).default("gpt-4o-mini-tts"),
     OPENAI_TTS_VOICE: z.string().min(1).default("marin"),
     /** Speech-to-speech model for the hands-free check-in (Realtime API). */
-    OPENAI_REALTIME_MODEL: z.string().min(1).default("gpt-realtime-2.1"),
+    OPENAI_REALTIME_MODEL: z.string().min(1).default("gpt-realtime-2.1-mini"),
     OPENAI_REALTIME_VOICE: z.string().min(1).default("marin"),
     WELLBEING_IDLE_MINUTES: z.coerce.number().int().min(1).max(1440).default(20),
     RATE_LIMIT_ASSISTANT_PER_HOUR: z.coerce.number().int().positive().default(120),

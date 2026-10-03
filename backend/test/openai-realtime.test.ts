@@ -6,7 +6,7 @@ import { OpenAiRealtime } from "../src/assistant/openai-realtime.js";
 import type { ChatContext } from "../src/assistant/provider.js";
 
 const ctx: ChatContext = { seniorName: "Halina", guardianNames: ["Marek"], language: "pl", localTime: null };
-const opts = { apiKey: "test-key", model: "gpt-realtime-2.1", voice: "marin", transcribeModel: "gpt-transcribe" };
+const opts = { apiKey: "test-key", model: "gpt-realtime-2.1-mini", voice: "marin", transcribeModel: "gpt-transcribe" };
 
 /** Local stand-in for the OpenAI Realtime socket: records what the backend sends. */
 let fake: WebSocketServer;
@@ -53,9 +53,9 @@ function connect() {
 describe("OpenAI Realtime", () => {
   it("configures a spoken check-in with tools, semantic VAD and the earlier turns", async () => {
     const { realtime, live, events, serverSends } = connect();
-    expect(realtime.name).toBe("openai/gpt-realtime-2.1");
+    expect(realtime.name).toBe("openai/gpt-realtime-2.1-mini");
     await until(() => upstream.received.length >= 3);
-    expect(upstream.url).toBe("/v1/realtime?model=gpt-realtime-2.1");
+    expect(upstream.url).toBe("/v1/realtime?model=gpt-realtime-2.1-mini");
     expect(upstream.auth).toBe("Bearer test-key");
     const [update, first, second] = upstream.received as {
       type: string;

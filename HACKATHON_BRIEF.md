@@ -77,7 +77,7 @@ At least one real platform integration must be verified in the final demo.
   automatically; the guardian sees the summary, not the conversation.
 - Changed by user decision (2026-10-04): the check-in is voice only and hands-free.
   The phone streams the microphone to the backend, which relays it to the OpenAI
-  Realtime model (`gpt-realtime-2.1`); the model's voice-activity detection
+  Realtime model (`gpt-realtime-2.1-mini`); the model's voice-activity detection
   decides when the senior has finished speaking, so nothing has to be pressed.
   Typing and push-to-talk were removed from the senior screen.
 - Added by user decision (2026-10-03): the guardian sees the watch's own

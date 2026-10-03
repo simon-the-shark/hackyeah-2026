@@ -207,6 +207,6 @@ check-in ends.
   assistant calls.
 - Hands-free voice (user request 2026-10-04: no send button, stream the voice to OpenAI, proxy it
   through our backend to keep the app simple): a WebSocket route relays microphone PCM to the
-  OpenAI Realtime API (`gpt-realtime-2.1`, semantic VAD) and the model's voice back, stores both
+  OpenAI Realtime API (`gpt-realtime-2.1-mini`, semantic VAD) and the model's voice back, stores both
   transcripts as check-in messages, and finishes the check-in when the model calls `end_check_in`.
   Adds the `ws` dependency (WebSocket server and an upstream client that can send the API key).

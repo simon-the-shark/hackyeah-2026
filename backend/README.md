@@ -254,7 +254,7 @@ session `simulated: true`, reports `source: "simulated"` with a summary starting
 | `OPENAI_CHAT_MODEL` | `gpt-6-luna` | Replies (reasoning effort `low`) and the summary (`medium`), Responses API with strict JSON schemas |
 | `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Voice messages (`/v1/audio/transcriptions`) |
 | `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | `gpt-4o-mini-tts`, `marin` | Reading replies aloud (`/v1/audio/speech`, MP3, asked to speak slowly and clearly) |
-| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1`, `marin` | Hands-free voice (Realtime API over a WebSocket) |
+| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1-mini`, `marin` | Hands-free voice (Realtime API over a WebSocket) |
 | `WELLBEING_IDLE_MINUTES` | 20 | Idle check-ins are finished by the watchdog |
 | `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (start, message, transcription, finish, speech, each live connection and each spoken turn) per senior; 429 above |
 

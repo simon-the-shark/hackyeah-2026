@@ -33,7 +33,7 @@ export interface LiveUpstream {
 
 /** Speech-to-speech model for the hands-free check-in. The backend proxies it; the app never talks to the provider. */
 export interface LiveVoice {
-  /** Provider and model, e.g. `openai/gpt-realtime-2.1`. */
+  /** Provider and model, e.g. `openai/gpt-realtime-2.1-mini`. */
   readonly name: string;
   /**
    * Opens a conversation configured for the check-in and seeded with `history`. Emits `ready` once the
