@@ -59,18 +59,6 @@ export struct GuardianWatchPage {
   }
 
   @Builder
-  simulatedBadge() {
-    Text('SIMULATED')
-      .fontSize(12)
-      .fontWeight(FontWeight.Bold)
-      .fontColor($r('app.color.warning'))
-      .backgroundColor($r('app.color.warning_tint'))
-      .borderRadius(8)
-      .padding({ left: 8, right: 8, top: 2, bottom: 2 })
-      .accessibilityText('Simulated data, not from a real sensor')
-  }
-
-  @Builder
   infoRow(label: string, value: string) {
     Row() {
       Text(label)
@@ -114,9 +102,6 @@ export struct GuardianWatchPage {
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
-        if (snapshot.latestSimulated) {
-          this.simulatedBadge()
-        }
       }
       .width('100%')
 
@@ -178,9 +163,6 @@ export struct GuardianWatchPage {
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
-        if (snapshot.statusSimulated) {
-          this.simulatedBadge()
-        }
       }
       .width('100%')
 

@@ -7,6 +7,7 @@ import { AlertDeepLink } from '../components/AlertDeepLink';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
+import { DOSE_HISTORY_ROUTE, DoseHistoryPage } from './DoseHistoryPage';
 import { FeaturePage } from './FeaturePage';
 import {
   GUARDIAN_MEDICATION_DETAIL_ROUTE,
@@ -16,6 +17,7 @@ import {
 import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { MedicationFormPage, MedicationFormParams } from './MedicationFormPage';
 import { ContactEditorPage, ContactEditorTarget } from './GuardianContacts';
+import { GUARDIAN_OVERVIEW_ROUTE, GuardianOverviewPage } from './GuardianOverviewPage';
 import { GUARDIAN_WATCH_ROUTE, GuardianWatchPage } from './GuardianWatchPage';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
@@ -83,6 +85,10 @@ struct Index {
       WatchSafetyPage()
     } else if (name === GUARDIAN_WATCH_ROUTE) {
       GuardianWatchPage()
+    } else if (name === GUARDIAN_OVERVIEW_ROUTE) {
+      GuardianOverviewPage()
+    } else if (name === DOSE_HISTORY_ROUTE) {
+      DoseHistoryPage()
     } else if (name === 'safe-area-setup') {
       SafeAreaSetupPage()
     } else if (name === 'settings') {

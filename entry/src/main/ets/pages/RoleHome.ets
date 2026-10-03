@@ -10,6 +10,8 @@ import { GuardianContactsList } from './GuardianContacts';
 import { GuardianLocationView } from './GuardianLocationPage';
 import { SosBanner } from '../components/SosBanner';
 import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
+import { GUARDIAN_OVERVIEW_ROUTE } from './GuardianOverviewPage';
+import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
 import { CareFocusStyle } from '../components/DesignSystem';
 
 @Component
@@ -42,6 +44,10 @@ export struct RoleHome {
       this.navStack.pushPathByName('settings', null);
     } else if (feature.id === 'watch-vitals') {
       this.navStack.pushPathByName(GUARDIAN_WATCH_ROUTE, null);
+    } else if (feature.id === 'overview') {
+      this.navStack.pushPathByName(GUARDIAN_OVERVIEW_ROUTE, null);
+    } else if (feature.id === 'dose-history') {
+      this.navStack.pushPathByName(DOSE_HISTORY_ROUTE, null);
     } else {
       this.navStack.pushPathByName('feature', feature);
     }

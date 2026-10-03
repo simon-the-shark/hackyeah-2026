@@ -257,7 +257,6 @@ export struct GuardianLocationView {
       kind: kind,
       ageText: deviceAgeText(this.device(kind), this.current(), this.now),
       stale: deviceIsStale(this.device(kind), this.current(), this.now),
-      simulated: this.device(kind).simulated,
       hasLocation: this.device(kind).hasLocation,
       lastUpdate: deviceClockTime(this.device(kind), this.current(), this.now),
       accuracy: this.accuracyText(this.device(kind)),
@@ -431,7 +430,6 @@ struct DeviceLocationCard {
   @Prop kind: string = PHONE;
   @Prop ageText: string = '';
   @Prop stale: boolean = false;
-  @Prop simulated: boolean = false;
   @Prop hasLocation: boolean = false;
   @Prop lastUpdate: string = '';
   @Prop accuracy: string = '';
@@ -464,16 +462,6 @@ struct DeviceLocationCard {
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
-
-        if (this.simulated) {
-          Text('Simulated')
-            .fontSize(13)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.warning'))
-            .padding({ left: 10, right: 10, top: 4, bottom: 4 })
-            .borderRadius(12)
-            .backgroundColor($r('app.color.warning_tint'))
-        }
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 14, bottom: 6 })
