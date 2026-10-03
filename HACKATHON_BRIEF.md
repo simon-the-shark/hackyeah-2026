@@ -65,6 +65,9 @@ At least one real platform integration must be verified in the final demo.
   goal), medication schedule/reminders, barcode scanning, medication 3D
   references, trusted contacts with easy dialing, and a local wellbeing assistant
   with guardian reporting. `MOBILE_PLAN.md` stages delivery by feasibility.
+- Added by user decision (2026-10-03): the guardian sees the watch's own
+  location and the senior's heart rate from the watch, with an alert when it
+  stays outside a set range. Informational only, never a diagnosis.
 - Nice to have: Guardian-defined trips (v1), learned frequent routes and
   deviation warnings (v2), voice interaction, and fall detection.
 - Separate ownership: Backend storage, event processing, and push infrastructure

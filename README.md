@@ -55,6 +55,46 @@ The Carely production backend address is built into the app. Create a senior
 account and pair the guardian in the Connection screen; both phones then retain
 their own authenticated session.
 
+### Smartwatch App
+
+The `watch` module is a separate HarmonyOS app entry for a wearable
+(`deviceTypes: ["wearable"]`, round 466×466 screen) in the same bundle.
+`./scripts/build-hap.sh` builds both HAPs:
+`entry/build/default/outputs/default/entry-default-unsigned.hap` and
+`watch/build/default/outputs/default/watch-default-unsigned.hap`. Sign them with
+your own DevEco Studio debug signature before installing; signing material is
+local and never committed.
+
+The watch pairs to the senior with a 6-digit code, then:
+
+- sends SOS (3-second countdown to cancel) with its own last location;
+- reports its own location heartbeat (`measuredBy: "watch"`, never the phone's);
+- reads heart rate with Sensor Service Kit (`ohos.permission.READ_HEALTH_DATA`),
+  uploads one median sample per 30 s, and sends one alert event when the reading
+  stays above 120 or below 45 bpm for 2 minutes (resolved after 2 minutes back in
+  range). Readings are informational, not a medical assessment.
+
+Sensors and location run only while Carely is open on the watch (sensor use in
+the background is not allowed). On an emulator, or when the sensor reports
+itself as a mock, data is sent with `source: "simulated"` and shown as
+SIMULATED on both watch and guardian screens.
+
+To try it on the DevEco Studio emulator (team images use API 23):
+
+1. Install and create a wearable emulator, for example
+   `Emulator -install -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
+   then `Emulator -create carely-watch -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
+   (`Emulator` lives in `DevEco-Studio.app/Contents/tools/emulator/`), or use
+   the Device Manager.
+2. Start the backend (`backend/README.md`) and forward its port into each
+   emulator, because the apps call `http://localhost:8787`:
+   `hdc -t <target> rport tcp:8787 tcp:8787`.
+3. On the senior phone: Settings, Smartwatch, Pair a watch. Enter the code on
+   the watch within 5 minutes and allow heart rate and location.
+4. Set a heart rate in the emulator's Virtual Sensor panel and a position in
+   its GPS panel.
+5. On the guardian phone: Home, Safety, Watch & vitals.
+
 ## Project Documents
 
 - `HACKATHON_BRIEF.md` records the agreed product scope and demo path.
