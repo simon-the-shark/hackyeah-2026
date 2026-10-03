@@ -160,10 +160,14 @@ export class WatchMonitor {
     this.lastFix = undefined;
   }
 
-  /** The SOS screen sends through here so the request carries the watch's own fresh location. */
+  /**
+   * The SOS screen sends through here so the request carries the watch's own
+   * last known location. Unlike heartbeats, an older fix is still attached:
+   * its `sampledAt` lets the guardian judge how old it is.
+   */
   async sendSos(id: string, occurredAt: number): Promise<void> {
     const request = new WatchEventRequest(id, 'sos', occurredAt, 'device');
-    const fix = this.freshFix(Date.now());
+    const fix = this.lastKnownFix();
     if (fix !== undefined) {
       request.location = fix;
     }
@@ -304,6 +308,23 @@ export class WatchMonitor {
     if (now - this.lastHeartbeatAt >= HEARTBEAT_MS) {
       this.sendHeartbeat(now);
     }
+  }
+
+  /** This watch's last fix or the system's cached one, whichever is newer; never waits for a new fix. */
+  private lastKnownFix(): WatchLocationPoint | undefined {
+    let system: WatchLocationPoint | undefined = undefined;
+    try {
+      const location = geoLocationManager.getLastLocation();
+      system = new WatchLocationPoint(location.latitude, location.longitude, location.accuracy,
+        location.timeStamp > 0 ? location.timeStamp : Date.now());
+    } catch (error) {
+      // No permission, location switched off, or no cached fix yet.
+      console.info(`[WatchMonitor] no system last location: ${(error as BusinessError).code}`);
+    }
+    if (system === undefined || this.lastFix === undefined) {
+      return system ?? this.lastFix;
+    }
+    return Date.parse(system.sampledAt) > Date.parse(this.lastFix.sampledAt) ? system : this.lastFix;
   }
 
   private freshFix(now: number): WatchLocationPoint | undefined {

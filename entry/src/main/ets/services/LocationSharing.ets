@@ -8,19 +8,25 @@ import { pendingSafetyEvents } from './PendingSafetyEvents';
 
 type StateListener = () => void;
 
-class LocationPoint {
+/** A fix measured by this phone, in the care service's `location` shape. */
+export class LocationPoint {
   lat: number;
   lng: number;
   accuracyM: number;
   sampledAt: string;
   measuredBy: string = 'phone';
 
-  constructor(lat: number, lng: number, accuracyM: number) {
+  constructor(lat: number, lng: number, accuracyM: number, sampledAt: number) {
     this.lat = lat;
     this.lng = lng;
-    this.accuracyM = accuracyM;
-    this.sampledAt = new Date().toISOString();
+    this.accuracyM = Math.max(0, accuracyM);
+    this.sampledAt = new Date(sampledAt).toISOString();
   }
+}
+
+function pointFrom(location: geoLocationManager.Location): LocationPoint {
+  const sampledAt = location.timeStamp > 0 ? location.timeStamp : Date.now();
+  return new LocationPoint(location.latitude, location.longitude, location.accuracy, sampledAt);
 }
 
 class StatusReport {
@@ -43,10 +49,14 @@ export class LocationSharing {
   private requested: boolean = false;
   private context: common.UIAbilityContext | undefined = undefined;
   private listeners: StateListener[] = [];
+  /** Kept after sharing stops, so an SOS can still say where the phone was last seen. */
+  private lastFix: LocationPoint | undefined = undefined;
   private readonly locationCallback: (location: geoLocationManager.Location) => void =
     (location: geoLocationManager.Location): void => {
+      const point = pointFrom(location);
+      this.lastFix = point;
       safetyStore.recordLiveLocation(location.latitude, location.longitude, location.accuracy, false);
-      this.reportLocation(location.latitude, location.longitude, location.accuracy, safetyStore.didLeaveSafeArea);
+      this.reportLocation(point, safetyStore.didLeaveSafeArea);
       this.notify();
     };
 
@@ -139,6 +149,25 @@ export class LocationSharing {
     });
   }
 
+  /**
+   * The newest position known on this phone, for attaching to an SOS: this
+   * app's last fix or the system's cached one, whichever is newer. Never asks
+   * for permission or waits for a new fix; undefined when neither exists.
+   */
+  lastKnownLocation(): LocationPoint | undefined {
+    let system: LocationPoint | undefined = undefined;
+    try {
+      system = pointFrom(geoLocationManager.getLastLocation());
+    } catch (error) {
+      // No permission, location switched off, or no cached fix yet.
+      console.info(`[LocationSharing] no system last location: ${(error as BusinessError).code}`);
+    }
+    if (system === undefined || this.lastFix === undefined) {
+      return system ?? this.lastFix;
+    }
+    return Date.parse(system.sampledAt) > Date.parse(this.lastFix.sampledAt) ? system : this.lastFix;
+  }
+
   stop(): void {
     this.requested = false;
     this.unsubscribeFromLocation();
@@ -195,11 +224,10 @@ export class LocationSharing {
     this.notify();
   }
 
-  private async reportLocation(latitude: number, longitude: number, accuracy: number, exited: boolean): Promise<void> {
+  private async reportLocation(point: LocationPoint, exited: boolean): Promise<void> {
     if (!apiSession.configured() || apiSession.role !== 'senior') {
       return;
     }
-    const point = new LocationPoint(latitude, longitude, accuracy);
     const context = this.context;
     try {
       await careApi.request(`/seniors/${apiSession.seniorId}/status`, http.RequestMethod.PUT,

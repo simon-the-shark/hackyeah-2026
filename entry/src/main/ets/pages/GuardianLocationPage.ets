@@ -1,6 +1,5 @@
 import { common } from '@kit.AbilityKit';
 import { CareButtonStyle } from '../components/DesignSystem';
-import { mapCommon, petalMaps } from '@kit.MapKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { MapScene, SeniorMap } from '../components/SeniorMap';
 import {
@@ -14,6 +13,7 @@ import {
   stateSentence
 } from '../models/SeniorLocation';
 import { formatClockTime } from '../models/Safety';
+import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
 
@@ -131,17 +131,12 @@ export struct GuardianLocationView {
     return scene;
   }
 
-  private async openInPetalMaps(snapshot: SeniorSnapshot): Promise<void> {
-    const position: mapCommon.LatLng = { latitude: snapshot.lat, longitude: snapshot.lng };
-    const params: petalMaps.PoiDetailParams = {
-      destinationPosition: position,
-      destinationName: `${snapshot.seniorName}, last known location`
-    };
-    try {
-      await petalMaps.openMapPoiDetail(this.getUIContext().getHostContext() as common.Context, params);
-    } catch (error) {
+  private async openMap(snapshot: SeniorSnapshot): Promise<void> {
+    const handOff = await openInMaps(this.getUIContext().getHostContext() as common.UIAbilityContext,
+      snapshot.lat, snapshot.lng, `${snapshot.seniorName}, last known location`);
+    if (handOff === MapsHandOff.None) {
       try {
-        this.getUIContext().getPromptAction().showToast({ message: 'Petal Maps is not available on this device' });
+        this.getUIContext().getPromptAction().showToast({ message: 'No maps app or browser could open this location' });
       } catch (toastError) {
         console.error('[GuardianLocation] toast failed');
       }
@@ -299,7 +294,7 @@ export struct GuardianLocationView {
             SymbolGlyph($r('sys.symbol.map'))
               .fontSize(20)
               .fontColor([$r('app.color.guardian_accent')])
-            Text('Open in Petal Maps')
+            Text('Open in Maps')
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.guardian_accent'))
@@ -308,7 +303,7 @@ export struct GuardianLocationView {
         .width('100%')
         .height(56)
         .attributeModifier(new CareButtonStyle('secondary'))
-        .onClick(() => this.openInPetalMaps(this.current()))
+        .onClick(() => this.openMap(this.current()))
       }
     }
     .width('100%')

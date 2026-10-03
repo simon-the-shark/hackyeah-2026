@@ -1,4 +1,14 @@
+import { common } from '@kit.AbilityKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
+import {
+  accuracyLabel,
+  AlertLocation,
+  alertLocationFrom,
+  fixTimeLabel,
+  formatCoordinates,
+  RemoteGeoPoint,
+  sourceLabel
+} from '../models/AlertLocation';
 import {
   AlertType,
   CareAlert,
@@ -7,6 +17,7 @@ import {
   remoteAlertCopy,
 } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
+import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession, careApi } from '../services/CareApi';
 import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
 import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
@@ -17,11 +28,20 @@ interface RemoteAlert {
   createdAt: string;
   // The care service sends null, not an absent field, for an unacknowledged alert.
   acknowledgedAt?: string | null;
-  event?: RemoteEvent;
+  // Null for server-raised alerts such as a missed dose.
+  event?: RemoteEvent | null;
 }
 
 interface RemoteEvent {
   type: string;
+  occurredAt: string;
+  location?: RemoteGeoPoint | null;
+}
+
+enum LocationLoad {
+  Loading,
+  Loaded,
+  Failed
 }
 
 interface RemoteAlertList {
@@ -288,9 +308,124 @@ export struct AlertDetailPage {
   @State private acknowledged: boolean = false;
   @State private acknowledging: boolean = false;
   @State private acknowledgementError: string = '';
+  @State private location: AlertLocation | undefined = undefined;
+  @State private locationLoad: LocationLoad = LocationLoad.Loading;
+  /** When the senior's device raised the event, on its own clock; 0 when unknown. */
+  private occurredAt: number = 0;
 
   aboutToAppear(): void {
     this.acknowledged = this.alert.acknowledged;
+    this.loadLocation();
+  }
+
+  /** Every entry point (inbox, SOS banner, notification) passes only the alert id, so read the event here. */
+  private async loadLocation(): Promise<void> {
+    if (!this.alert.remote || !apiSession.configured() || apiSession.role !== 'guardian') {
+      this.locationLoad = LocationLoad.Loaded;
+      return;
+    }
+    try {
+      const item = await careApi.request(`/alerts/${encodeURIComponent(this.alert.id)}`,
+        http.RequestMethod.GET) as RemoteAlert;
+      const event = item.event;
+      if (event !== undefined && event !== null) {
+        const occurredAt = Date.parse(event.occurredAt);
+        this.occurredAt = isFinite(occurredAt) ? occurredAt : 0;
+        this.location = alertLocationFrom(event.location);
+      }
+      this.locationLoad = LocationLoad.Loaded;
+    } catch (error) {
+      this.locationLoad = LocationLoad.Failed;
+    }
+  }
+
+  private async openMap(location: AlertLocation): Promise<void> {
+    const handOff = await openInMaps(this.getUIContext().getHostContext() as common.UIAbilityContext,
+      location.lat, location.lng, this.alert.title);
+    if (handOff === MapsHandOff.None) {
+      try {
+        this.getUIContext().getPromptAction().showToast({ message: 'No maps app or browser could open this location' });
+      } catch (toastError) {
+        console.error('[AlertDetail] toast failed');
+      }
+    }
+  }
+
+  /** For SOS and falls the guardian needs to know a location is missing, not just see nothing. */
+  private locationStatusText(): string {
+    if (this.locationLoad === LocationLoad.Loading) {
+      return 'Loading the location…';
+    }
+    if (this.locationLoad === LocationLoad.Failed) {
+      return 'Could not load the location from the care service.';
+    }
+    return 'No location was shared with this alert. Check the Location tab or call the senior.';
+  }
+
+  @Builder
+  locationCard() {
+    Column({ space: 14 }) {
+      Row({ space: 14 }) {
+        IconBadge({
+          icon: $r('sys.symbol.map_badge_local'),
+          accent: $r('app.color.guardian_accent'),
+          tint: $r('app.color.guardian_tint')
+        })
+        Column({ space: 3 }) {
+          Text('Last known location')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+          if (this.location !== undefined) {
+            Text(`${sourceLabel(this.location)} · ${fixTimeLabel(this.location, this.occurredAt)}`)
+              .fontSize(14)
+              .fontColor($r('app.color.text_secondary'))
+          }
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+      }
+      .width('100%')
+      .accessibilityGroup(true)
+
+      if (this.location !== undefined) {
+        Text(`${formatCoordinates(this.location.lat, this.location.lng)} · ${accuracyLabel(this.location)}`)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .copyOption(CopyOptions.LocalDevice)
+          .width('100%')
+
+        Button() {
+          Row({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.map'))
+              .fontSize(20)
+              .fontColor([$r('app.color.guardian_accent')])
+            Text('Open in Maps')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.guardian_accent'))
+          }
+        }
+        .width('100%')
+        .height(56)
+        .attributeModifier(new CareButtonStyle('secondary'))
+        .accessibilityText('Open the last known location in Maps')
+        .onClick(() => {
+          if (this.location !== undefined) {
+            this.openMap(this.location);
+          }
+        })
+      } else {
+        Text(this.locationStatusText())
+          .fontSize(16)
+          .fontColor($r('app.color.text_secondary'))
+          .width('100%')
+      }
+    }
+    .width('100%')
+    .padding(16)
+    .borderRadius(20)
+    .backgroundColor($r('app.color.surface'))
   }
 
   @Builder
@@ -344,6 +479,10 @@ export struct AlertDetailPage {
           .alignItems(HorizontalAlign.Start)
           .borderRadius(28)
           .backgroundColor(alertTint(this.alert))
+
+          if (this.location !== undefined || isUrgent(this.alert)) {
+            this.locationCard()
+          }
 
           Column() {
             this.infoRow('Time', formatAlertTime(this.alert.createdAt), true)
