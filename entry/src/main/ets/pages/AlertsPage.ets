@@ -1,5 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
+import { MapMarker, MapScene, SeniorMap } from '../components/SeniorMap';
 import {
   accuracyLabel,
   AlertLocation,
@@ -306,6 +307,7 @@ export struct AlertDetailPage {
   @State private acknowledging: boolean = false;
   @State private acknowledgementError: string = '';
   @State private location: AlertLocation | undefined = undefined;
+  @State private locationScene: MapScene = new MapScene();
   @State private locationLoad: LocationLoad = LocationLoad.Loading;
   /** When the senior's device raised the event, on its own clock; 0 when unknown. */
   private occurredAt: number = 0;
@@ -329,6 +331,16 @@ export struct AlertDetailPage {
         const occurredAt = Date.parse(event.occurredAt);
         this.occurredAt = isFinite(occurredAt) ? occurredAt : 0;
         this.location = alertLocationFrom(event.location);
+        const scene = new MapScene();
+        if (this.location !== undefined) {
+          const marker = new MapMarker();
+          marker.kind = this.location.measuredBy;
+          marker.lat = this.location.lat;
+          marker.lng = this.location.lng;
+          marker.accuracyM = this.location.accuracyM;
+          scene.markers = [marker];
+        }
+        this.locationScene = scene;
       }
       this.locationLoad = LocationLoad.Loaded;
     } catch (error) {
@@ -386,6 +398,8 @@ export struct AlertDetailPage {
       .accessibilityGroup(true)
 
       if (this.location !== undefined) {
+        SeniorMap({ scene: this.locationScene })
+
         Text(`${formatCoordinates(this.location.lat, this.location.lng)} · ${accuracyLabel(this.location)}`)
           .fontSize(16)
           .fontColor($r('app.color.text_primary'))

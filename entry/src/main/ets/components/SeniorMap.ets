@@ -10,7 +10,7 @@ const MIN_ZOOM_DELTA: number = -3;
 
 /** One device's position on the map. */
 export class MapMarker {
-  /** `PHONE` or `WATCH`; picks the icon. */
+  /** `PHONE`, `WATCH`, or empty when the source is unknown; picks the icon. */
   kind: string = PHONE;
   lat: number = 0;
   lng: number = 0;
@@ -30,11 +30,12 @@ export class MapScene {
 }
 
 export function markerIcon(kind: string): Resource {
-  return kind === WATCH ? $r('sys.symbol.watch_fill') : $r('sys.symbol.phone_fill_1');
+  return kind === WATCH ? $r('sys.symbol.watch_fill') :
+    kind === PHONE ? $r('sys.symbol.phone_fill_1') : $r('sys.symbol.map_badge_local');
 }
 
 export function markerLabel(kind: string): string {
-  return kind === WATCH ? 'Watch' : 'Phone';
+  return kind === WATCH ? 'Watch' : kind === PHONE ? 'Phone' : 'Reported location';
 }
 
 /**
