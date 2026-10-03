@@ -25,6 +25,8 @@ export class MonitorState {
   static readonly ACTIVE: string = 'active';
   static readonly DENIED: string = 'denied';
   static readonly MISSING: string = 'missing';
+  /** The device-wide location switch is off. */
+  static readonly SWITCH_OFF: string = 'switch_off';
   static readonly FAILED: string = 'failed';
 }
 

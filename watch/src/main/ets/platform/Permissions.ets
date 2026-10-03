@@ -15,6 +15,23 @@ export async function requestPermissions(context: common.UIAbilityContext, permi
   }
 }
 
+/** Error code of `requestGlobalSwitch` when the switch is already on. */
+const SWITCH_ALREADY_ON = 12100013;
+
+/** Asks the system to turn on the device-wide location switch (permissions alone are not enough). */
+export async function requestLocationSwitch(context: common.UIAbilityContext): Promise<boolean> {
+  try {
+    return await abilityAccessCtrl.createAtManager().requestGlobalSwitch(context, abilityAccessCtrl.SwitchType.LOCATION);
+  } catch (error) {
+    const code = (error as BusinessError).code;
+    if (code === SWITCH_ALREADY_ON) {
+      return true;
+    }
+    console.error(`[Permissions] location switch request failed: ${code}`);
+    return false;
+  }
+}
+
 /** After a denial the system no longer asks, so the user is taken to the settings dialog instead. */
 export async function requestPermissionsInSettings(context: common.UIAbilityContext,
   permissions: Permissions[]): Promise<boolean> {

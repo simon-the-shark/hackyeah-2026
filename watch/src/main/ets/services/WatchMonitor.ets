@@ -27,7 +27,12 @@ import {
 } from '../models/WatchState';
 import { batteryPercent, runningOnEmulator } from '../platform/DeviceEnvironment';
 import { HeartRateSensor, SensorAvailability } from '../platform/HeartRateSensor';
-import { HEALTH_PERMISSIONS, LOCATION_PERMISSIONS, requestPermissions } from '../platform/Permissions';
+import {
+  HEALTH_PERMISSIONS,
+  LOCATION_PERMISSIONS,
+  requestLocationSwitch,
+  requestPermissions
+} from '../platform/Permissions';
 import {
   EpisodeEventKind,
   HeartRateAlertDetector,
@@ -47,6 +52,8 @@ const FIX_FRESH_MS = 2 * 60 * 1000;
 /** The backend accepts at most 500 samples per batch; older ones are dropped first when offline. */
 const MAX_PENDING_SAMPLES = 500;
 const DISPLAY_UPDATE_MS = 5 * 1000;
+/** Location Kit error when the device-wide location switch is off. */
+const LOCATION_SWITCH_OFF = 3301100;
 
 function distanceMeters(latA: number, lngA: number, latB: number, lngB: number): number {
   const earthRadiusMeters = 6371000;
@@ -252,6 +259,17 @@ export class WatchMonitor {
       AppStorage.set<string>(K_LOC_STATE, MonitorState.DENIED);
       return;
     }
+    // The permission is useless while the watch's own location switch is off; ask the system to turn it on.
+    if (!this.locationEnabled()) {
+      await requestLocationSwitch(this.context as common.UIAbilityContext);
+      if (!this.isCurrent(generation)) {
+        return;
+      }
+      if (!this.locationEnabled()) {
+        AppStorage.set<string>(K_LOC_STATE, MonitorState.SWITCH_OFF);
+        return;
+      }
+    }
     const request: geoLocationManager.LocationRequest = {
       priority: geoLocationManager.LocationRequestPriority.FIRST_FIX,
       scenario: geoLocationManager.LocationRequestScenario.UNSET,
@@ -262,8 +280,18 @@ export class WatchMonitor {
       geoLocationManager.on('locationChange', request, this.locationCallback);
       AppStorage.set<string>(K_LOC_STATE, MonitorState.ACTIVE);
     } catch (error) {
-      console.error(`[WatchMonitor] location on failed: ${(error as BusinessError).code}`);
-      AppStorage.set<string>(K_LOC_STATE, MonitorState.FAILED);
+      const code = (error as BusinessError).code;
+      console.error(`[WatchMonitor] location on failed: ${code}`);
+      AppStorage.set<string>(K_LOC_STATE,
+        code === LOCATION_SWITCH_OFF ? MonitorState.SWITCH_OFF : MonitorState.FAILED);
+    }
+  }
+
+  private locationEnabled(): boolean {
+    try {
+      return geoLocationManager.isLocationEnabled();
+    } catch (error) {
+      return false;
     }
   }
 
@@ -295,7 +323,8 @@ export class WatchMonitor {
   /** Inside/outside of the guardian's safe area, judged from this watch's own fix (watches have no geofence API). */
   private monitoringState(fix: WatchLocationPoint | undefined): string {
     if (fix === undefined) {
-      return AppStorage.get<string>(K_LOC_STATE) === MonitorState.DENIED ? 'unavailable' : 'unknown';
+      const state = AppStorage.get<string>(K_LOC_STATE);
+      return state === MonitorState.DENIED || state === MonitorState.SWITCH_OFF ? 'unavailable' : 'unknown';
     }
     const area = this.safeArea;
     if (area === undefined || fix.accuracyM > area.radiusM) {

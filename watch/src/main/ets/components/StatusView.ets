@@ -1,6 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { formatClock, K_PAIRED, MonitorState } from '../models/WatchState';
-import { LOCATION_PERMISSIONS, requestPermissionsInSettings } from '../platform/Permissions';
+import { LOCATION_PERMISSIONS, requestLocationSwitch, requestPermissionsInSettings } from '../platform/Permissions';
 import { watchMonitor } from '../services/WatchMonitor';
 import { watchSessionStore } from '../services/WatchSessionStore';
 
@@ -17,6 +17,9 @@ export struct StatusView {
     if (this.locState === MonitorState.DENIED) {
       return 'Location: not allowed';
     }
+    if (this.locState === MonitorState.SWITCH_OFF) {
+      return 'Location is off on this watch';
+    }
     if (this.locState === MonitorState.FAILED) {
       return 'Location: unavailable';
     }
@@ -28,7 +31,10 @@ export struct StatusView {
 
   private async allowLocation(): Promise<void> {
     const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    if (await requestPermissionsInSettings(context, LOCATION_PERMISSIONS)) {
+    const fixed = this.locState === MonitorState.SWITCH_OFF
+      ? await requestLocationSwitch(context)
+      : await requestPermissionsInSettings(context, LOCATION_PERMISSIONS);
+    if (fixed) {
       watchMonitor.pause();
       await watchMonitor.resume();
     }
@@ -54,8 +60,8 @@ export struct StatusView {
         .fontColor($r('app.color.watch_text'))
         .textAlign(TextAlign.Center)
         .width(170)
-      if (this.locState === MonitorState.DENIED) {
-        Button('Allow')
+      if (this.locState === MonitorState.DENIED || this.locState === MonitorState.SWITCH_OFF) {
+        Button(this.locState === MonitorState.SWITCH_OFF ? 'Turn on' : 'Allow')
           .height(30)
           .fontSize(13)
           .fontColor(Color.Black)
