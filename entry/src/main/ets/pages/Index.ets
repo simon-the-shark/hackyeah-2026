@@ -29,8 +29,9 @@ struct Index {
   @Provide('doseRecords') doseRecords: Map<string, DoseRecord> = new Map<string, DoseRecord>();
   @StorageLink('paired') @Watch('onPairedChanged') private paired: boolean = false;
 
+  /** On launch the home opens without a transition, so the setup screen does not flash first. */
   aboutToAppear(): void {
-    this.ensureRoleHome();
+    this.ensureRoleHome(false);
   }
 
   private onPairedChanged(): void {
@@ -44,12 +45,12 @@ struct Index {
   }
 
   /** Paired phones skip role picking and open the saved senior or guardian home. */
-  private ensureRoleHome(): void {
+  private ensureRoleHome(animated: boolean = true): void {
     if (!this.paired || !apiSession.configured()) {
       return;
     }
     if (this.navStack.size() === 0) {
-      this.navStack.pushPathByName(this.roleHomeRoute(), null);
+      this.navStack.pushPathByName(this.roleHomeRoute(), null, animated);
     }
   }
 
