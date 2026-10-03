@@ -1,0 +1,433 @@
+[
+  {
+    "case_id": "SMOKE-NAV-001",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-002",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-003",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-003",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-004",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-004",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-005",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-005",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-006",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-006",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-007",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-007",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-007. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-007 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-008",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-008",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-008. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-008 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-009",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-009",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-009. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-009 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-010",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-010",
+    "phase": "REQ",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-010. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-010 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "REQ",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "device_constraints",
+        "capability_boundary",
+        "acceptance_focus"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-011",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-011",
+    "phase": "REQ",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-011. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-011 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "REQ",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "device_constraints",
+        "capability_boundary",
+        "acceptance_focus"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-012",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-012",
+    "phase": "REQ",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-012. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-012 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "REQ",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/routing-navigation-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "device_constraints",
+        "capability_boundary",
+        "acceptance_focus"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-03",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-013",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-013",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-013. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-013 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/routing-navigation-scenario-development.md",
+        "./references/animation-transitions.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-03"
+    }
+  },
+  {
+    "case_id": "SMOKE-NAV-014",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-NAV-014",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-NAV-014. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-NAV-014 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-05",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/routing-navigation-scenario-development.md",
+        "./references/animation-transitions.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-03"
+    }
+  }
+]

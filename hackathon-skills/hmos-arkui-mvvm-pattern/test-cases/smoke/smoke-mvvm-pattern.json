@@ -1,0 +1,46 @@
+[
+  {
+    "case_id": "SMOKE-MVVM-01",
+    "layer": "smoke",
+    "title": "V1 shopping-cart MVVM layer validation",
+    "phase": "DEV",
+    "user_prompt": "Develop a phone shopping-cart page with Model/ViewModel/View/Page layers. Load product data from rawfile JSON, keep the View away from Model data, and provide a complete V1 MVVM implementation plan.",
+    "intent": "Validate MVVM-01 routing and V1 observation with @Observed, @Track, @ObjectLink, @State, @Builder, and one-way Model to ViewModel to View data flow.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "MVVM-01",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [],
+      "next_scene_refs": ["./SKILL.md", "./references/mvvm-scenario-development_V1.md"],
+      "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"],
+      "forbidden_scenes": ["MVVM-02"]
+    }
+  },
+  {
+    "case_id": "SMOKE-MVVM-02",
+    "layer": "smoke",
+    "title": "V1 music playlist MVVM layer validation",
+    "phase": "DEV",
+    "user_prompt": "Develop a phone music playlist page with Model/ViewModel/View/Page layers. The View must invoke ViewModel methods indirectly and the solution must target V1 state management.",
+    "intent": "Validate MVVM-01 routing, precise @Track updates, @ObjectLink item observation, @State page binding, @Builder reuse, and one-way data flow.",
+    "expected": {"primary_phase": "DEV", "primary_scene": "MVVM-01", "primary_scene_ref": "./SKILL.md", "secondary_scenes": [], "next_scene_refs": ["./SKILL.md", "./references/mvvm-scenario-development_V1.md"], "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"], "forbidden_scenes": ["MVVM-02"]}
+  },
+  {
+    "case_id": "SMOKE-MVVM-03",
+    "layer": "smoke",
+    "title": "V2 contacts MVVM layer validation",
+    "phase": "DEV",
+    "user_prompt": "Develop a phone contacts page with Model/ViewModel/View/Page layers. Use @Param for read-only child data, @Event for actions, Repeat for lists, and V2 state management.",
+    "intent": "Validate MVVM-02 routing, @ObservedV2, @Trace, @Param, @Event, Repeat, @Computed, @ComponentV2, and @Local.",
+    "expected": {"primary_phase": "DEV", "primary_scene": "MVVM-02", "primary_scene_ref": "./SKILL.md", "secondary_scenes": [], "next_scene_refs": ["./SKILL.md", "./references/mvvm-scenario-development_v2.md"], "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"], "forbidden_scenes": ["MVVM-01"]}
+  },
+  {
+    "case_id": "SMOKE-MVVM-04",
+    "layer": "smoke",
+    "title": "V2 weather-city management MVVM layer validation",
+    "phase": "DEV",
+    "user_prompt": "Develop a phone weather city-management page with Model/ViewModel/View/Page layers. Use @Param, @Event, Repeat, @Computed, @ComponentV2, and @Local.",
+    "intent": "Validate MVVM-02 routing and V2 property observation, callback data-source updates, list rendering, computed values, and page assembly.",
+    "expected": {"primary_phase": "DEV", "primary_scene": "MVVM-02", "primary_scene_ref": "./SKILL.md", "secondary_scenes": [], "next_scene_refs": ["./SKILL.md", "./references/mvvm-scenario-development_v2.md"], "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"], "forbidden_scenes": ["MVVM-01"]}
+  }
+]

@@ -1,0 +1,370 @@
+[
+  {
+    "case_id": "SMOKE-DM-01",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-01",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-01. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-01 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-08",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-02",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-02",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-02. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-02 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-03",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-03",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-03. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-03 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-04",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-04",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-04. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-04 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-05",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-05",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-05. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-05 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-08",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-06",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-06",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-06. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-06 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-07",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-07",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-07. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-07 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-08",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-08",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-08. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-08 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-09",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-09",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-09. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-09 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-10",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-10",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-10. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-10 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-DM-11",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-DM-11",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-DM-11. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-DM-11 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-13",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./references/dialog-menu-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  }
+]

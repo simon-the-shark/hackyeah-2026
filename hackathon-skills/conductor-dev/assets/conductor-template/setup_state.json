@@ -1,0 +1,146 @@
+{
+  "schema_version": 1,
+  "workflow_profile": "standard",
+  "token_budget": 80000,
+  "command_output_budget": "compact",
+  "workflow_plan": {
+    "status": "pending",
+    "profile": null,
+    "recorded_by": null,
+    "required_architecture_skills": []
+  },
+  "question_gate": {
+    "status": "pending",
+    "method": null,
+    "decisions": {}
+  },
+  "execution_profile": null,
+  "risk_level": null,
+  "risk_signals": [],
+  "product_status": "unconfirmed",
+  "product_brief": {
+    "problem": null,
+    "primary_user": null,
+    "desired_outcome": null,
+    "core_flow": null,
+    "mvp": null,
+    "non_goals": null,
+    "target_device": null,
+    "data_behavior": null,
+    "visual_direction": null,
+    "acceptance_criteria": null
+  },
+  "product_confirmation": {
+    "user_confirmed": false,
+    "decision": null,
+    "assumptions": []
+  },
+  "work_plan_status": "pending",
+  "track_kind": null,
+  "ui_impact": null,
+  "required_skills": [],
+  "loaded_skills": [],
+  "api_evidence_sources": [],
+  "api_evidence_scopes": [],
+  "context_fingerprint": null,
+  "loaded_context": [],
+  "api_evidence_cache": {},
+  "context_cache": {
+    "phase": null,
+    "fingerprint": null,
+    "files": []
+  },
+  "ui_checkpoint": {
+    "status": "not_required",
+    "source_revision": null,
+    "snapshot": null,
+    "user_decision": null
+  },
+  "ai_workflow": {
+    "revision": null,
+    "last_recorded_phase": null,
+    "tools": [],
+    "clean": false
+  },
+  "current_phase": "initialization",
+  "phase_status": "pending",
+  "track_status": "not_started",
+  "last_completed_phase": null,
+  "next_phase": "initialization",
+  "phase_requires_boundary_pass": false,
+  "verification_boundary": {
+    "status": "not_required",
+    "reason": "initialization has no application change",
+    "source_revision": null,
+    "packaging_revision": null,
+    "runtime_impact": false,
+    "signing": "not_configured",
+    "recorded_by": null
+  },
+  "validation_status": {
+    "build": "not_attempted",
+    "lint": "not_attempted",
+    "device": "not_attempted",
+    "interactions": "not_attempted"
+  },
+  "known_checks": {
+    "lint": {
+      "result": null,
+      "tool_version": null,
+      "config_fingerprint": null,
+      "target_fingerprint": null
+    }
+  },
+  "verification_gate": {
+    "last_phase": "initialization",
+    "last_mode": "execution",
+    "status": "blocked",
+    "checks": {
+      "context": "reload",
+      "evidence": "fetch",
+      "lint": "run"
+    }
+  },
+  "recovery": {
+    "status": "none",
+    "incident": null
+  },
+  "execution_authorization": {
+    "status": "pending",
+    "phase": null,
+    "token": null,
+    "authorized_revision": null
+  },
+  "automated_test_approval": {
+    "status": "pending",
+    "user_decision": null,
+    "phase": null
+  },
+  "acceptance_results": {
+    "add": "not_attempted",
+    "complete": "not_attempted",
+    "filter": "not_attempted",
+    "delete": "not_attempted",
+    "persistence": "not_attempted"
+  },
+  "runtime_evidence": {
+    "status": "pending",
+    "source_revision": null,
+    "reason": null,
+    "recorded_by": null
+  },
+  "scope_change": {
+    "status": "none",
+    "reason": null,
+    "files": []
+  },
+  "synchronization_record": {
+    "status": "not_started",
+    "phase": null,
+    "task_id": null,
+    "summary_file": null
+  },
+  "last_successful_step": "",
+  "next_action": "",
+  "blocker": null
+}

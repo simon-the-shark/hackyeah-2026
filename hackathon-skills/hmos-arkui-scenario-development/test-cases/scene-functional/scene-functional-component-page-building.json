@@ -1,0 +1,669 @@
+[
+  {
+    "case_id": "CPB-FUNC-001",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-001.",
+        "Required implementation behavior for CPB-FUNC-001.",
+        "Required implementation behavior for CPB-FUNC-001.",
+        "Required implementation behavior for CPB-FUNC-001.",
+        "Required implementation behavior for CPB-FUNC-001."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-001.",
+        "Forbidden implementation pattern for CPB-FUNC-001.",
+        "Forbidden implementation pattern for CPB-FUNC-001.",
+        "Forbidden implementation pattern for CPB-FUNC-001."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-001.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-001.",
+        "Runtime assertion for CPB-FUNC-001.",
+        "Runtime assertion for CPB-FUNC-001.",
+        "Runtime assertion for CPB-FUNC-001."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-001.",
+        "Evidence required to pass CPB-FUNC-001.",
+        "Evidence required to pass CPB-FUNC-001."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-002",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-16"
+      ],
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-002.",
+        "Required implementation behavior for CPB-FUNC-002.",
+        "Required implementation behavior for CPB-FUNC-002.",
+        "Required implementation behavior for CPB-FUNC-002.",
+        "Required implementation behavior for CPB-FUNC-002."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-002.",
+        "Forbidden implementation pattern for CPB-FUNC-002.",
+        "Forbidden implementation pattern for CPB-FUNC-002.",
+        "Forbidden implementation pattern for CPB-FUNC-002."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-002.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-002.",
+        "Runtime assertion for CPB-FUNC-002.",
+        "Runtime assertion for CPB-FUNC-002.",
+        "Runtime assertion for CPB-FUNC-002."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-002.",
+        "Evidence required to pass CPB-FUNC-002.",
+        "Evidence required to pass CPB-FUNC-002."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-003",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-003",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-003.",
+        "Required implementation behavior for CPB-FUNC-003.",
+        "Required implementation behavior for CPB-FUNC-003.",
+        "Required implementation behavior for CPB-FUNC-003.",
+        "Required implementation behavior for CPB-FUNC-003.",
+        "Required implementation behavior for CPB-FUNC-003."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-003.",
+        "Forbidden implementation pattern for CPB-FUNC-003.",
+        "Forbidden implementation pattern for CPB-FUNC-003.",
+        "Forbidden implementation pattern for CPB-FUNC-003."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-003.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-003.",
+        "Runtime assertion for CPB-FUNC-003.",
+        "Runtime assertion for CPB-FUNC-003.",
+        "Runtime assertion for CPB-FUNC-003."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-003.",
+        "Evidence required to pass CPB-FUNC-003.",
+        "Evidence required to pass CPB-FUNC-003."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-004",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-004",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-004.",
+        "Required implementation behavior for CPB-FUNC-004.",
+        "Required implementation behavior for CPB-FUNC-004.",
+        "Required implementation behavior for CPB-FUNC-004.",
+        "Required implementation behavior for CPB-FUNC-004."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-004.",
+        "Forbidden implementation pattern for CPB-FUNC-004.",
+        "Forbidden implementation pattern for CPB-FUNC-004.",
+        "Forbidden implementation pattern for CPB-FUNC-004."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-004.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-004.",
+        "Runtime assertion for CPB-FUNC-004.",
+        "Runtime assertion for CPB-FUNC-004.",
+        "Runtime assertion for CPB-FUNC-004."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-004.",
+        "Evidence required to pass CPB-FUNC-004.",
+        "Evidence required to pass CPB-FUNC-004.",
+        "Evidence required to pass CPB-FUNC-004."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-005",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-005",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-005.",
+        "Required implementation behavior for CPB-FUNC-005.",
+        "Required implementation behavior for CPB-FUNC-005.",
+        "Required implementation behavior for CPB-FUNC-005.",
+        "Required implementation behavior for CPB-FUNC-005."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-005.",
+        "Forbidden implementation pattern for CPB-FUNC-005.",
+        "Forbidden implementation pattern for CPB-FUNC-005.",
+        "Forbidden implementation pattern for CPB-FUNC-005."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-005.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-005.",
+        "Runtime assertion for CPB-FUNC-005.",
+        "Runtime assertion for CPB-FUNC-005.",
+        "Runtime assertion for CPB-FUNC-005."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-005.",
+        "Evidence required to pass CPB-FUNC-005.",
+        "Evidence required to pass CPB-FUNC-005."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-006",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-006",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-006.",
+        "Required implementation behavior for CPB-FUNC-006.",
+        "Required implementation behavior for CPB-FUNC-006.",
+        "Required implementation behavior for CPB-FUNC-006.",
+        "Required implementation behavior for CPB-FUNC-006."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-006.",
+        "Forbidden implementation pattern for CPB-FUNC-006.",
+        "Forbidden implementation pattern for CPB-FUNC-006.",
+        "Forbidden implementation pattern for CPB-FUNC-006."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-006.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-006.",
+        "Runtime assertion for CPB-FUNC-006.",
+        "Runtime assertion for CPB-FUNC-006.",
+        "Runtime assertion for CPB-FUNC-006."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-006.",
+        "Evidence required to pass CPB-FUNC-006.",
+        "Evidence required to pass CPB-FUNC-006.",
+        "Evidence required to pass CPB-FUNC-006."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-007",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-007",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-007. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-007 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-007.",
+        "Required implementation behavior for CPB-FUNC-007.",
+        "Required implementation behavior for CPB-FUNC-007.",
+        "Required implementation behavior for CPB-FUNC-007.",
+        "Required implementation behavior for CPB-FUNC-007."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-007.",
+        "Forbidden implementation pattern for CPB-FUNC-007.",
+        "Forbidden implementation pattern for CPB-FUNC-007.",
+        "Forbidden implementation pattern for CPB-FUNC-007."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-007.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-007.",
+        "Runtime assertion for CPB-FUNC-007.",
+        "Runtime assertion for CPB-FUNC-007.",
+        "Runtime assertion for CPB-FUNC-007."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-007.",
+        "Evidence required to pass CPB-FUNC-007.",
+        "Evidence required to pass CPB-FUNC-007."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-008",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-008",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-008. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-008 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-008.",
+        "Required implementation behavior for CPB-FUNC-008.",
+        "Required implementation behavior for CPB-FUNC-008.",
+        "Required implementation behavior for CPB-FUNC-008.",
+        "Required implementation behavior for CPB-FUNC-008."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-008.",
+        "Forbidden implementation pattern for CPB-FUNC-008.",
+        "Forbidden implementation pattern for CPB-FUNC-008.",
+        "Forbidden implementation pattern for CPB-FUNC-008."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-008.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-008.",
+        "Runtime assertion for CPB-FUNC-008.",
+        "Runtime assertion for CPB-FUNC-008.",
+        "Runtime assertion for CPB-FUNC-008."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-008.",
+        "Evidence required to pass CPB-FUNC-008.",
+        "Evidence required to pass CPB-FUNC-008.",
+        "Evidence required to pass CPB-FUNC-008."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-009",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-009",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-009. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-009 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-009.",
+        "Required implementation behavior for CPB-FUNC-009.",
+        "Required implementation behavior for CPB-FUNC-009.",
+        "Required implementation behavior for CPB-FUNC-009.",
+        "Required implementation behavior for CPB-FUNC-009."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-009.",
+        "Forbidden implementation pattern for CPB-FUNC-009.",
+        "Forbidden implementation pattern for CPB-FUNC-009.",
+        "Forbidden implementation pattern for CPB-FUNC-009."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-009.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-009.",
+        "Runtime assertion for CPB-FUNC-009.",
+        "Runtime assertion for CPB-FUNC-009.",
+        "Runtime assertion for CPB-FUNC-009."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-009.",
+        "Evidence required to pass CPB-FUNC-009.",
+        "Evidence required to pass CPB-FUNC-009."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-010",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-010",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-010. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-010 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-010.",
+        "Required implementation behavior for CPB-FUNC-010.",
+        "Required implementation behavior for CPB-FUNC-010.",
+        "Required implementation behavior for CPB-FUNC-010.",
+        "Required implementation behavior for CPB-FUNC-010."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-010.",
+        "Forbidden implementation pattern for CPB-FUNC-010.",
+        "Forbidden implementation pattern for CPB-FUNC-010.",
+        "Forbidden implementation pattern for CPB-FUNC-010."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-010.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-010.",
+        "Runtime assertion for CPB-FUNC-010.",
+        "Runtime assertion for CPB-FUNC-010.",
+        "Runtime assertion for CPB-FUNC-010."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-010.",
+        "Evidence required to pass CPB-FUNC-010.",
+        "Evidence required to pass CPB-FUNC-010."
+      ]
+    }
+  },
+  {
+    "case_id": "CPB-FUNC-011",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CPB-FUNC-011",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CPB-FUNC-011. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CPB-FUNC-011 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CPB-FUNC-011.",
+        "Required implementation behavior for CPB-FUNC-011.",
+        "Required implementation behavior for CPB-FUNC-011.",
+        "Required implementation behavior for CPB-FUNC-011.",
+        "Required implementation behavior for CPB-FUNC-011."
+      ],
+      "should_reuse_resources": "./references/component-page-building-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CPB-FUNC-011.",
+        "Forbidden implementation pattern for CPB-FUNC-011.",
+        "Forbidden implementation pattern for CPB-FUNC-011.",
+        "Forbidden implementation pattern for CPB-FUNC-011."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CPB-FUNC-011.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CPB-FUNC-011.",
+        "Runtime assertion for CPB-FUNC-011.",
+        "Runtime assertion for CPB-FUNC-011.",
+        "Runtime assertion for CPB-FUNC-011."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CPB-FUNC-011.",
+        "Evidence required to pass CPB-FUNC-011.",
+        "Evidence required to pass CPB-FUNC-011."
+      ]
+    }
+  }
+]

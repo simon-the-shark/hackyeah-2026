@@ -1,0 +1,293 @@
+[
+  {
+    "case_id": "SMOKE-CR-001",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-001",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-002",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-002",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-05"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-003",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-003",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-004",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-004",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-07",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-005",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-005",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-07",
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-006",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-006",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-02",
+        "ARKUI-07"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-007",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-007",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-007. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-007 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-01"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-008",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-008",
+    "phase": "REQ",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-008. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-008 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "REQ",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "device_constraints",
+        "capability_boundary",
+        "acceptance_focus"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-009",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-009",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-009. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-009 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/compilation-runtime-scenario-development.md",
+        "./references/animation-transitions-scenario-development/"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    }
+  },
+  {
+    "case_id": "SMOKE-CR-010",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CR-010",
+    "phase": "VAL",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CR-010. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CR-010 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "VAL",
+      "primary_scene": "ARKUI-06",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": null,
+      "next_scene_refs": "./references/compilation-runtime-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "verification_matrix",
+        "evidence_requirements",
+        "pass_criteria",
+        "residual_risks"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    }
+  }
+]

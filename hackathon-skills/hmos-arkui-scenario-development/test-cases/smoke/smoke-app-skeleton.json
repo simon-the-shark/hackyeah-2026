@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "SMOKE-AS-01",
+    "layer": "smoke",
+    "title": "Category app foundation skeleton: Navigation, breakpoints, and Tabs",
+    "phase": "DEV",
+    "user_prompt": "Build a category app for news or commerce. Use Navigation as the root container and manage the page stack. Use WidthBreakpoint and HeightBreakpoint for multi-device adaptation: a bottom single-column TabBar on phones, side navigation with two or three columns on tablets, breakpoint-based List lane and GridRow column counts, and compact, aggregated, or multi-row search layouts by device form. Output a complete development plan.",
+    "intent": "Verify that the category app foundation skeleton consistently routes to ARKUI-11, covering the Navigation, breakpoint, and Tabs page skeleton scenario.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-11",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-16"
+      ],
+      "next_scene_refs": [
+        "./references/app-skeleton-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-09"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-AS-02",
+    "layer": "smoke",
+    "title": "Map navigation composite page: Stack, floating panels, and drawer",
+    "phase": "DEV",
+    "user_prompt": "Build a map navigation page using Stack as the root container. The full-screen map supports one-finger panning and two-finger zooming, with a frosted floating navigation bar at the top, zoom/layer/location controls at the bottom right, and a bottom drawer with a drag handle and three snap heights. Each overlay uses independent state and respects the safe area. Output a complete development plan.",
+    "intent": "Verify that the map navigation composite page consistently routes to ARKUI-11, covering the Stack, floating panel, and drawer scenario.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-11",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-16"
+      ],
+      "next_scene_refs": [
+        "./references/app-skeleton-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-09"
+      ]
+    }
+  }
+]

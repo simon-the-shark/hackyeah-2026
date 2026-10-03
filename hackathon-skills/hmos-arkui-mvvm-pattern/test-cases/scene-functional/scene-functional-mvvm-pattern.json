@@ -1,0 +1,25 @@
+[
+  {
+    "case_id": "MVVM-FUNC-001",
+    "layer": "scene-functional",
+    "title": "V1 bookshelf MVVM implementation validation",
+    "phase": "DEV",
+    "user_prompt": "Build a bookshelf page with book name, author, reading progress, favorite state, single and bulk favorite actions, progress updates, and a favorite count. Load data from rawfile JSON and separate Model, ViewModel, and View.",
+    "intent": "Validate MVVM-01 with @Observed, @Track, an observed Array subclass, @State, @Link, @ObjectLink, ForEach, and stateless shared components.",
+    "expected": {"primary_phase": "DEV", "primary_scene": "MVVM-01", "secondary_scenes": [], "next_scene_refs": ["./SKILL.md"], "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"], "forbidden_scenes": ["MVVM-02"]},
+    "solution_contract": {"must_cover": ["Use the V1 decorator set and do not mix V2 decorators.", "Use ordinary Model classes for raw data and JSON loading.", "Use @Observed and @Track ViewModels with toggleFavorite() and addReadingProgress().", "Use an @Observed Array subclass for observable push and splice.", "Keep ViewModel conversion and business logic out of the View.", "Use @State for the page, @Link and @ObjectLink for business components, and ForEach for the list.", "Use a stateless shared favorite-count component.", "Do not import Model types into the View."], "should_reuse_resources": ["./references/mvvm-scenario-development_V1.md", "./assets/V1MVVM", "./SKILL.md"], "forbidden_patterns": ["Mixing V1 and V2 decorators.", "Direct View access to Model types.", "Non-observable array mutations.", "A getter in an @Observed V1 class with @Track properties.", "Direct View data mutation instead of ViewModel methods."]},
+    "execution_contract": {"execution_type": "harmonyos_project", "target_project_type": "HarmonyOS NEXT Stage/ArkTS project", "compile_command_template": "./hvigorw assembleHap", "test_command_template": "./hvigorw test", "runtime_assertions": ["The bookshelf loads from rawfile JSON.", "Favorite and progress actions update the corresponding UI.", "Bulk favorite uses two-way V1 binding.", "Observable array mutations update the list.", "The View does not access Model types."], "pass_evidence": ["Successful build log", "Initial bookshelf screenshot", "Favorite and progress screenshot", "Bulk action screenshot", "Layered directory screenshot"]}
+  },
+  {
+    "case_id": "MVVM-FUNC-002",
+    "layer": "scene-functional",
+    "title": "V2 expense-record MVVM implementation validation",
+    "phase": "DEV",
+    "title_alias": "V2 expense-record MVVM implementation validation",
+    "user_prompt": "Build an expense-record page with totals, add and delete actions, rawfile JSON loading, PersistenceV2 restoration, computed totals, @Param read-only data, @Event callbacks, and Repeat rendering.",
+    "intent": "Validate MVVM-02 with @ObservedV2, @Trace, @Computed, @Param, @Event, @Local, @Type, PersistenceV2.connect, and Repeat.",
+    "expected": {"primary_phase": "DEV", "primary_scene": "MVVM-02", "secondary_scenes": [], "next_scene_refs": ["./SKILL.md"], "required_output_fields": ["active_phases", "primary_phase", "primary_scene", "secondary_scenes", "route_reason", "next_scene_refs", "code_touchpoints", "reuse_resources", "implementation_notes", "integration_risks"], "forbidden_scenes": ["MVVM-01"]},
+    "solution_contract": {"must_cover": ["Use only the V2 decorator set.", "Use ordinary Model classes for raw data and JSON loading.", "Use @ObservedV2 and @Trace ViewModels.", "Use @Type for nested PersistenceV2 serialization.", "Use PersistenceV2.connect and load defaults only when persisted data is empty.", "Use @Computed for totals, @Param and @Event for strict one-way data flow, and Repeat for the list.", "Do not import Model types into the View."], "should_reuse_resources": ["./references/mvvm-scenario-development_V2.md", "./assets/V2MVVM", "./SKILL.md"], "forbidden_patterns": ["Mixing V1 decorators.", "Subclassing arrays in V2.", "Direct ViewModel mutation from child Views.", "Missing PersistenceV2 or @Type.", "Manual storage of computed totals.", "Using ForEach instead of Repeat."]},
+    "execution_contract": {"execution_type": "harmonyos_project", "target_project_type": "HarmonyOS NEXT Stage/ArkTS project", "compile_command_template": "./hvigorw assembleHap", "test_command_template": "./hvigorw test", "runtime_assertions": ["Expense records load from rawfile JSON.", "Computed totals update after additions and deletions.", "Repeat updates changed items efficiently.", "PersistenceV2 restores data after restart.", "The View does not access Model types."], "pass_evidence": ["Successful build log", "Initial expense screenshot", "Add/delete screenshot", "Restart restoration screenshot", "Layered directory screenshot"]}
+  }
+]

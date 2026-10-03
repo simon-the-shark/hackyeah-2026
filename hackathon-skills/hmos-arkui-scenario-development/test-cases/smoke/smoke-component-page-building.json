@@ -1,0 +1,313 @@
+[
+  {
+    "case_id": "SMOKE-CPB-01",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-01",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-01. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-01 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-02",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-02",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-02. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-02 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-16"
+      ],
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-03",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-03",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-03. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-03 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-04",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-04",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-04. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-04 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-05",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-05",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-05. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-05 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-06",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-06",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-06. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-06 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-07",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-07",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-07. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-07 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-08",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-08",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-08. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-08 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-09",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-09",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-09. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-09 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-10",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-10",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-10. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-10 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-14",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  },
+  {
+    "case_id": "SMOKE-CPB-11",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-CPB-11",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-CPB-11. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-CPB-11 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-16",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": "./references/component-page-building-scenario-development.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-11"
+    }
+  }
+]

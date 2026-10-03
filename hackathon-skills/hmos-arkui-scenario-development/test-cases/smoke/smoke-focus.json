@@ -1,0 +1,164 @@
+[
+  {
+    "case_id": "SMOKE-FOCUS-001",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-event.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-FOCUS-002",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-event.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-FOCUS-003",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-003",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-event.md",
+      "next_scene_caps": "SCENE-03",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-FOCUS-004",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-004",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-event.md",
+      "next_scene_caps": "SCENE-04",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-FOCUS-005",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-005",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-move.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-FOCUS-006",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-FOCUS-006",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-FOCUS-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-FOCUS-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-10",
+      "next_scene_refs": "references/arkui-focus/focus-move.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  }
+]

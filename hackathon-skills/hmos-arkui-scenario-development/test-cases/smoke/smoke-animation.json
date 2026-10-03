@@ -1,0 +1,1217 @@
+[
+  {
+    "case_id": "SMOKE-ANIM-01",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-01",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-01. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-01 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-02",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-02",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-02. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-02 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-03",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-03",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-03. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-03 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-03",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-04",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-04",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-04. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-04 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-05",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-05",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-05. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-05 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-06",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-06",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-06. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-06 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-07",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-07",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-07. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-07 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-08",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-08",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-08. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-08 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-09",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-09",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-09. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-09 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-03"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-10",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-10",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-10. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-10 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-03"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-11",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-11",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-11. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-11 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-12",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-12",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-12. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-12 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-13",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-13",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-13. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-13 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07",
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-14",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-14",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-14. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-14 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-15",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-15",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-15. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-15 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-02",
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-16",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-16",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-16. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-16 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-02",
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-17",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-17",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-17. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-17 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-18",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-18",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-18. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-18 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-19",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-19",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-19. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-19 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-20",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-20",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-20. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-20 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-21",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-21",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-21. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-21 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-22",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-22",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-22. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-22 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-23",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-23",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-23. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-23 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-24",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-24",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-24. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-24 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-25",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-25",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-25. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-25 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-26",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-26",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-26. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-26 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-08"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-27",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-27",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-27. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-27 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-28",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-28",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-28. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-28 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-05",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-29",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-29",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-29. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-29 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-30",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-30",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-30. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-30 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-31",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-31",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-31. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-31 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-32",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-32",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-32. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-32 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-33",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-33",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-33. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-33 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-34",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-34",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-34. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-34 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-35",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-35",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-35. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-35 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  },
+  {
+    "case_id": "SMOKE-ANIM-36",
+    "layer": "smoke",
+    "title": "ArkUI animation scenario SMOKE-ANIM-36",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the ArkUI animation scenario represented by SMOKE-ANIM-36. Preserve the animation behavior, interaction flow, state transitions, timing, layout, API usage, and verification requirements encoded by this test case. Output a complete development plan.",
+    "intent": "Verify that SMOKE-ANIM-36 routes to the expected ArkUI animation scene and preserves its API, interaction, state, timing, layout, and validation constraints.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-09",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": [
+        "ARKUI-02",
+        "ARKUI-07"
+      ],
+      "next_scene_refs": [
+        "./SKILL.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-08"
+      ]
+    }
+  }
+]

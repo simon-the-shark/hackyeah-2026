@@ -1,0 +1,545 @@
+[
+  {
+    "case_id": "SMOKE-GESTURE-001",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-02",
+        "ARKUI-08"
+      ],
+      "next_scene_refs": "references/arkui-interaction/gesture-bind.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-002",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-bind.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-003",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-003",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-type.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-004",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-004",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-type.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-005",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-005",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-type.md",
+      "next_scene_caps": "SCENE-03",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-006",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-006",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-type.md",
+      "next_scene_caps": "SCENE-04",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-007",
+    "layer": "smoke",
+    "title": "GestureGroup(Sequence)",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-007. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-007 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-group.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-008",
+    "layer": "smoke",
+    "title": "GestureGroup(Parallel)",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-008. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-008 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-group.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-009",
+    "layer": "smoke",
+    "title": "GestureGroup(Exclusive)",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-009. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-009 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-group.md",
+      "next_scene_caps": "SCENE-03",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-010",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-010",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-010. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-010 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-01",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-011",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-011",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-011. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-011 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-02",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-012",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-012",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-012. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-012 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-03",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-013",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-013",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-013. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-013 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-04",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-014",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-014",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-014. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-014 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-05",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-015",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-015",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-015. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-015 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-06",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-016",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-016",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-016. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-016 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "FIX",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-07",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-017",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-017",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-017. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-017 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "FIX",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-08",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-018",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-018",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-018. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-018 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-09",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-019",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-019",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-019. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-019 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-10",
+      "forbidden_scenes": null
+    }
+  },
+  {
+    "case_id": "SMOKE-GESTURE-020",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-GESTURE-020",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-GESTURE-020. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-GESTURE-020 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "allowed_tools": "Read",
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for the selected route",
+      "next_scene_refs": "list[str] relative paths of the next scene documents",
+      "next_scene_caps": "list[str] secondary capability IDs defined by the referenced documents",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges with from, to, and edge fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": "ARKUI-02",
+      "next_scene_refs": "references/arkui-interaction/gesture-control.md",
+      "next_scene_caps": "SCENE-11",
+      "forbidden_scenes": null
+    }
+  }
+]

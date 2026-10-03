@@ -1,0 +1,210 @@
+{
+  "enum": [
+    "enumeration",
+    "enumerations",
+    "const enum",
+    "enum value",
+    "enum member"
+  ],
+  "class": [
+    "classes",
+    "constructor",
+    "inheritance",
+    "property",
+    "properties",
+    "method",
+    "methods"
+  ],
+  "interface": [
+    "interfaces",
+    "structural typing"
+  ],
+  "generic": [
+    "generics",
+    "type parameter",
+    "generic constraint"
+  ],
+  "type-casting": [
+    "cast",
+    "type cast",
+    "as keyword",
+    "assertion",
+    "narrowing"
+  ],
+  "function": [
+    "functions",
+    "rest parameter",
+    "arrow function",
+    "callback"
+  ],
+  "collection": [
+    "array",
+    "set",
+    "map",
+    "collection types",
+    "container"
+  ],
+  "string": [
+    "strings",
+    "template string"
+  ],
+  "error-handling": [
+    "throw",
+    "try catch",
+    "error",
+    "exception"
+  ],
+  "json": [
+    "json parse",
+    "json stringify"
+  ],
+  "xml": [
+    "xml parsing",
+    "xml generation",
+    "xml conversion"
+  ],
+  "buffer": [
+    "arraybuffer",
+    "fastbuffer",
+    "uint8array"
+  ],
+  "collections": [
+    "@arkts.collections",
+    "array",
+    "map",
+    "set",
+    "typedarray",
+    "bitvector"
+  ],
+  "taskpool": [
+    "task pool",
+    "taskgroup",
+    "task group"
+  ],
+  "worker": [
+    "workers",
+    "mainthread",
+    "main thread",
+    "postmessage"
+  ],
+  "api-reference": [
+    "@kit.arkts",
+    "@ohos",
+    "Import module",
+    "parameter",
+    "return value",
+    "error code",
+    "System capabilities"
+  ],
+  "sendable": [
+    "@sendable",
+    "sendable object",
+    "sendable class"
+  ],
+  "runtime": [
+    "dynamic import",
+    "lazy import",
+    "module side effects",
+    "native module"
+  ],
+  "toolchain": [
+    "es2abc",
+    "abc",
+    "bytecode",
+    "obfuscation",
+    "arkoptions"
+  ],
+  "migration": [
+    "typescript to arkts",
+    "swift to arkts",
+    "java to arkts"
+  ],
+  "validation": [
+    "snippet",
+    "compile",
+    "syntax check",
+    "run result",
+    "verify"
+  ],
+  "debugging": [
+    "debug",
+    "diagnostic",
+    "diagnostics",
+    "error message"
+  ],
+  "linter": [
+    "lint",
+    "linter-cli",
+    "lightweight lint",
+    "lightweight linter",
+    "lightweight lint",
+    "lightweight linter",
+    "Lightweight lint tool",
+    "Lightweight linter tool",
+    "rule",
+    "rules",
+    "constraint",
+    "constraints",
+    "limit",
+    "constraint",
+    "rule"
+  ],
+  "var": [
+    "let instead of var",
+    "arkts-no-var",
+    "disallow var",
+    "Cannot use var",
+    "var declaration"
+  ],
+  "destructuring": [
+    "destructuring declaration",
+    "destructuring",
+    "arkts-no-destruct-decls",
+    "deconstruct",
+    "deconstruction statement",
+    "Destructuring assignment"
+  ],
+  "object-literal": [
+    "object literal",
+    "arkts-no-untyped-obj-literals",
+    "arkts-no-obj-literals-as-types",
+    "object literal",
+    "contextless object literal"
+  ],
+  "sendable-rule": [
+    "sendable constraint",
+    "sendable rule",
+    "shared constraints",
+    "Concurrency constraints",
+    "sendable field"
+  ],
+  "typeof": [
+    "type query",
+    "typeof expression",
+    "forbid_type_query",
+    "type query fail",
+    "typeof"
+  ],
+  "delete": [
+    "forbid_delete",
+    "delete operator",
+    "delete expression",
+    "delete operator"
+  ],
+  "in-operator": [
+    "forbid_in",
+    "in operator",
+    "in expression"
+  ],
+  "lightweight-linter-cli": [
+    "linter-cli",
+    "lightweight lint",
+    "lightweight linter",
+    "single-file lint",
+    "checker diagnostics only",
+    "lightweight lint",
+    "lightweight linter",
+    "Lightweight lint tool",
+    "Lightweight inspection tool"
+  ]
+}

@@ -1,0 +1,41 @@
+# Project Context
+
+## Definition
+- [Product Definition](./product.md)
+- [Product Guidelines](./product-guidelines.md)
+- [Tech Stack](./tech-stack.md)
+
+## Workflow
+- [Workflow](./workflow.md)
+- [ArkTS Style Guide](./code_styleguides/arkts.md)
+- [Code Style Guides](./code_styleguides/)
+
+## Management
+- [Tracks Registry](./tracks.md)
+- [Tracks Directory](./tracks/)
+- [Setup State](./setup_state.json)
+- [State Validator](../../scripts/validate_state.py)
+- [Lint Cache](../../scripts/lint_cache.py)
+- [Phase Sync](../../scripts/sync_phase.py)
+- [Context Cache](../../scripts/context_cache.py)
+- [Evidence Cache](../../scripts/evidence_cache.py)
+- [AI Workflow Record](../../scripts/ai_workflow.py)
+- [Artifact Preparation](../../scripts/prepare_artifacts.py)
+- [Skill Usage Record](../../scripts/record_skill_usage.py)
+- [Failure Record](../../scripts/record_failure.py)
+- [AI Workflow Cleanup](../../scripts/clean_ai_workflow.py)
+- [Verification Gate](../../scripts/verification_gate.py)
+- [State Initialization](../../scripts/initialize_state.py)
+- [Compact Command](../../scripts/compact_command.py)
+- [State Update](../../scripts/state_update.py)
+- [Bootstrap Summary](../../scripts/bootstrap_summary.py)
+- [Execution Authorization](../../scripts/authorize_execution.py)
+- [Boundary Result](../../scripts/record_boundary.py)
+- [Test Consent](../../scripts/record_test_consent.py)
+- [Acceptance Record](../../scripts/record_acceptance.py)
+- [Runtime Evidence](../../scripts/record_runtime_evidence.py)
+- [Scope Change](../../scripts/record_scope_change.py)
+- [Execution Policy](../../references/execution-policy.md)
+- [Context Policy](../../references/context-policy.md)
+- [Agency State Model](../../references/agency-workflow.md)
+- [Ignore Rules](../.geminiignore)

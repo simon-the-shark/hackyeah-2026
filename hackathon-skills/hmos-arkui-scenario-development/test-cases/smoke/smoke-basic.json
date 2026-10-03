@@ -1,0 +1,353 @@
+[
+  {
+    "case_id": "SMOKE-BASIC-001",
+    "layer": "smoke",
+    "title": "Generic dialog with @BuilderParam UI slots",
+    "phase": "DEV",
+    "user_prompt": "Build a reusable dialog component for different dialog types. It has title, content, and footer button sections with default placeholder content and Cancel/Confirm buttons, but each business scenario must be able to customize all three sections. Output an implementation-ready development plan.",
+    "intent": "Verify that the @BuilderParam UI slot case consistently routes to ARKUI-01 and basic-ui.md SCENE-01.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-ui.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-01"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-002",
+    "layer": "smoke",
+    "title": "Component unit encapsulation selection",
+    "phase": "DEV",
+    "user_prompt": "Build a task management page with a task card list. Each card can independently toggle completion and priority (normal, important, urgent). A top-level Mark All Complete switch updates every card, while card changes are aggregated back to the page. A fixed footer contains New, Batch Delete, Sort by Priority, and Export actions, each represented by an icon and label. Output an implementation-ready development plan.",
+    "intent": "Verify that component unit encapsulation selection consistently routes to ARKUI-01 and basic-ui.md SCENE-02.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-ui.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-02"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-003",
+    "layer": "smoke",
+    "title": "Component style reuse",
+    "phase": "DEV",
+    "user_prompt": "Build an e-commerce product card list with repeated styles for the card container, title bar, price, product title, product image, and primary action button. Centralize shared styles so one change updates every use. Some styles are fixed while price, title, image, and button styles vary by card. Explain how to manage and apply both kinds of styles and output an implementation-ready development plan.",
+    "intent": "Verify that component style reuse consistently routes to ARKUI-01 and basic-ui.md SCENE-03.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-ui.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-03"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-004",
+    "layer": "smoke",
+    "title": "Dynamic component factory dispatch",
+    "phase": "DEV",
+    "user_prompt": "Build a news feed containing text-only, single-image, three-image, and video items. The item type comes from a data field and selects the corresponding card style. New card types such as ads or polls should be added in one centralized registry without changing every list consumer. Output an implementation-ready development plan.",
+    "intent": "Verify that dynamic component factory dispatch consistently routes to ARKUI-01 and basic-extension.md SCENE-01.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-extension.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-01"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-005",
+    "layer": "smoke",
+    "title": "Custom layout container",
+    "phase": "DEV",
+    "user_prompt": "Build a two-column masonry image wall like Pinterest. Cards have different heights, and each new card is appended to the currently shorter column to keep both columns visually balanced. The container height follows the taller column and reports its measured height to the parent instead of using a fixed value. Standard rows, columns, and grids cannot provide this shortest-column placement. Output an implementation-ready development plan.",
+    "intent": "Verify that the custom layout container consistently routes to ARKUI-01 and basic-extension.md SCENE-02.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/ROUTE.md",
+        "references/arkui-basic/basic-extension.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-02"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-006",
+    "layer": "smoke",
+    "title": "Single-type list-item scroll reuse",
+    "phase": "DEV",
+    "user_prompt": "Build a news list where every item has the same structure: title, source, publish time, and optionally a thumbnail. Users scroll continuously to load and browse more items. Output an implementation-ready development plan.",
+    "intent": "Verify that single-type list-item scroll reuse consistently routes to ARKUI-01 and basic-reuse.md SCENE-01.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-reuse.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-01"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-007",
+    "layer": "smoke",
+    "title": "Composite list-item reuse",
+    "phase": "DEV",
+    "user_prompt": "Build a multi-type feed with single-image, three-image, and video items. Their header and footer are identical, while the content section differs: one image, three images, or a cover image with a play indicator. Output an implementation-ready development plan.",
+    "intent": "Verify that composite list-item reuse consistently routes to ARKUI-01 and basic-reuse.md SCENE-02.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-reuse.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-02"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-008",
+    "layer": "smoke",
+    "title": "Cross-list global reuse with a manual pool",
+    "phase": "DEV",
+    "user_prompt": "Build a ride-hailing page centered on a map showing the current location, routes, and nearby vehicles. Map initialization is expensive, so warm up the map before entering the page and display it immediately when the page opens. Output an implementation-ready development plan.",
+    "intent": "Verify that cross-list global reuse with a manual pool consistently routes to ARKUI-01 and basic-reuse.md SCENE-03.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-reuse.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-03"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-009",
+    "layer": "smoke",
+    "title": "if-branch visibility and reuse",
+    "phase": "DEV",
+    "user_prompt": "Build a product-detail list where each card has many product photos loaded on demand as it becomes visible. Cards initially show only the title and price. Tapping expands a photo wall for browsing; tapping again collapses it. Previously loaded photos must remain available on re-expansion without duplicate requests, and the interaction must stay smooth. Output an implementation-ready development plan.",
+    "intent": "Verify that if-branch visibility and reuse consistently routes to ARKUI-01 and basic-reuse.md SCENE-05.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-reuse.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-05"
+      ],
+      "forbidden_scenes": []
+    }
+  },
+  {
+    "case_id": "SMOKE-BASIC-010",
+    "layer": "smoke",
+    "title": "Cross-list global reuse pool (reusePool)",
+    "phase": "DEV",
+    "user_prompt": "Build a video app page with channel tabs such as Recommended, TV Series, Movies, Variety, and Animation. Each tab contains video cards with cover image, title, view count, and badges. Reuse video cards across tabs. Output an implementation-ready development plan.",
+    "intent": "Verify that the cross-list global reuse pool consistently routes to ARKUI-01 and basic-reuse.md SCENE-04.",
+    "allowed_tools": [
+      "Read"
+    ],
+    "required_output_fields": {
+      "active_phases": "list[str] currently active phase labels",
+      "primary_phase": "str primary phase label",
+      "active_scenes": "list[str] currently active scene IDs",
+      "route_reason": "str reason for routing to the primary scene",
+      "next_scene_refs": "list[str] relative paths of scene files to open next",
+      "next_scene_caps": "list[str] secondary scene IDs defined inside the referenced documents; read the documents before selecting them, and never use a primary scene ID such as ARKUI-xx",
+      "primary_code_domain": "str primary code location domain",
+      "secondary_code_domains": "list[str] secondary code domains",
+      "integration_edges": "list[dict] integration edges; each item contains from, to, and edge string fields"
+    },
+    "expected": {
+      "primary_phase": "DEV",
+      "active_scenes": [
+        "ARKUI-01"
+      ],
+      "next_scene_refs": [
+        "references/arkui-basic/basic-reuse.md"
+      ],
+      "next_scene_caps": [
+        "SCENE-04"
+      ],
+      "forbidden_scenes": []
+    }
+  }
+]

@@ -1,0 +1,292 @@
+[
+  {
+    "id": "tc_001",
+    "title": "Basic List Display",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["03-layout", "09-rendering"],
+    "query": "Write an ArkTS product list page using List + LazyForEach for lazy loading; each item displays a product image, name, and price",
+    "expected_components": ["List", "LazyForEach", "ListItem", "Image", "Text", "IDataSource"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["List", "LazyForEach", "cachedCount"],
+      "anti_patterns": ["Use ForEach for long lists", "Use index as key"],
+      "mistake_refs": ["Section 6: ForEach/LazyForEach errors"]
+    }
+  },
+  {
+    "id": "tc_002",
+    "title": "Navigation Multi-Page Routing",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["07-navigation", "02-state-management"],
+    "query": "Implement a Navigation framework with home and detail NavDestination pages. The home page has a list; clicking an item navigates to the detail page and passes an itemId parameter",
+    "expected_components": ["Navigation", "NavDestination", "List", "@State", "onItemClick"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["Navigation", "NavDestination", "navDestinationInfo"],
+      "anti_patterns": ["Use router instead of Navigation", "Multiple @Entry pages"],
+      "mistake_refs": ["Section 8: navigation and routing errors", "Section 1: import path and module errors"]
+    }
+  },
+  {
+    "id": "tc_003",
+    "title": "V2 State Management Counter",
+    "complexity": "simple",
+    "mode": "Example output",
+    "category": ["02-state-management"],
+    "query": "Write a counter component with V2 state management, two increment/decrement buttons, and the current count",
+    "expected_components": ["@Local", "Button", "Text", "@ComponentV2"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["@Local", "@ComponentV2"],
+      "anti_patterns": ["Use V1 @State"],
+      "mistake_refs": ["Section 3: mixing V1/V2 state management", "Section 4: decorators used in the wrong position"]
+    }
+  },
+  {
+    "id": "tc_004",
+    "title": "Custom Dialog",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["08-dialog-menu"],
+    "query": "Implement a custom confirmation dialog with a title, description, cancel and confirm buttons, and notify the parent through a callback after confirmation",
+    "expected_components": ["ComponentContent", "promptAction"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["promptAction.openCustomDialog", "ComponentContent"],
+      "anti_patterns": ["Use CustomDialogController", "Use AlertDialog instead of a custom dialog"],
+      "mistake_refs": ["Section 11: use of deprecated APIs", "Section 2: global APIs not called through UIContext"]
+    }
+  },
+  {
+    "id": "tc_005",
+    "title": "Pull-to-Refresh List",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["03-layout", "04-components"],
+    "query": "Implement a list page with pull-to-refresh and load-more behavior, simulate a network request for data, and show a loading state while loading",
+    "expected_components": ["Refresh", "List", "LazyForEach", "@State", "LoadingProgress"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["Refresh", "onRefreshing", "onReachEnd"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_006",
+    "title": "Property Animation and Visibility",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["05-animation"],
+    "query": "Implement a card expand/collapse effect that smoothly expands details on click and collapses on a second click. Use transition for enter and exit animation",
+      "expected_components": ["transition", "animateTo", "@State", "if conditional rendering"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["transition", "animateTo"],
+      "anti_patterns": ["Use animateTo plus manual visibility instead of transition"],
+      "mistake_refs": ["Section 2: global APIs not called through UIContext"]
+    }
+  },
+  {
+    "id": "tc_007",
+    "title": "Tabs",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["03-layout", "02-state-management"],
+    "query": "Implement a bottom Tabs navigation page with Home, Discover, and Me tabs, each with its own title and content area",
+    "expected_components": ["Tabs", "TabContent", "TabBuilder"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["Tabs", "TabContent", "barPosition"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_008",
+    "title": "Waterfall Layout",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["03-layout", "09-rendering"],
+    "query": "Implement a waterfall image browser with WaterFlow, two columns, variable image heights, pull-to-refresh, and load-more support",
+    "expected_components": ["WaterFlow", "FlowItem", "LazyForEach", "Refresh"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["WaterFlow", "FlowItem", "columnsTemplate"],
+      "anti_patterns": ["Simulate a waterfall with Grid"],
+      "mistake_refs": ["Section 6: ForEach/LazyForEach errors"]
+    }
+  },
+  {
+    "id": "tc_009",
+    "title": "Form Input and Validation",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["04-components", "02-state-management"],
+    "query": "Implement a registration form with username, phone number, password, and confirm-password inputs. On submit, validate that the username is nonempty, the phone number has 11 digits, the password has at least 6 characters, and both passwords match. Show red error text below the corresponding input when validation fails",
+    "expected_components": ["TextInput", "@State", "Button", "Text", "Column"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["TextInput", "onChange", "type"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_010",
+    "title": "Gesture Interaction",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["06-interaction", "05-animation"],
+    "query": "Implement an image viewer with pinch-to-zoom, double-tap zoom and restore, and a long-press save menu",
+    "expected_components": ["PinchGesture", "TapGesture", "LongPressGesture", "Image", "scale"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["PinchGesture", "TapGesture", "LongPressGesture", "gesture"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_011",
+    "title": "Dark Mode Adaptation",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["11-theme-style"],
+    "query": "Implement a settings page whose colors all use system resource colors ($r) and automatically adapt to dark mode. Include a switch for toggling dark mode",
+    "expected_components": ["$r", "Toggle", "@State", "Column"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["$r", "sys.color"],
+      "anti_patterns": ["Hard-coded color values"]
+    }
+  },
+  {
+    "id": "tc_012",
+    "title": "Immersive Status Bar",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["16-window"],
+    "query": "Implement an immersive page whose content extends into the status-bar area, with white status-bar text and bottom content kept outside the safe area",
+    "expected_components": ["expandSafeArea", "window", "@Entry"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["expandSafeArea", "setWindowLayoutFullScreen"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_013",
+    "title": "MVVM Architecture Page",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["02-state-management", "04-components"],
+    "query": "Implement a todo page with MVVM architecture. The Model defines the TodoItem data class, the ViewModel manages list data and add/remove operations using V2 state management, and the View displays the list and add button with UI and logic separated into different files",
+    "expected_components": ["@ObservedV2", "@Local", "@ComponentV2", "List", "TextInput", "Button"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["@ObservedV2", "@Local", "@ComponentV2"],
+      "anti_patterns": ["Put all code in one file", "V1 state management"],
+      "mistake_refs": ["Section 3: mixing V1/V2 state management"]
+    }
+  },
+  {
+    "id": "tc_014",
+    "title": "Search Page",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["04-components", "02-state-management", "03-layout"],
+    "query": "Implement a search page: enter a keyword in the top search box to filter the list below in real time. Store search history locally and search automatically when a history term is tapped. Show an empty-state message when there are no results",
+    "expected_components": ["TextInput", "List", "@State", "LazyForEach", "@Builder"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["TextInput", "onChange", "LazyForEach"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_015",
+    "title": "Bottom Sheet BindSheet",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["08-dialog-menu"],
+    "query": "Implement a bottom semi-modal sheet that opens from the bottom on button tap, includes a title, content area, and close button, and supports drag-down dismissal",
+    "expected_components": ["bindSheet", "SheetMode", "@State"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["bindSheet", "showClose", "dragDown"],
+      "anti_patterns": ["Simulate a bottom sheet with CustomDialog"],
+      "mistake_refs": ["Section 11: use of deprecated APIs"]
+    }
+  },
+  {
+    "id": "tc_016",
+    "title": "Custom Builder Component",
+    "complexity": "simple",
+    "mode": "Example output",
+    "category": ["01-basics", "10-extension"],
+    "query": "Use @Builder to wrap a reusable empty-list component that accepts an icon resource, prompt text, and button text, with the button-click callback handled by the parent",
+    "expected_components": ["@Builder", "Image", "Text", "Button"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["@Builder"],
+      "anti_patterns": ["Use @Component instead of @Builder for a pure UI fragment"]
+    }
+  },
+  {
+    "id": "tc_017",
+    "title": "Complex RelativeContainer Layout",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["03-layout"],
+    "query": "Use RelativeContainer to implement a profile header: avatar at top left, settings button at top right, nickname and signature in the center, and a bottom statistics row (followers/following/likes)",
+    "expected_components": ["RelativeContainer", "RelativeContainer.AlignRules", "Image", "Text", "Row"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["RelativeContainer", "alignRules"],
+      "anti_patterns": ["Multiple nested Column/Row containers"]
+    }
+  },
+  {
+    "id": "tc_018",
+    "title": "Shared State Across Components",
+    "complexity": "complex",
+    "mode": "Example output",
+    "category": ["02-state-management"],
+    "query": "Use V2 state management to share the cart count across components. The page has three independent components: a product list (add to cart), a bottom cart bar (show count and total), and a floating cart button (show badge count); all share the same cart data",
+    "expected_components": ["@Provider", "@Consumer", "@ObservedV2", "@Trace", "@ComponentV2"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["@Provider", "@Consumer", "@Trace"],
+      "anti_patterns": ["Share through AppStorage", "V1 @Provide/@Consume"],
+      "mistake_refs": ["Section 3: mixing V1/V2 state management"]
+    }
+  },
+  {
+    "id": "tc_019",
+    "title": "Page Transition Animation",
+    "complexity": "medium",
+    "mode": "Example output",
+    "category": ["05-animation", "07-navigation"],
+    "query": "Implement a custom page transition in Navigation: the new page slides in from the right on push, and the current page slides right on pop",
+    "expected_components": ["Navigation", "NavDestination", "customNavContentTransition"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["customNavContentTransition", "NavigationAnimatedTransition"],
+      "anti_patterns": []
+    }
+  },
+  {
+    "id": "tc_020",
+    "title": "Comprehensive Store Home Page",
+    "complexity": "complex",
+    "mode": "Context execution",
+    "category": ["03-layout", "04-components", "02-state-management", "07-navigation"],
+    "query": "Implement a store home page containing, from top to bottom: a search bar, carousel (Swiper), shortcut grid (two rows of four circular icon entries), flash-sale countdown block (hours, minutes, seconds), and product-recommendation waterfall. Use V2 state management and split complex components with @Builder",
+    "expected_components": ["Swiper", "WaterFlow", "@Local", "@ComponentV2", "@Builder", "TextInput", "Text", "Column", "Row"],
+    "verification": {
+      "must_compile": true,
+      "key_apis": ["Swiper", "WaterFlow", "@Local", "@ComponentV2", "@Builder"],
+      "anti_patterns": ["Put all code in build", "Use ForEach for long lists", "V1 state management"],
+      "mistake_refs": ["Section 3: mixing V1/V2 state management", "Section 5: invalid operations inside build()", "Section 6: ForEach/LazyForEach errors"]
+    }
+  }
+]

@@ -1,0 +1,1235 @@
+[
+  {
+    "case_id": "GESTURE-FUNC-001",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-08",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-bind.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001.",
+        "Required implementation behavior for GESTURE-FUNC-001."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-bind.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-001.",
+        "Forbidden implementation pattern for GESTURE-FUNC-001.",
+        "Forbidden implementation pattern for GESTURE-FUNC-001."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-001.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-001.",
+        "Runtime assertion for GESTURE-FUNC-001.",
+        "Runtime assertion for GESTURE-FUNC-001.",
+        "Runtime assertion for GESTURE-FUNC-001."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-001.",
+        "Evidence required to pass GESTURE-FUNC-001.",
+        "Evidence required to pass GESTURE-FUNC-001.",
+        "Evidence required to pass GESTURE-FUNC-001.",
+        "Evidence required to pass GESTURE-FUNC-001."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-002",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-08",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-bind.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-002.",
+        "Required implementation behavior for GESTURE-FUNC-002.",
+        "Required implementation behavior for GESTURE-FUNC-002.",
+        "Required implementation behavior for GESTURE-FUNC-002.",
+        "Required implementation behavior for GESTURE-FUNC-002."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-bind.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-002.",
+        "Forbidden implementation pattern for GESTURE-FUNC-002.",
+        "Forbidden implementation pattern for GESTURE-FUNC-002."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-002.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-002.",
+        "Runtime assertion for GESTURE-FUNC-002.",
+        "Runtime assertion for GESTURE-FUNC-002.",
+        "Runtime assertion for GESTURE-FUNC-002."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-002.",
+        "Evidence required to pass GESTURE-FUNC-002.",
+        "Evidence required to pass GESTURE-FUNC-002.",
+        "Evidence required to pass GESTURE-FUNC-002."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-003",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-003",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-type.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-003.",
+        "Required implementation behavior for GESTURE-FUNC-003.",
+        "Required implementation behavior for GESTURE-FUNC-003.",
+        "Required implementation behavior for GESTURE-FUNC-003."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-type.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-003.",
+        "Forbidden implementation pattern for GESTURE-FUNC-003.",
+        "Forbidden implementation pattern for GESTURE-FUNC-003."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-003.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-003.",
+        "Runtime assertion for GESTURE-FUNC-003.",
+        "Runtime assertion for GESTURE-FUNC-003."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-003.",
+        "Evidence required to pass GESTURE-FUNC-003.",
+        "Evidence required to pass GESTURE-FUNC-003."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-004",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-004",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-type.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-004.",
+        "Required implementation behavior for GESTURE-FUNC-004.",
+        "Required implementation behavior for GESTURE-FUNC-004.",
+        "Required implementation behavior for GESTURE-FUNC-004.",
+        "Required implementation behavior for GESTURE-FUNC-004."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-type.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-004.",
+        "Forbidden implementation pattern for GESTURE-FUNC-004.",
+        "Forbidden implementation pattern for GESTURE-FUNC-004."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-004.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-004.",
+        "Runtime assertion for GESTURE-FUNC-004.",
+        "Runtime assertion for GESTURE-FUNC-004."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-004.",
+        "Evidence required to pass GESTURE-FUNC-004.",
+        "Evidence required to pass GESTURE-FUNC-004."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-005",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-005",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-type.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-005.",
+        "Required implementation behavior for GESTURE-FUNC-005.",
+        "Required implementation behavior for GESTURE-FUNC-005.",
+        "Required implementation behavior for GESTURE-FUNC-005.",
+        "Required implementation behavior for GESTURE-FUNC-005."
+      ],
+      "should_reuse_resources": [
+        "./references/arkui-interaction/gesture-type.md",
+        "./references/arkui-interaction/gesture-group.md"
+      ],
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-005.",
+        "Forbidden implementation pattern for GESTURE-FUNC-005.",
+        "Forbidden implementation pattern for GESTURE-FUNC-005.",
+        "Forbidden implementation pattern for GESTURE-FUNC-005."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-005.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-005.",
+        "Runtime assertion for GESTURE-FUNC-005.",
+        "Runtime assertion for GESTURE-FUNC-005.",
+        "Runtime assertion for GESTURE-FUNC-005."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-005.",
+        "Evidence required to pass GESTURE-FUNC-005.",
+        "Evidence required to pass GESTURE-FUNC-005."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-006",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-006",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-006. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-006 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-type.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-006.",
+        "Required implementation behavior for GESTURE-FUNC-006.",
+        "Required implementation behavior for GESTURE-FUNC-006.",
+        "Required implementation behavior for GESTURE-FUNC-006."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-type.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-006.",
+        "Forbidden implementation pattern for GESTURE-FUNC-006.",
+        "Forbidden implementation pattern for GESTURE-FUNC-006.",
+        "Forbidden implementation pattern for GESTURE-FUNC-006."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-006.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-006.",
+        "Runtime assertion for GESTURE-FUNC-006.",
+        "Runtime assertion for GESTURE-FUNC-006."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-006.",
+        "Evidence required to pass GESTURE-FUNC-006.",
+        "Evidence required to pass GESTURE-FUNC-006."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-007",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-007",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-007. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-007 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-group.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-007.",
+        "Required implementation behavior for GESTURE-FUNC-007.",
+        "Required implementation behavior for GESTURE-FUNC-007.",
+        "Required implementation behavior for GESTURE-FUNC-007."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-group.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-007.",
+        "Forbidden implementation pattern for GESTURE-FUNC-007.",
+        "Forbidden implementation pattern for GESTURE-FUNC-007."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-007.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-007.",
+        "Runtime assertion for GESTURE-FUNC-007.",
+        "Runtime assertion for GESTURE-FUNC-007."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-007.",
+        "Evidence required to pass GESTURE-FUNC-007.",
+        "Evidence required to pass GESTURE-FUNC-007."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-008",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-008",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-008. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-008 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-09",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-group.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-10"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-008.",
+        "Required implementation behavior for GESTURE-FUNC-008.",
+        "Required implementation behavior for GESTURE-FUNC-008.",
+        "Required implementation behavior for GESTURE-FUNC-008."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-group.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-008.",
+        "Forbidden implementation pattern for GESTURE-FUNC-008.",
+        "Forbidden implementation pattern for GESTURE-FUNC-008."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-008.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-008.",
+        "Runtime assertion for GESTURE-FUNC-008.",
+        "Runtime assertion for GESTURE-FUNC-008."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-008.",
+        "Evidence required to pass GESTURE-FUNC-008.",
+        "Evidence required to pass GESTURE-FUNC-008."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-009",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-009",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-009. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-009 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": null,
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-group.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-009.",
+        "Required implementation behavior for GESTURE-FUNC-009.",
+        "Required implementation behavior for GESTURE-FUNC-009.",
+        "Required implementation behavior for GESTURE-FUNC-009."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-group.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-009.",
+        "Forbidden implementation pattern for GESTURE-FUNC-009.",
+        "Forbidden implementation pattern for GESTURE-FUNC-009."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-009.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-009.",
+        "Runtime assertion for GESTURE-FUNC-009.",
+        "Runtime assertion for GESTURE-FUNC-009."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-009.",
+        "Evidence required to pass GESTURE-FUNC-009.",
+        "Evidence required to pass GESTURE-FUNC-009."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-010",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-010",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-010. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-010 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-010.",
+        "Required implementation behavior for GESTURE-FUNC-010.",
+        "Required implementation behavior for GESTURE-FUNC-010."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-010.",
+        "Forbidden implementation pattern for GESTURE-FUNC-010.",
+        "Forbidden implementation pattern for GESTURE-FUNC-010."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-010.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-010.",
+        "Runtime assertion for GESTURE-FUNC-010.",
+        "Runtime assertion for GESTURE-FUNC-010."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-010.",
+        "Evidence required to pass GESTURE-FUNC-010.",
+        "Evidence required to pass GESTURE-FUNC-010."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-011",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-011",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-011. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-011 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-011.",
+        "Required implementation behavior for GESTURE-FUNC-011.",
+        "Required implementation behavior for GESTURE-FUNC-011.",
+        "Required implementation behavior for GESTURE-FUNC-011.",
+        "Required implementation behavior for GESTURE-FUNC-011."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-011.",
+        "Forbidden implementation pattern for GESTURE-FUNC-011.",
+        "Forbidden implementation pattern for GESTURE-FUNC-011.",
+        "Forbidden implementation pattern for GESTURE-FUNC-011."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-011.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-011.",
+        "Runtime assertion for GESTURE-FUNC-011.",
+        "Runtime assertion for GESTURE-FUNC-011.",
+        "Runtime assertion for GESTURE-FUNC-011."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-011.",
+        "Evidence required to pass GESTURE-FUNC-011.",
+        "Evidence required to pass GESTURE-FUNC-011.",
+        "Evidence required to pass GESTURE-FUNC-011."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-012",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-012",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-012. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-012 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-012.",
+        "Required implementation behavior for GESTURE-FUNC-012.",
+        "Required implementation behavior for GESTURE-FUNC-012."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-012.",
+        "Forbidden implementation pattern for GESTURE-FUNC-012."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-012.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-012.",
+        "Runtime assertion for GESTURE-FUNC-012."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-012.",
+        "Evidence required to pass GESTURE-FUNC-012.",
+        "Evidence required to pass GESTURE-FUNC-012."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-013",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-013",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-013. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-013 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-013.",
+        "Required implementation behavior for GESTURE-FUNC-013.",
+        "Required implementation behavior for GESTURE-FUNC-013.",
+        "Required implementation behavior for GESTURE-FUNC-013.",
+        "Required implementation behavior for GESTURE-FUNC-013."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-013.",
+        "Forbidden implementation pattern for GESTURE-FUNC-013.",
+        "Forbidden implementation pattern for GESTURE-FUNC-013."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-013.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-013.",
+        "Runtime assertion for GESTURE-FUNC-013.",
+        "Runtime assertion for GESTURE-FUNC-013."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-013.",
+        "Evidence required to pass GESTURE-FUNC-013.",
+        "Evidence required to pass GESTURE-FUNC-013."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-014",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-014",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-014. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-014 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-014.",
+        "Required implementation behavior for GESTURE-FUNC-014.",
+        "Required implementation behavior for GESTURE-FUNC-014.",
+        "Required implementation behavior for GESTURE-FUNC-014.",
+        "Required implementation behavior for GESTURE-FUNC-014."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-014.",
+        "Forbidden implementation pattern for GESTURE-FUNC-014.",
+        "Forbidden implementation pattern for GESTURE-FUNC-014.",
+        "Forbidden implementation pattern for GESTURE-FUNC-014."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-014.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-014.",
+        "Runtime assertion for GESTURE-FUNC-014.",
+        "Runtime assertion for GESTURE-FUNC-014."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-014.",
+        "Evidence required to pass GESTURE-FUNC-014.",
+        "Evidence required to pass GESTURE-FUNC-014."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-015",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-015",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-015. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-015 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-layer"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-015.",
+        "Required implementation behavior for GESTURE-FUNC-015.",
+        "Required implementation behavior for GESTURE-FUNC-015.",
+        "Required implementation behavior for GESTURE-FUNC-015.",
+        "Required implementation behavior for GESTURE-FUNC-015.",
+        "Required implementation behavior for GESTURE-FUNC-015."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-layer",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-015.",
+        "Forbidden implementation pattern for GESTURE-FUNC-015.",
+        "Forbidden implementation pattern for GESTURE-FUNC-015.",
+        "Forbidden implementation pattern for GESTURE-FUNC-015.",
+        "Forbidden implementation pattern for GESTURE-FUNC-015."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-015.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-015.",
+        "Runtime assertion for GESTURE-FUNC-015.",
+        "Runtime assertion for GESTURE-FUNC-015.",
+        "Runtime assertion for GESTURE-FUNC-015."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-015.",
+        "Evidence required to pass GESTURE-FUNC-015.",
+        "Evidence required to pass GESTURE-FUNC-015.",
+        "Evidence required to pass GESTURE-FUNC-015."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-016",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-016",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-016. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-016 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": null,
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-016.",
+        "Required implementation behavior for GESTURE-FUNC-016.",
+        "Required implementation behavior for GESTURE-FUNC-016.",
+        "Required implementation behavior for GESTURE-FUNC-016."
+      ],
+      "should_reuse_resources": [
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict",
+        "./references/arkui-interaction/gesture-bind.md"
+      ],
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-016.",
+        "Forbidden implementation pattern for GESTURE-FUNC-016.",
+        "Forbidden implementation pattern for GESTURE-FUNC-016."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-016.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-016.",
+        "Runtime assertion for GESTURE-FUNC-016.",
+        "Runtime assertion for GESTURE-FUNC-016."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-016.",
+        "Evidence required to pass GESTURE-FUNC-016.",
+        "Evidence required to pass GESTURE-FUNC-016."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-017",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-017",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-017. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-017 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": null,
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-017.",
+        "Required implementation behavior for GESTURE-FUNC-017.",
+        "Required implementation behavior for GESTURE-FUNC-017."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-conflict",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-017.",
+        "Forbidden implementation pattern for GESTURE-FUNC-017.",
+        "Forbidden implementation pattern for GESTURE-FUNC-017."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-017.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-017.",
+        "Runtime assertion for GESTURE-FUNC-017.",
+        "Runtime assertion for GESTURE-FUNC-017."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-017.",
+        "Evidence required to pass GESTURE-FUNC-017.",
+        "Evidence required to pass GESTURE-FUNC-017."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-018",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-018",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-018. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-018 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": null,
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-018.",
+        "Required implementation behavior for GESTURE-FUNC-018.",
+        "Required implementation behavior for GESTURE-FUNC-018.",
+        "Required implementation behavior for GESTURE-FUNC-018."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-conflict",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-018.",
+        "Forbidden implementation pattern for GESTURE-FUNC-018.",
+        "Forbidden implementation pattern for GESTURE-FUNC-018."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-018.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-018.",
+        "Runtime assertion for GESTURE-FUNC-018.",
+        "Runtime assertion for GESTURE-FUNC-018."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-018.",
+        "Evidence required to pass GESTURE-FUNC-018.",
+        "Evidence required to pass GESTURE-FUNC-018."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-019",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-019",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-019. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-019 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-019.",
+        "Required implementation behavior for GESTURE-FUNC-019.",
+        "Required implementation behavior for GESTURE-FUNC-019.",
+        "Required implementation behavior for GESTURE-FUNC-019.",
+        "Required implementation behavior for GESTURE-FUNC-019."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-conflict",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-019.",
+        "Forbidden implementation pattern for GESTURE-FUNC-019.",
+        "Forbidden implementation pattern for GESTURE-FUNC-019.",
+        "Forbidden implementation pattern for GESTURE-FUNC-019.",
+        "Forbidden implementation pattern for GESTURE-FUNC-019."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-019.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-019.",
+        "Runtime assertion for GESTURE-FUNC-019.",
+        "Runtime assertion for GESTURE-FUNC-019.",
+        "Runtime assertion for GESTURE-FUNC-019."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-019.",
+        "Evidence required to pass GESTURE-FUNC-019.",
+        "Evidence required to pass GESTURE-FUNC-019.",
+        "Evidence required to pass GESTURE-FUNC-019."
+      ]
+    }
+  },
+  {
+    "case_id": "GESTURE-FUNC-020",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario GESTURE-FUNC-020",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by GESTURE-FUNC-020. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that GESTURE-FUNC-020 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-02",
+      "secondary_scenes": null,
+      "next_scene_refs": [
+        "./references/arkui-interaction/ROUTE.md",
+        "./references/arkui-interaction/gesture-control.md#gesture-conflict"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for GESTURE-FUNC-020.",
+        "Required implementation behavior for GESTURE-FUNC-020.",
+        "Required implementation behavior for GESTURE-FUNC-020.",
+        "Required implementation behavior for GESTURE-FUNC-020."
+      ],
+      "should_reuse_resources": "./references/arkui-interaction/gesture-control.md#gesture-conflict",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for GESTURE-FUNC-020.",
+        "Forbidden implementation pattern for GESTURE-FUNC-020.",
+        "Forbidden implementation pattern for GESTURE-FUNC-020."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for GESTURE-FUNC-020.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for GESTURE-FUNC-020.",
+        "Runtime assertion for GESTURE-FUNC-020.",
+        "Runtime assertion for GESTURE-FUNC-020."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass GESTURE-FUNC-020.",
+        "Evidence required to pass GESTURE-FUNC-020.",
+        "Evidence required to pass GESTURE-FUNC-020."
+      ]
+    }
+  }
+]

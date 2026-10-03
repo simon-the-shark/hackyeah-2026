@@ -1,0 +1,64 @@
+[
+  {
+    "case_id": "SMOKE-MI-01",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-MI-01",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-MI-01. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-MI-01 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-15",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/media-image-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  },
+  {
+    "case_id": "SMOKE-MI-02",
+    "layer": "smoke",
+    "title": "ArkUI test scenario SMOKE-MI-02",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by SMOKE-MI-02. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that SMOKE-MI-02 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-15",
+      "primary_scene_ref": "./SKILL.md",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/media-image-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    }
+  }
+]

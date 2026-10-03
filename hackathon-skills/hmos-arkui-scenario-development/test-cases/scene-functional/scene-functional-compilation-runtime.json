@@ -1,0 +1,321 @@
+[
+  {
+    "case_id": "CR-FUNC-001",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CR-FUNC-001",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CR-FUNC-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CR-FUNC-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "secondary_scenes": null,
+      "next_scene_refs": "./SKILL.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": "ARKUI-07"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CR-FUNC-001.",
+        "Required implementation behavior for CR-FUNC-001.",
+        "Required implementation behavior for CR-FUNC-001.",
+        "Required implementation behavior for CR-FUNC-001.",
+        "Required implementation behavior for CR-FUNC-001."
+      ],
+      "should_reuse_resources": "./references/compilation-runtime-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CR-FUNC-001.",
+        "Forbidden implementation pattern for CR-FUNC-001.",
+        "Forbidden implementation pattern for CR-FUNC-001.",
+        "Forbidden implementation pattern for CR-FUNC-001."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CR-FUNC-001.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CR-FUNC-001.",
+        "Runtime assertion for CR-FUNC-001.",
+        "Runtime assertion for CR-FUNC-001.",
+        "Runtime assertion for CR-FUNC-001."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CR-FUNC-001.",
+        "Evidence required to pass CR-FUNC-001.",
+        "Evidence required to pass CR-FUNC-001.",
+        "Evidence required to pass CR-FUNC-001."
+      ]
+    }
+  },
+  {
+    "case_id": "CR-FUNC-002",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CR-FUNC-002",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CR-FUNC-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CR-FUNC-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "secondary_scenes": null,
+      "next_scene_refs": "./SKILL.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-05",
+        "ARKUI-03"
+      ]
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CR-FUNC-002.",
+        "Required implementation behavior for CR-FUNC-002.",
+        "Required implementation behavior for CR-FUNC-002.",
+        "Required implementation behavior for CR-FUNC-002.",
+        "Required implementation behavior for CR-FUNC-002."
+      ],
+      "should_reuse_resources": "./references/compilation-runtime-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CR-FUNC-002.",
+        "Forbidden implementation pattern for CR-FUNC-002.",
+        "Forbidden implementation pattern for CR-FUNC-002.",
+        "Forbidden implementation pattern for CR-FUNC-002."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CR-FUNC-002.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CR-FUNC-002.",
+        "Runtime assertion for CR-FUNC-002.",
+        "Runtime assertion for CR-FUNC-002.",
+        "Runtime assertion for CR-FUNC-002."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CR-FUNC-002.",
+        "Evidence required to pass CR-FUNC-002.",
+        "Evidence required to pass CR-FUNC-002.",
+        "Evidence required to pass CR-FUNC-002."
+      ]
+    }
+  },
+  {
+    "case_id": "CR-FUNC-003",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CR-FUNC-003",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CR-FUNC-003. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CR-FUNC-003 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "secondary_scenes": null,
+      "next_scene_refs": "./SKILL.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-07",
+        "ARKUI-03"
+      ]
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CR-FUNC-003.",
+        "Required implementation behavior for CR-FUNC-003.",
+        "Required implementation behavior for CR-FUNC-003.",
+        "Required implementation behavior for CR-FUNC-003.",
+        "Required implementation behavior for CR-FUNC-003.",
+        "Required implementation behavior for CR-FUNC-003."
+      ],
+      "should_reuse_resources": "./references/compilation-runtime-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CR-FUNC-003.",
+        "Forbidden implementation pattern for CR-FUNC-003.",
+        "Forbidden implementation pattern for CR-FUNC-003.",
+        "Forbidden implementation pattern for CR-FUNC-003."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CR-FUNC-003.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CR-FUNC-003.",
+        "Runtime assertion for CR-FUNC-003.",
+        "Runtime assertion for CR-FUNC-003.",
+        "Runtime assertion for CR-FUNC-003."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CR-FUNC-003.",
+        "Evidence required to pass CR-FUNC-003.",
+        "Evidence required to pass CR-FUNC-003.",
+        "Evidence required to pass CR-FUNC-003."
+      ]
+    }
+  },
+  {
+    "case_id": "CR-FUNC-004",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CR-FUNC-004",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CR-FUNC-004. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CR-FUNC-004 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "secondary_scenes": null,
+      "next_scene_refs": "./SKILL.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-07",
+        "ARKUI-09"
+      ]
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CR-FUNC-004.",
+        "Required implementation behavior for CR-FUNC-004.",
+        "Required implementation behavior for CR-FUNC-004.",
+        "Required implementation behavior for CR-FUNC-004.",
+        "Required implementation behavior for CR-FUNC-004."
+      ],
+      "should_reuse_resources": "./references/compilation-runtime-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CR-FUNC-004.",
+        "Forbidden implementation pattern for CR-FUNC-004.",
+        "Forbidden implementation pattern for CR-FUNC-004.",
+        "Forbidden implementation pattern for CR-FUNC-004.",
+        "Forbidden implementation pattern for CR-FUNC-004."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CR-FUNC-004.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CR-FUNC-004.",
+        "Runtime assertion for CR-FUNC-004.",
+        "Runtime assertion for CR-FUNC-004.",
+        "Runtime assertion for CR-FUNC-004."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CR-FUNC-004.",
+        "Evidence required to pass CR-FUNC-004.",
+        "Evidence required to pass CR-FUNC-004.",
+        "Evidence required to pass CR-FUNC-004."
+      ]
+    }
+  },
+  {
+    "case_id": "CR-FUNC-005",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario CR-FUNC-005",
+    "phase": "FIX",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by CR-FUNC-005. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that CR-FUNC-005 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "FIX",
+      "primary_scene": "ARKUI-06",
+      "secondary_scenes": null,
+      "next_scene_refs": "./SKILL.md",
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "problem_profile",
+        "root_cause_hypothesis",
+        "fix_plan",
+        "regression_watchlist"
+      ],
+      "forbidden_scenes": [
+        "ARKUI-07",
+        "ARKUI-09"
+      ]
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for CR-FUNC-005.",
+        "Required implementation behavior for CR-FUNC-005.",
+        "Required implementation behavior for CR-FUNC-005.",
+        "Required implementation behavior for CR-FUNC-005.",
+        "Required implementation behavior for CR-FUNC-005."
+      ],
+      "should_reuse_resources": "./references/compilation-runtime-scenario-development.md",
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for CR-FUNC-005.",
+        "Forbidden implementation pattern for CR-FUNC-005.",
+        "Forbidden implementation pattern for CR-FUNC-005.",
+        "Forbidden implementation pattern for CR-FUNC-005."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for CR-FUNC-005.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for CR-FUNC-005.",
+        "Runtime assertion for CR-FUNC-005.",
+        "Runtime assertion for CR-FUNC-005.",
+        "Runtime assertion for CR-FUNC-005."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass CR-FUNC-005.",
+        "Evidence required to pass CR-FUNC-005.",
+        "Evidence required to pass CR-FUNC-005.",
+        "Evidence required to pass CR-FUNC-005."
+      ]
+    }
+  }
+]

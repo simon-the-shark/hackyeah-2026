@@ -2,6 +2,23 @@
 
 The product concept has not been selected yet, but the core development stack is fixed.
 
+## Hackathon Submission
+
+The submission must run on an OpenHarmony, HarmonyOS, or Oniro emulator or a
+compatible physical device, build into a working `.hap`, and visibly use or
+improve at least one platform, device, or system capability. The selected
+concept must lead with Intelligent Experiences, Spatial Experiences, or
+Human-Centric Technology.
+
+Maintain reproducible setup, build, installation, and launch instructions.
+The final public repository must not contain credentials, signing secrets,
+personal data, tokens, or private endpoints.
+
+Required deliverables are tracked in the root `README.md`,
+`HACKATHON_BRIEF.md`, and `AI_WORKFLOW.md`. Treat
+`https://github.com/onirodeveloper/hackyeah2026-challenge/blob/main/hackathon_challenge.md`
+as the authoritative challenge statement.
+
 ## Platform
 
 Use:
@@ -172,3 +189,15 @@ Never claim:
 - device success,
 
 without actually verifying it.
+
+---
+
+# AI Transparency
+
+At the start of an AI-assisted session, read `AI_WORKFLOW.md` and record any
+new model, coding agent, MCP server, or agent skill before substantive work.
+Update its work log after material work and before handoff. Keep descriptions
+public-safe and record validation, failures, limitations, and lessons learned.
+
+If AI is part of the product, document the model or service, inference flow,
+data handling and privacy, failure behavior, and evaluation approach.

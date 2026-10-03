@@ -1,0 +1,142 @@
+[
+  {
+    "case_id": "MI-FUNC-001",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario MI-FUNC-001",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by MI-FUNC-001. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that MI-FUNC-001 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-15",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/media-image-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001.",
+        "Required implementation behavior for MI-FUNC-001."
+      ],
+      "should_reuse_resources": [
+        "./references/media-image-scenario-development.md",
+        "./SKILL.md"
+      ],
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for MI-FUNC-001.",
+        "Forbidden implementation pattern for MI-FUNC-001.",
+        "Forbidden implementation pattern for MI-FUNC-001.",
+        "Forbidden implementation pattern for MI-FUNC-001.",
+        "Forbidden implementation pattern for MI-FUNC-001."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for MI-FUNC-001.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for MI-FUNC-001.",
+        "Runtime assertion for MI-FUNC-001.",
+        "Runtime assertion for MI-FUNC-001.",
+        "Runtime assertion for MI-FUNC-001."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass MI-FUNC-001.",
+        "Evidence required to pass MI-FUNC-001.",
+        "Evidence required to pass MI-FUNC-001.",
+        "Evidence required to pass MI-FUNC-001."
+      ]
+    }
+  },
+  {
+    "case_id": "MI-FUNC-002",
+    "layer": "scene-functional",
+    "title": "ArkUI test scenario MI-FUNC-002",
+    "phase": "DEV",
+    "user_prompt": "Implement and validate the HarmonyOS ArkUI scenario represented by MI-FUNC-002. Preserve the APIs, routing, behavior, state, layout, and acceptance requirements defined by this test case. Output an implementation-ready development plan.",
+    "intent": "Verify that MI-FUNC-002 routes to the expected ArkUI scene and preserves its implementation and validation requirements.",
+    "expected": {
+      "primary_phase": "DEV",
+      "primary_scene": "ARKUI-15",
+      "secondary_scenes": "ARKUI-07",
+      "next_scene_refs": [
+        "./references/media-image-scenario-development.md",
+        "./references/component-page-building-scenario-development.md"
+      ],
+      "required_output_fields": [
+        "active_phases",
+        "primary_phase",
+        "primary_scene",
+        "secondary_scenes",
+        "route_reason",
+        "next_scene_refs",
+        "code_touchpoints",
+        "reuse_resources",
+        "implementation_notes",
+        "integration_risks"
+      ],
+      "forbidden_scenes": "ARKUI-09"
+    },
+    "solution_contract": {
+      "must_cover": [
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002.",
+        "Required implementation behavior for MI-FUNC-002."
+      ],
+      "should_reuse_resources": [
+        "./references/media-image-scenario-development.md",
+        "./SKILL.md"
+      ],
+      "forbidden_patterns": [
+        "Forbidden implementation pattern for MI-FUNC-002.",
+        "Forbidden implementation pattern for MI-FUNC-002.",
+        "Forbidden implementation pattern for MI-FUNC-002.",
+        "Forbidden implementation pattern for MI-FUNC-002.",
+        "Forbidden implementation pattern for MI-FUNC-002."
+      ]
+    },
+    "execution_contract": {
+      "execution_type": "harmonyos_project",
+      "target_project_type": "English requirement for MI-FUNC-002.",
+      "compile_command_template": "./hvigorw assembleHap",
+      "test_command_template": "./hvigorw test",
+      "runtime_assertions": [
+        "Runtime assertion for MI-FUNC-002.",
+        "Runtime assertion for MI-FUNC-002.",
+        "Runtime assertion for MI-FUNC-002.",
+        "Runtime assertion for MI-FUNC-002."
+      ],
+      "pass_evidence": [
+        "Evidence required to pass MI-FUNC-002.",
+        "Evidence required to pass MI-FUNC-002.",
+        "Evidence required to pass MI-FUNC-002.",
+        "Evidence required to pass MI-FUNC-002."
+      ]
+    }
+  }
+]
