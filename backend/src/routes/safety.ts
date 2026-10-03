@@ -4,7 +4,7 @@ import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
-import { geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
+import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent } from "../services/alerts.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
@@ -17,6 +17,7 @@ const eventBody = z
     cancelsEventId: uuid.optional(),
     tripId: uuid.optional(),
     location: geoPoint.optional(),
+    source: eventSource,
   })
   .superRefine((e, ctx) => {
     if (e.type === "sos_cancel" && !e.cancelsEventId) {
@@ -31,6 +32,7 @@ const statusBody = z.object({
   monitoringState: z.enum(["inside", "outside", "unknown", "unavailable"]),
   location: geoPoint.optional(),
   battery: z.number().int().min(0).max(100).optional(),
+  source: eventSource,
 });
 
 const alertView = (row: {
@@ -53,6 +55,7 @@ const alertView = (row: {
     receivedAt: row.event.receivedAt,
     deviceId: row.event.deviceId,
     location: row.event.location,
+    source: row.event.source,
   },
 });
 
@@ -198,6 +201,7 @@ export function safetyRoutes(deps: Deps) {
       monitoringState: body.monitoringState,
       location: body.location ?? null,
       battery: body.battery ?? null,
+      source: body.source,
       // Server receipt time, so a skewed device clock cannot hide a stale gap.
       reportedAt: deps.clock(),
       staleAlertedAt: null,

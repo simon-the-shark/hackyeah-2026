@@ -44,6 +44,8 @@ export const monitoringStateEnum = pgEnum("monitoring_state", [
 ]);
 export const reportSourceEnum = pgEnum("report_source", ["ai", "structured", "simulated"]);
 export const tripStatusEnum = pgEnum("trip_status", ["planned", "active", "completed", "missed"]);
+/** Where an event or heartbeat came from; anything but `device` is a labelled simulation. */
+export const eventSourceEnum = pgEnum("event_source", ["device", "trace_replay", "simulated"]);
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -53,6 +55,8 @@ export type GeoPoint = {
   accuracyM?: number;
   /** ISO timestamp of the location sample; lets guardians judge freshness. */
   sampledAt?: string;
+  /** Which device measured the fix; a phone fix relayed by the watch stays `phone`. */
+  measuredBy?: "phone" | "watch";
 };
 
 export const users = pgTable("users", {
@@ -187,6 +191,7 @@ export const events = pgTable(
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
     location: jsonb("location").$type<GeoPoint>(),
+    source: eventSourceEnum("source").notNull().default("device"),
   },
   (t) => [index("events_senior_idx").on(t.seniorId, t.receivedAt)],
 );
@@ -226,6 +231,7 @@ export const statusHeartbeats = pgTable("status_heartbeats", {
   monitoringState: monitoringStateEnum("monitoring_state").notNull(),
   location: jsonb("location").$type<GeoPoint>(),
   battery: integer("battery"),
+  source: eventSourceEnum("source").notNull().default("device"),
   reportedAt: timestamp("reported_at", { withTimezone: true }).notNull(),
   /** Set when a monitoring_lost alert was raised for the current gap; cleared by a fresh heartbeat. */
   staleAlertedAt: timestamp("stale_alerted_at", { withTimezone: true }),

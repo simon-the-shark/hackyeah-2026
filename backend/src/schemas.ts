@@ -14,7 +14,11 @@ export const geoPoint = z.object({
   lng,
   accuracyM: z.number().nonnegative().optional(),
   sampledAt: z.iso.datetime({ offset: true }).optional(),
+  measuredBy: z.enum(["phone", "watch"]).optional(),
 });
+
+/** `trace_replay` and `simulated` are shown to guardians as simulations. */
+export const eventSource = z.enum(["device", "trace_replay", "simulated"]).default("device");
 
 export const phone = z.string().regex(/^\+?[0-9 ()-]{3,20}$/, "Invalid phone number");
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Expected HH:MM");

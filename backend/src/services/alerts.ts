@@ -6,6 +6,7 @@ import type { Auth, Deps } from "../types.js";
 
 type AlertKind = (typeof alerts.$inferSelect)["kind"];
 type EventType = (typeof events.$inferSelect)["type"];
+type EventSource = (typeof events.$inferSelect)["source"];
 
 export type EventInput = {
   id: string;
@@ -14,6 +15,7 @@ export type EventInput = {
   cancelsEventId?: string | undefined;
   tripId?: string | undefined;
   location?: GeoPoint | undefined;
+  source: EventSource;
 };
 
 const ALERT_KIND_FOR_EVENT: Partial<Record<EventType, AlertKind>> = {
@@ -40,7 +42,7 @@ async function seniorName(deps: Deps, seniorId: string): Promise<string> {
 export async function notifyGuardians(
   deps: Deps,
   alert: { id: string; seniorId: string; kind: AlertKind },
-  opts: { cancelled?: boolean } = {},
+  opts: { cancelled?: boolean; source?: EventSource } = {},
 ) {
   const rows = await deps.db
     .select({ token: devices.pushToken })
@@ -51,7 +53,9 @@ export async function notifyGuardians(
   if (tokens.length === 0) return "none" as const;
 
   const name = await seniorName(deps, alert.seniorId);
-  const title = opts.cancelled ? `Cancelled: ${TITLES[alert.kind](name)}` : TITLES[alert.kind](name);
+  let title = opts.cancelled ? `Cancelled: ${TITLES[alert.kind](name)}` : TITLES[alert.kind](name);
+  // Guardians must never mistake a replayed trace or demo trigger for a real event.
+  if (opts.source && opts.source !== "device") title = `[Simulation] ${title}`;
   const status = await deps.push.send(tokens, {
     title,
     body: "Open the app for details.",
@@ -84,6 +88,7 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
         occurredAt: input.occurredAt,
         receivedAt: deps.clock(),
         location: input.location ?? null,
+        source: input.source,
       })
       .onConflictDoNothing()
       .returning();
@@ -122,7 +127,7 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
   let alert = txResult.alert;
   if (txResult.created && alert) {
     // Alert is committed before the push; a push failure never fails the request.
-    const pushStatus = await notifyGuardians(deps, alert, { cancelled: txResult.cancelled });
+    const pushStatus = await notifyGuardians(deps, alert, { cancelled: txResult.cancelled, source: input.source });
     alert = { ...alert, pushStatus };
   }
   return { event: txResult.event, alert, created: txResult.created };
