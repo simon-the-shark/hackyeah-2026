@@ -95,8 +95,8 @@ export async function checkMissedDoses(deps: Deps) {
 
   const candidates: { med: Med; occurrenceId: string; scheduledAt: Date; time: string }[] = [];
   for (const med of meds) {
-    // Doses scheduled before the medication was created or last edited never count as missed.
-    const from = new Date(Math.max(med.updatedAt.getTime(), now.getTime() - LOOKBACK_MS));
+    // Doses scheduled before the medication was created or its schedule last changed never count as missed.
+    const from = new Date(Math.max(med.scheduleUpdatedAt.getTime(), now.getTime() - LOOKBACK_MS));
     const to = new Date(now.getTime() - graceMs);
     if (to <= from) continue;
     for (const occ of occurrencesBetween(med, from, to)) candidates.push({ med, ...occ });

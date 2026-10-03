@@ -1,5 +1,5 @@
 {
-  "id": "5b6be80d-0e85-4be5-856f-41c15a11425b",
+  "id": "07049ff2-3716-430b-ae31-3c5824f54c5f",
   "prevId": "4c726005-0a0c-42ce-9c1c-4bd5bddf6822",
   "version": "7",
   "dialect": "postgresql",
@@ -744,8 +744,8 @@
           "notNull": true,
           "default": 1
         },
-        "updated_at": {
-          "name": "updated_at",
+        "schedule_updated_at": {
+          "name": "schedule_updated_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,

@@ -73,7 +73,7 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 `devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, created_at)`,
 `safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
 `contacts(id, senior_id, name, phone, sort_order, version)`,
-`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version, updated_at)`,
+`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version, schedule_updated_at)`,
 `dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, scheduled_for, recorded_at)`,
 `events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null)`,
 `alerts(id, event_id, senior_id, kind sos|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost, created_at, cancelled_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
@@ -156,7 +156,7 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 - Dose records keep history when a medication is deleted (`medication_id` set null, plus a `medication_name` snapshot).
 - Added a `trip_started` event (planned to active) and a guardian-wide `GET /v1/alerts?unacknowledged=true` inbox, so the app can resolve a notification tap without push payload data.
 - `HEARTBEAT_STALE_SECONDS` stays 900, documented as unvalidated.
-- Missed doses are computed on the server by the watchdog (`src/services/doses.ts`): grace `DOSE_MISSED_GRACE_MINUTES` (default 60) from the scheduled time or the latest snooze, 24-hour lookback, nothing before the medication's last edit. The dose `occurrenceId` format is now enforced, and a device `dose_missed` event no longer creates an alert.
+- Missed doses are computed on the server by the watchdog (`src/services/doses.ts`): grace `DOSE_MISSED_GRACE_MINUTES` (default 60) from the scheduled time or the latest snooze, 24-hour lookback, nothing scheduled before the medication was created or its `times`/`timezone` last changed (other edits do not reset detection). The server's schedule is authoritative. The dose `occurrenceId` format is now enforced, and a device `dose_missed` event no longer creates an alert.
 - Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
 - Push Kit notification click-through data is not sent yet (payload shape unverified); `GET /v1/alerts` covers the tap case.
 - The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.

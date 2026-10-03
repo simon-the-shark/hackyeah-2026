@@ -145,8 +145,11 @@ export const medications = pgTable(
     times: jsonb("times").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     timezone: text("timezone").notNull(),
     version: integer("version").notNull().default(1),
-    /** Set on create and every edit; only doses scheduled after it can be reported missed. */
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Set on create and whenever `times` or `timezone` change (not on name or other edits);
+     * only doses scheduled after it can be reported missed.
+     */
+    scheduleUpdatedAt: timestamp("schedule_updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("medications_senior_idx").on(t.seniorId)],
 );

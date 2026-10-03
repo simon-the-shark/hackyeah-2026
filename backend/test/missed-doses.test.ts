@@ -112,10 +112,27 @@ describe("server-side missed doses", () => {
     expect(await checkMissedDoses(t.deps)).toBe(0);
   });
 
+  it("keeps detecting missed doses after a name-only edit", async () => {
+    const { seniorId, guardianToken, medId } = await withMedication();
+    at("2026-10-03T06:30:00Z");
+    const edit = await t.call("PUT", `/v1/seniors/${seniorId}/medications/${medId}`, guardianToken, {
+      name: "Demo Blood Pressure",
+      instructions: "With water",
+      times: ["08:00"],
+      timezone: "Europe/Warsaw",
+      version: 1,
+    });
+    expect(edit.status).toBe(200);
+    at("2026-10-03T07:00:00Z");
+    expect(await checkMissedDoses(t.deps)).toBe(1);
+    const [row] = await t.db.select().from(alerts);
+    expect(row?.details).toMatchObject({ medicationName: "Demo Blood Pressure" });
+  });
+
   it("only looks back 24 hours, so downtime does not flood old alerts", async () => {
     const { medId } = await withMedication();
     // Pretend the medication has existed since 1 October.
-    await t.db.update(medications).set({ updatedAt: new Date("2026-10-01T00:00:00Z") }).where(eq(medications.id, medId));
+    await t.db.update(medications).set({ scheduleUpdatedAt: new Date("2026-10-01T00:00:00Z") }).where(eq(medications.id, medId));
     at("2026-10-04T12:00:00Z");
     expect(await checkMissedDoses(t.deps)).toBe(1);
     const [row] = await t.db.select().from(alerts);

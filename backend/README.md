@@ -71,7 +71,7 @@ Timestamps are ISO 8601 with offset.
 | `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | PUT needs `version` |
 | `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered |
 | `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
-| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?}`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is still accepted and stored, but creates no alert: the server detects missed doses itself (see below); a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
+| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?}`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
 | `GET /v1/alerts?unacknowledged=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
@@ -94,15 +94,27 @@ from its `times` and `timezone`, DST included. A dose with no `taken` or
 time raises one `dose_missed` alert and one push. A `snoozed` record restarts
 the grace period from the snooze's `recordedAt`.
 
-- The app must record doses with the canonical `occurrenceId` above, or the
-  server cannot match them and will report the dose as missed.
-- Doses scheduled before a medication was created or last edited are never
-  reported, and only the last 24 hours are checked, so a server restart does
-  not flood old alerts.
+- The server's schedule is authoritative. The app must record doses with the
+  canonical `occurrenceId` above, or the server cannot match them and will
+  report the dose as missed.
+- Building the id needs no time-zone arithmetic: use the `times` entry exactly
+  as stored (e.g. `08:00`) and the calendar date of that dose in the
+  medication's `timezone`. Daylight-saving changes move the UTC instant
+  (`scheduledFor`) but never the id, so the app and server cannot disagree on
+  it because of DST.
+- Doses scheduled before a medication was created, or before its `times` or
+  `timezone` last changed, are never reported. Editing the name, dose text,
+  instructions, barcode or model does not reset detection.
+- Only the last 24 hours are checked, so a server restart does not flood old
+  alerts; doses missed during a longer outage are not reported.
 - These alerts have no source event (`event: null`). Instead `details` holds
   `medicationId`, `medicationName`, `occurrenceId`, `scheduledFor` (UTC),
   `localTime` and `timezone`.
-- The 60-minute default is unvalidated, like the heartbeat threshold.
+- The 60-minute default is unvalidated, like the heartbeat threshold, and one
+  grace period applies to every medication. Time-sensitive medicines may need a
+  shorter, per-medication window; that is not implemented.
+- Snoozes are not capped: a dose snoozed again before each grace period ends
+  is never reported. A snooze limit is not implemented.
 
 ## Heartbeat threshold
 
