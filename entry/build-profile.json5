@@ -1,6 +1,12 @@
 {
   "apiType": "stageMode",
   "buildOption": {
+    // The on-device concern model runs in a worker so loading it cannot block the UI thread.
+    "sourceOption": {
+      "workers": [
+        "./src/main/ets/workers/ConcernWorker.ets"
+      ]
+    },
     "resOptions": {
       "copyCodeResource": {
         "enable": false

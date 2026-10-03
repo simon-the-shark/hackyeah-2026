@@ -11,6 +11,8 @@ const LOG_TAG = 'SpeechInput';
 const ASR_CAPABILITY = 'SystemCapability.AI.SpeechRecognizer';
 const MICROPHONE = 'ohos.permission.MICROPHONE';
 const LANGUAGE = 'en-US';
+// Used only to open an engine for listing languages when English cannot be created directly.
+const PROBE_LANGUAGE = 'zh-CN';
 const OFFLINE = 1;
 const LISTEN_TIMEOUT_MS = 20000;
 
@@ -129,6 +131,11 @@ class SpeechInput {
     });
   }
 
+  // Whether English recognition can actually be created (the capability alone does not guarantee a language).
+  async isAvailable(): Promise<boolean> {
+    return (await this.ensureEngine()) !== undefined;
+  }
+
   cancel(): void {
     if (this.engine !== undefined && this.activeSession.length > 0) {
       try {
@@ -153,23 +160,49 @@ class SpeechInput {
     }
   }
 
+  // Languages a probe engine reported, for the diagnostics screen when English is unavailable.
+  probedLanguages: string[] = [];
+
   private async ensureEngine(): Promise<speechRecognizer.SpeechRecognitionEngine | undefined> {
     if (this.engine !== undefined || this.failed || !isSpeechInputSupported()) {
       return this.engine;
     }
+    this.engine = await this.tryCreate(LANGUAGE);
+    if (this.engine === undefined) {
+      const englishError = this.lastError;
+      const probe = await this.tryCreate(PROBE_LANGUAGE);
+      if (probe !== undefined) {
+        try {
+          this.probedLanguages = await probe.listLanguages({ sessionId: `carely-lang-${Date.now()}` });
+        } catch (err) {
+          hilog.warn(LOG_DOMAIN, LOG_TAG, `listLanguages failed: ${(err as BusinessError).code}`);
+        } finally {
+          probe.shutdown();
+        }
+        const english = this.probedLanguages.find((language: string) => language.toLowerCase().startsWith('en'));
+        this.engine = english !== undefined ? await this.tryCreate(english) : undefined;
+      }
+      if (this.engine === undefined) {
+        this.lastError = englishError;
+        this.failed = true;
+      }
+    }
+    return this.engine;
+  }
+
+  private async tryCreate(language: string): Promise<speechRecognizer.SpeechRecognitionEngine | undefined> {
     try {
-      this.engine = await speechRecognizer.createEngine({
-        language: LANGUAGE,
+      return await speechRecognizer.createEngine({
+        language: language,
         online: OFFLINE,
         extraParams: { 'recognizerMode': 'short' }
       });
     } catch (err) {
       const error = err as BusinessError;
       this.lastError = `${error.code} ${error.message}`;
-      this.failed = true;
-      hilog.warn(LOG_DOMAIN, LOG_TAG, `No ${LANGUAGE} speech recognizer: ${this.lastError}`);
+      hilog.warn(LOG_DOMAIN, LOG_TAG, `No ${language} speech recognizer: ${this.lastError}`);
+      return undefined;
     }
-    return this.engine;
   }
 }
 

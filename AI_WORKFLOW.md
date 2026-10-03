@@ -93,6 +93,7 @@ endpoints, or confidential prompts.
 | 2026-10-03 | Claude Code / Claude Opus 5.5 (with Explore and Plan subagents), Context7 MCP, HarmonyOS SDK declarations | Smartwatch companion: watch location and heart rate for the guardian (user-approved plan) | Backend (migration 0014): purpose-checked 6-digit watch pairing codes (`/pairing/watch-codes`, `/pairing/watch-claim`, never interchangeable with guardian codes), heart-rate batches (`/seniors/:id/vitals`, 7-day retention) and an informational `heart_rate` alert from watch-evaluated episodes; readings never appear in pushes and are redacted from dev logs. New `watch` entry module (`deviceTypes: wearable`): pairing keypad, SOS, its own location heartbeat (`measuredBy: watch`), Sensor Service Kit heart rate with a pure episode detector; foreground only, emulator/mock data labelled simulated. Phone: guardian "Watch & vitals" screen, senior Smartwatch pairing card, heart-rate alert copy, and the Location tab now reads the phone's own heartbeat. Health Service Kit and Wear Engine were ruled out after checking the docs (HUAWEI ID and service approval, no wearable emulator support). | Backend `pnpm typecheck`; 105 vitest tests (21 new) and a curl smoke test against a local server on a throwaway database, run before the team moved to the deployed backend. `./scripts/build-hap.sh` builds both HAPs; hypium tests: watch 6/6, entry 28/28. On a Huawei_Wearable API 23 emulator a locally signed watch HAP installed and launched; the keypad layout was fixed after a screenshot showed clipped keys, and entering a code reached the deployed backend over HTTPS, which rejected it because the watch endpoints are not deployed yet. `deviceInfo.productModel` reads `emulator` there. **Not verified:** successful pairing, heart rate from the Virtual Sensor, watch location, SOS, the guardian screen at runtime, and anything with the screen off or the app in the background. Heart-rate thresholds (120/45 bpm for 2 min) are fixed and unvalidated; readings are not a medical assessment. |
 | 2026-10-03 | Claude Code / Claude Opus 5.5, HarmonyOS SDK declarations | Attach the last known location to SOS and open it in maps from the guardian alert | Senior phone SOS now attaches the newest of the app's last LocationKit fix (kept after sharing stops) and the system cache `geoLocationManager.getLastLocation()`, with the fix's own `timeStamp` as `sampledAt`; it never prompts for permission or waits for a new fix. The countdown says the location is included if available, and the sent screen says whether it was. Watch SOS now sends its last known fix (or the system cache) instead of dropping fixes older than 2 min. Guardian alert detail reads `GET /alerts/:id` and, when the event has a location, shows a "Last known location" card (phone/watch, fix time relative to the alert on the senior's own clock, coordinates, accuracy) with "Open in Maps"; for SOS/fall without a location it says none was shared. A shared `MapsLauncher` tries Petal Maps (`openMapPoiDetail`) and falls back to an OpenStreetMap link through `UIAbilityContext.openLink`; the Location tab uses it too. No backend change: events already accepted and returned `location`. | `getLastLocation` (API 9, `APPROXIMATELY_LOCATION`), `Location.timeStamp`, `openLink` (API 12) and `openMapPoiDetail` error `1002600014` checked in the installed SDK; symbols checked in `sysResource.js`. `./scripts/build-hap.sh` passed for both modules (only the two existing `CareApi.ets` warnings); hypium 32/32 including 4 new `AlertLocation` tests. Installed on the API 23 phone and watch emulators: the new countdown copy renders on the phone (backed out before sending). **Not verified at runtime:** sending an SOS with a location, the guardian location card and the maps hand-off, because both emulators are paired as the senior and no guardian session was available. |
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | AI wellbeing companion on the senior phone, reports sent to the backend | Senior Wellbeing tab: fixed check-in script (tap, type, or speak; Core Speech Kit TTS reads questions, offline ASR answers with keyword matching), deterministic concern rules with Call family / SOS shortcuts, preview with an "include what I wrote" control, sharing through `POST /v1/seniors/:id/reports` with an offline queue and withdraw (`DELETE`). Guardian Wellbeing Reports page lists reports with answers, concern chips, the template note and the AI check result kept apart. On-device AI: Qwen2.5-0.5B-Instruct exported as a one-pass yes/no graph, converted to MindSpore Lite with int8 weights by `scripts/build-companion-model.sh` (Docker), loaded with `@kit.MindSporeLiteKit`; byte-level BPE tokenizer in ArkTS; Developer Tools diagnostics. `ohos.permission.MICROPHONE` added. System `localChatModel` (DataAugmentationKit) rejected: PC/2-in-1 only, whitelist, no emulator | Graph checked against Hugging Face and onnxruntime (identical scores) and the `.ms` through the MindSpore Lite runtime (12/12 decisions kept, max diff 0.24, ~1.2 s per check in Docker on Apple silicon). `./scripts/build-hap.sh` passed (518 MB unsigned HAP); 32 hypium unit tests pass. **Not run on an emulator or device** (no HDC target): model loading, latency and memory on HarmonyOS, the `.ms` 2.3.1 format against the device runtime, TTS/ASR language support, microphone permission and the report round trip are unverified. The app's report body was sent with curl to a local backend (synthetic accounts, log push): POST 201, guardian list returns it with `aiCheck` and concerns, senior read 403, withdraw 204 and gone for the guardian, repeat withdraw 404 (treated as done). |
+| 2026-10-04 | Claude Code / Claude Opus 5.5, hackathon `ohos-app-dev` skill (raw `hdc`/`uitest` in place of the unavailable `devecocli`, approved by the user) | End-to-end check of the wellbeing companion on the HarmonyOS emulator | Found and fixed on the emulator: (1) MindSpore Lite builds the model synchronously, freezing the UI thread > 6 s, so the watchdog killed the app (`THREAD_BLOCK_6S`) when opening Wellbeing; model copy, tokenizer and inference moved to an ArkTS Worker. (2) float32 kernels expanded the int8 weights to ~2 GB and the low-memory killer stopped the app; switched to `precisionMode: 'preferred_fp16'`. (3) The graph then overflowed in float16 (RMSNorm sum of squares ~3e6, unscaled q·k) and answered yes to every message; RMSNorm now divides by 16 before squaring and q/k are pre-scaled, exact in float32, with `check_fp16.py` added to the build. (4) Answer buttons were keyed by option value only, so the next question reused the previous question's labels and tap handlers; the key now includes the question id. Also: concern threshold 0.5 (calibrated on the 12 synthetic messages), cached model named by content hash, microphone hidden when the recognizer has no English, and speech wrappers list the voices and languages the device offers | Emulator (Pura 90, HarmonyOS 6.1.0 API 23, 4 GB): diagnostics show MindSpore Lite loads the 2.3.1 `.ms`, model load ≈ 4 s, tokenizer 6/6, 12/12 correct decisions at threshold 0.5, ≈ 224 ms per check, ≈ 1.65–1.8 GB app memory. UI paths passed: knee pain flagged by the on-device AI with the Call family/SOS card; harmless note not flagged and no card; conditional follow-up skipped for no pain; include-notes opt-out removes the free text and AI result from what is shared; Share posts to the paired backend ("Shared with your guardian"); history survives an app restart; Don't share adds nothing; Withdraw removes the entry. Not verified: offline queue (emulator network cannot be cut without root), guardian Wellbeing Reports page (emulator is paired as the senior), Call family dialer handoff. Speech: English TTS voice `en_US/8` is listed but not installed, and the recognizer offers only zh-CN, so read-aloud and voice answers are hidden on this emulator. 40 unit tests pass. |
 
 ## Workflow
 
@@ -150,7 +151,10 @@ handled:
   "successfully" to MindSpore Lite but produced wrong numbers (4-D tensors are
   treated as NCHW); all graphs now stay at 3-D or below. Dynamic int8
   quantization changed decisions and was ~20 s per check; int8 weight-only works.
-  The first Docker exports were killed for lack of memory in an 8 GB VM.
+  The first Docker exports were killed for lack of memory in an 8 GB VM. On the
+  emulator, loading the model on the UI thread got the app killed by the freeze
+  watchdog, float32 weights got it killed for memory, and the first float16 run
+  flagged every message because of overflow (all fixed; see the work log).
 
 ## Known Limitations
 
@@ -181,11 +185,12 @@ handled:
   data and barcode check), features are "Coming soon" placeholders. The
   medication schedule is not yet loaded from the backend, taken doses are only
   stored on the device, and reminders are not implemented.
-- The wellbeing check-in, its on-device concern check, speech input/output and
-  guardian reports have not run on an emulator or device. Core Speech Kit
-  language support (English) and offline recognition are unknown on the target;
-  touch input always works. Reports have no idempotency key, so a lost response
-  during sharing can create a duplicate report.
+- The wellbeing check-in and its on-device concern check ran end to end on the
+  emulator; the offline report queue, the guardian Wellbeing Reports page and the
+  Call family handoff were not exercised there. On the emulator the English TTS
+  voice is listed but not installed and speech recognition offers only zh-CN, so
+  read-aloud and voice answers are hidden; touch input always works. Reports have
+  no idempotency key, so a lost response during sharing can create a duplicate.
 - Live barcode scanning relies on HarmonyOS Scan Kit and has not been verified on
   an emulator or device; the simulated scan path is a demo fallback only.
 - The `.hap` is unsigned because no signing profile is configured. Emulator
@@ -209,7 +214,7 @@ handled:
 
 ## AI Feature Disclosure
 
-### Wellbeing Check-In Concern Check (Implemented, Not Yet Verified On Device)
+### Wellbeing Check-In Concern Check (Implemented, Verified On The Emulator)
 
 - **Purpose:** During the senior's daily check-in, read the free text they type
   or say (where it hurts, anything else to tell the family) and flag a possible
@@ -218,11 +223,11 @@ handled:
   report. It never sends anything or raises an alert by itself.
 - **Model/service:** Qwen2.5-0.5B-Instruct (Apache-2.0), bundled in the HAP and
   run on the phone's CPU with MindSpore Lite Kit (`@kit.MindSporeLiteKit`, public
-  SDK, API 10+). Converted with MindSpore Lite 2.3.1 to a 512 MB `.ms` file with
+  SDK, API 10+) in an ArkTS Worker with float16 kernels. Converted with MindSpore Lite 2.3.1 to a 512 MB `.ms` file with
   int8 weights by `scripts/build-companion-model.sh`; not committed to git.
 - **Inference flow:** free text → fixed prompt that quotes the text as a message
   to check (max 240 characters) → ArkTS byte-level BPE tokenizer → one call on a
-  static 128-token graph → logits of "yes" and "no" → flag if yes > no. No text
+  static 128-token graph → logits of "yes" and "no" → flag if yes − no > 0.5. No text
   is generated. Questions, scripted replies and the guardian note are fixed text
   built from the answers.
 - **Data/privacy:** Inference runs entirely on the device; the conversation is
@@ -236,12 +241,13 @@ handled:
   available. SOS, geofencing and medication do not depend on the model.
 - **Limitations:** A 0.5B model can miss worries or flag harmless text; it is not
   a medical assessment, and the guardian screen says so. English prompts only.
-  The model is large (518 MB HAP) and its on-device latency, memory use and
-  format compatibility with the HarmonyOS MindSpore Lite runtime are unverified.
+  The model is large (518 MB HAP, ~1.7 GB app memory while loaded). The 0.5
+  threshold was set on the same 12 synthetic messages used for evaluation.
+  Verified on the emulator only, not on a physical phone.
 - **Evaluation:** `tools/companion-model/eval_narrow.py` and `eval_summaries.py`
   compare candidate models on synthetic check-ins. On 12 synthetic messages the
   chosen model scored 12/12 (fp32), and the converted int8 model kept every
   decision (max score change 0.24, about 1.2 s per check in Docker on Apple
-  silicon). The in-app diagnostics re-run the tokenizer vectors and these 12
-  checks on the device and report latency; their results are to be recorded here
-  once run on an emulator or phone.
+  silicon). On the HarmonyOS emulator the in-app diagnostics measured tokenizer
+  6/6, 12/12 correct decisions at threshold 0.5 (scores within 0.76 of the
+  computer), about 224 ms per check and a 4 s model load.

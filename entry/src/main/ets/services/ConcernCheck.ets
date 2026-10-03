@@ -4,6 +4,10 @@ import { ConcernModel, ModelScore } from '../platform/ConcernModel';
 import { concernPrompt } from './CheckInScript';
 
 const MODEL_LABEL = 'Qwen2.5-0.5B-Instruct (on-device, MindSpore Lite)';
+// Score (logit yes - logit no) above which a message is flagged. On the emulator, int8 weights plus float16
+// kernels raised harmless messages' scores by ~0.4-0.7 (up to +0.09) while worries stayed >= 1.50, so 0 would
+// flag harmless text. Chosen on the 12 synthetic check messages; revisit with more data.
+export const CONCERN_THRESHOLD = 0.5;
 
 export enum ConcernCheckState {
   Loading,
@@ -40,7 +44,7 @@ export class ConcernCheck {
       return undefined;
     }
     const result: ModelScore | undefined = await this.model.score(concernPrompt(text));
-    return result === undefined ? undefined : new AiConcernCheck(MODEL_LABEL, result.score > 0, result.score);
+    return result === undefined ? undefined : new AiConcernCheck(MODEL_LABEL, result.score > CONCERN_THRESHOLD, result.score);
   }
 }
 

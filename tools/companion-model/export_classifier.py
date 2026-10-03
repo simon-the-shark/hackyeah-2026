@@ -9,7 +9,11 @@ prompt in one call with static shapes:
   outputs  scores  float32 [1, 2]  logits of "yes" and "no"
 
 Every tensor has at most 3 dimensions: MindSpore Lite reinterprets 4-D tensors as NCHW images and
-scrambled them (see bisect_ops.py). The script checks the graph against Hugging Face and onnxruntime and
+scrambled them (see bisect_ops.py). The graph is also written to survive float16 kernels, which the device
+needs to fit the model in memory: Qwen2.5's residual stream reaches ~1,700, so RMSNorm's sum of squares
+(~3e6) and the unscaled attention dot products overflow float16's 65,504. RMSNorm therefore divides by a
+constant before squaring, and q and k are each pre-multiplied by the square root of the attention scale.
+Both are exact rewrites in float32. The script checks the graph against Hugging Face and onnxruntime and
 writes the tokenizer files the app loads (services/companion/BpeTokenizer.ets).
 """
 import argparse
@@ -25,6 +29,9 @@ from torch import nn
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 NEG = -10000.0
+# Divides activations inside RMSNorm before squaring: large enough that the largest sum of squares (~3e6 / 16^2)
+# stays below float16's 65,504, small enough that the tiny first-layer values do not underflow to zero.
+RMS_SCALE = 16.0
 
 # JavaScript has no inline (?i:...) group, so the case-insensitive contractions of Qwen2's split pattern
 # are spelled out.
@@ -76,7 +83,9 @@ class Classifier(nn.Module):
 
     @staticmethod
     def rms(x, weight, eps):
-        return weight * (x * torch.rsqrt(x.pow(2).mean(-1, keepdim=True) + eps))
+        # rms(x) == rms(x / s) for any s > 0 (with eps scaled by 1 / s^2); s keeps the squares in float16 range.
+        y = x * (1.0 / RMS_SCALE)
+        return weight * (y * torch.rsqrt(y.pow(2).mean(-1, keepdim=True) + eps / (RMS_SCALE * RMS_SCALE)))
 
     def rotate(self, x):
         half = self.head_dim // 2
@@ -86,17 +95,18 @@ class Classifier(nn.Module):
         return x.view(self.n, count, self.head_dim).transpose(0, 1)      # [count, N, D]
 
     def forward(self, tokens, length):
-        scale = 1.0 / math.sqrt(self.head_dim)
+        # Applied to q and k separately so their dot product is never formed unscaled (float16 overflow).
+        half_scale = 1.0 / math.sqrt(math.sqrt(self.head_dim))
         h = self.embed(tokens.to(torch.int64))                          # [N, hidden]
         for layer in self.layers:
             attn = layer.self_attn
             x = self.rms(h, layer.input_layernorm.weight, self.eps)
-            q = self.rotate(self.heads(attn.q_proj(x), self.n_heads))
-            k = self.rotate(self.heads(attn.k_proj(x), self.n_kv))
+            q = self.rotate(self.heads(attn.q_proj(x), self.n_heads)) * half_scale
+            k = self.rotate(self.heads(attn.k_proj(x), self.n_kv)) * half_scale
             v = self.heads(attn.v_proj(x), self.n_kv)
             k = torch.index_select(k, 0, self.kv_index)                 # [H, N, D]
             v = torch.index_select(v, 0, self.kv_index)
-            probs = torch.softmax(torch.matmul(q, k.transpose(1, 2)) * scale + self.causal, dim=-1)
+            probs = torch.softmax(torch.matmul(q, k.transpose(1, 2)) + self.causal, dim=-1)
             out = torch.matmul(probs, v).transpose(0, 1).reshape(self.n, self.n_heads * self.head_dim)
             h = h + attn.o_proj(out)
             x = self.rms(h, layer.post_attention_layernorm.weight, self.eps)

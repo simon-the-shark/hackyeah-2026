@@ -1,21 +1,23 @@
 import { common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
-import { fileIo as fs } from '@kit.CoreFileKit';
-import { mindSporeLite } from '@kit.MindSporeLiteKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
-import { util } from '@kit.ArkTS';
-import { BpeTokenizer, TokenizerConfig } from '../services/companion/BpeTokenizer';
+import { MessageEvents, util, worker } from '@kit.ArkTS';
+import { WorkerReply, WorkerRequest } from './ConcernWorkerProtocol';
 
 // The bundled on-device model (Qwen2.5-0.5B-Instruct reduced to a yes/no scorer and converted to MindSpore
 // Lite by scripts/build-companion-model.sh). One call reads a whole prompt and returns the logits of "yes"
-// and "no"; nothing is generated and nothing leaves the device.
+// and "no"; nothing is generated and nothing leaves the device. All model work runs in
+// workers/ConcernWorker.ets: building the model blocks for many seconds and must not run on the UI thread.
 
 const LOG_DOMAIN = 0x0000;
 const LOG_TAG = 'ConcernModel';
 const MINDSPORE_CAPABILITY = 'SystemCapability.AI.MindSporeLite';
 const DIR = 'companion';
 const MODEL_FILE = 'concern_classifier.ms';
-const COPY_CHUNK = 4 * 1024 * 1024;
+const WORKER_SCRIPT = 'entry/ets/workers/ConcernWorker.ets';
+// Generous: the first launch copies 512 MB and expands the int8 weights on a phone-class CPU.
+const LOAD_TIMEOUT_MS = 5 * 60 * 1000;
+const SCORE_TIMEOUT_MS = 60 * 1000;
 
 export interface ModelCheck {
   message: string;
@@ -26,6 +28,8 @@ export interface ModelCheck {
 
 export interface ModelMeta {
   model: string;
+  // Content hash of the bundled .ms; names the cached copy in the app's files.
+  modelHash?: string;
   maxTokens: number;
   padId: number;
   checks: ModelCheck[];
@@ -71,55 +75,21 @@ export function isModelBundled(context: common.Context): boolean {
   }
 }
 
-// MindSpore Lite loads from a file path, but the model is a raw file inside the HAP, so it is copied to the
-// app's private files once (and again when an update changes its size). Undefined when copying fails.
-function ensureModelFile(context: common.Context): string | undefined {
-  const target = `${context.filesDir}/${MODEL_FILE}`;
-  const rawPath = `${DIR}/${MODEL_FILE}`;
-  let out: fs.File | undefined = undefined;
-  try {
-    const raw = context.resourceManager.getRawFdSync(rawPath);
-    if (fs.accessSync(target) && fs.statSync(target).size === raw.length) {
-      return target;
-    }
-    out = fs.openSync(target, fs.OpenMode.CREATE | fs.OpenMode.WRITE_ONLY | fs.OpenMode.TRUNC);
-    const buffer = new ArrayBuffer(COPY_CHUNK);
-    let copied = 0;
-    while (copied < raw.length) {
-      const read = fs.readSync(raw.fd, buffer, { offset: raw.offset + copied,
-        length: Math.min(COPY_CHUNK, raw.length - copied) });
-      if (read <= 0) {
-        throw new Error('Unexpected end of the bundled model file.');
-      }
-      fs.writeSync(out.fd, buffer, { length: read });
-      copied += read;
-    }
-    return target;
-  } catch (err) {
-    hilog.error(LOG_DOMAIN, LOG_TAG, `Cannot copy the model: ${(err as BusinessError).message}`);
-    return undefined;
-  } finally {
-    try {
-      if (out !== undefined) {
-        fs.closeSync(out);
-      }
-      context.resourceManager.closeRawFdSync(rawPath);
-    } catch (err) {
-      hilog.warn(LOG_DOMAIN, LOG_TAG, 'Cannot close model files');
-    }
-  }
-}
+type ReplyHandler = (reply: WorkerReply) => void;
 
 export class ConcernModel {
-  readonly tokenizer: BpeTokenizer;
   readonly meta: ModelMeta;
-  private readonly model: mindSporeLite.Model;
-  private queue: Promise<void> = Promise.resolve();
+  readonly loadReport: string;
+  private readonly thread: worker.ThreadWorker;
+  private readonly pending: Map<number, ReplyHandler>;
+  private nextId: number = 1;
 
-  private constructor(model: mindSporeLite.Model, meta: ModelMeta, tokenizer: BpeTokenizer) {
-    this.model = model;
+  private constructor(thread: worker.ThreadWorker, pending: Map<number, ReplyHandler>, meta: ModelMeta,
+    loadReport: string) {
+    this.thread = thread;
+    this.pending = pending;
     this.meta = meta;
-    this.tokenizer = tokenizer;
+    this.loadReport = loadReport;
   }
 
   // Undefined when MindSpore Lite is missing, the model was not bundled, or loading fails.
@@ -133,63 +103,94 @@ export class ConcernModel {
       return undefined;
     }
     const metaText = rawText(context, 'model_meta.json');
-    const configText = rawText(context, 'tokenizer_config.json');
-    const vocabText = rawText(context, 'vocab.json');
-    const mergesText = rawText(context, 'merges.txt');
-    const path = ensureModelFile(context);
-    if (metaText === undefined || configText === undefined || vocabText === undefined || mergesText === undefined ||
-      path === undefined) {
+    const request = new WorkerRequest();
+    request.kind = 'load';
+    request.config = rawText(context, 'tokenizer_config.json') ?? '';
+    request.vocab = rawText(context, 'vocab.json') ?? '';
+    request.merges = rawText(context, 'merges.txt') ?? '';
+    if (metaText === undefined || request.config === '' || request.vocab === '' || request.merges === '') {
       return undefined;
     }
+    const meta = JSON.parse(metaText) as ModelMeta;
+    request.maxTokens = meta.maxTokens;
+    request.padId = meta.padId;
+    request.modelPath = `${context.filesDir}/concern_classifier-${meta.modelHash ?? 'unversioned'}.ms`;
+    request.filesDir = context.filesDir;
+    const rawPath = `${DIR}/${MODEL_FILE}`;
+    let thread: worker.ThreadWorker | undefined = undefined;
     try {
-      const meta = JSON.parse(metaText) as ModelMeta;
-      const config = JSON.parse(configText) as TokenizerConfig;
-      const tokenizer = new BpeTokenizer(JSON.parse(vocabText) as Record<string, number>, mergesText.split('\n'),
-        config);
-      const started = Date.now();
-      const msContext: mindSporeLite.Context = { target: ['cpu'], cpu: { threadNum: 4 } };
-      const model = await mindSporeLite.loadModelFromFile(path, msContext);
-      hilog.info(LOG_DOMAIN, LOG_TAG, `Model loaded in ${Date.now() - started} ms`);
-      return new ConcernModel(model, meta, tokenizer);
-    } catch (err) {
-      const error = err as BusinessError;
-      hilog.error(LOG_DOMAIN, LOG_TAG, `Cannot load the model: ${error.code} ${error.message}`);
-      return undefined;
-    }
-  }
-
-  // Undefined when the prompt does not fit or inference fails. Calls run one at a time.
-  async score(prompt: string): Promise<ModelScore | undefined> {
-    const ids = this.tokenizer.encode(prompt);
-    if (ids.length === 0 || ids.length > this.meta.maxTokens) {
-      hilog.warn(LOG_DOMAIN, LOG_TAG, `Prompt does not fit: ${ids.length} tokens`);
-      return undefined;
-    }
-    const run = this.queue.then(() => this.predict(ids));
-    this.queue = run.then(() => {}, () => {});
-    return run;
-  }
-
-  private async predict(ids: number[]): Promise<ModelScore | undefined> {
-    const started = Date.now();
-    try {
-      const inputs = this.model.getInputs();
-      const tokens = inputs.find((tensor: mindSporeLite.MSTensor) => tensor.name === 'tokens');
-      const length = inputs.find((tensor: mindSporeLite.MSTensor) => tensor.name === 'length');
-      if (tokens === undefined || length === undefined) {
-        throw new Error('The model has unexpected inputs.');
+      const raw = context.resourceManager.getRawFdSync(rawPath);
+      request.rawFd = raw.fd;
+      request.rawOffset = raw.offset;
+      request.rawLength = raw.length;
+      thread = new worker.ThreadWorker(WORKER_SCRIPT);
+      const pending = new Map<number, ReplyHandler>();
+      const loaded = new Promise<WorkerReply>((resolve: (reply: WorkerReply) => void) => {
+        const timer = setTimeout(() => resolve(WorkerReply.loaded(false, 'Loading timed out.', LOAD_TIMEOUT_MS)),
+          LOAD_TIMEOUT_MS);
+        (thread as worker.ThreadWorker).onmessage = (event: MessageEvents) => {
+          const reply = event.data as WorkerReply;
+          if (reply.kind === 'loaded') {
+            clearTimeout(timer);
+            resolve(reply);
+            return;
+          }
+          const handler = pending.get(reply.id);
+          if (handler !== undefined) {
+            pending.delete(reply.id);
+            handler(reply);
+          }
+        };
+      });
+      thread.postMessage(request);
+      const result = await loaded;
+      if (!result.ok) {
+        hilog.error(LOG_DOMAIN, LOG_TAG, `Cannot load the model: ${result.message}`);
+        thread.terminate();
+        return undefined;
       }
-      const padded = new Int32Array(this.meta.maxTokens).fill(this.meta.padId);
-      padded.set(ids);
-      tokens.setData(padded.buffer);
-      length.setData(new Int32Array([ids.length]).buffer);
-      const outputs = await this.model.predict(inputs);
-      const scores = new Float32Array(outputs[0].getData());
-      return new ModelScore(scores[0] - scores[1], Date.now() - started);
+      hilog.info(LOG_DOMAIN, LOG_TAG, `Model loaded in ${result.elapsedMs} ms (${result.message})`);
+      return new ConcernModel(thread, pending, meta, `${result.elapsedMs} ms: ${result.message}`);
     } catch (err) {
-      const error = err as BusinessError;
-      hilog.error(LOG_DOMAIN, LOG_TAG, `Inference failed: ${error.code} ${error.message}`);
+      hilog.error(LOG_DOMAIN, LOG_TAG, `Cannot start the model worker: ${(err as BusinessError).message}`);
+      thread?.terminate();
+      return undefined;
+    } finally {
+      try {
+        context.resourceManager.closeRawFdSync(rawPath);
+      } catch (err) {
+        hilog.warn(LOG_DOMAIN, LOG_TAG, 'Cannot close the bundled model file');
+      }
+    }
+  }
+
+  // Undefined when the prompt does not fit, inference fails or times out.
+  async score(prompt: string): Promise<ModelScore | undefined> {
+    const reply = await this.ask(WorkerRequest.score(this.nextId++, prompt), SCORE_TIMEOUT_MS);
+    if (reply === undefined || !reply.ok) {
+      hilog.error(LOG_DOMAIN, LOG_TAG, `Inference failed: ${reply?.message ?? 'timed out'}`);
       return undefined;
     }
+    return new ModelScore(reply.score, reply.elapsedMs);
+  }
+
+  // Token ids for `text`, for the diagnostics comparison with reference encodings.
+  async tokenize(text: string): Promise<number[]> {
+    const reply = await this.ask(WorkerRequest.tokenize(this.nextId++, text), SCORE_TIMEOUT_MS);
+    return reply?.ids ?? [];
+  }
+
+  private ask(request: WorkerRequest, timeoutMs: number): Promise<WorkerReply | undefined> {
+    return new Promise<WorkerReply | undefined>((resolve: (reply: WorkerReply | undefined) => void) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(request.id);
+        resolve(undefined);
+      }, timeoutMs);
+      this.pending.set(request.id, (reply: WorkerReply) => {
+        clearTimeout(timer);
+        resolve(reply);
+      });
+      this.thread.postMessage(request);
+    });
   }
 }

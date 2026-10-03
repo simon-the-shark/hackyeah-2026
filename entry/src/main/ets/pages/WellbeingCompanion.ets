@@ -13,7 +13,7 @@ import {
 } from '../models/Wellbeing';
 import { Contact } from '../models/Contact';
 import { openDialer } from '../platform/PhoneDialer';
-import { isSpeechInputSupported, ListenOutcome, ListenStatus, speechInput } from '../platform/SpeechInput';
+import { ListenOutcome, ListenStatus, speechInput } from '../platform/SpeechInput';
 import { speechOutput } from '../platform/SpeechOutput';
 import { describeBackendError, NOT_CONFIGURED_MESSAGE } from '../services/BackendErrors';
 import {
@@ -76,6 +76,8 @@ export struct WellbeingCompanion {
   @State private checking: boolean = false;
   @State private speakOn: boolean = true;
   @State private speechAvailable: boolean = false;
+  // English speech recognition works on this device (the emulator's recognizer only offers Chinese).
+  @State private voiceInputAvailable: boolean = false;
   @State private listening: boolean = false;
   @State private heard: string = '';
   @State private draft: string = '';
@@ -101,6 +103,7 @@ export struct WellbeingCompanion {
       this.speechAvailable = available;
       this.speakOn = available;
     });
+    speechInput.isAvailable().then((available: boolean) => this.voiceInputAvailable = available);
     this.refreshHistory(true);
   }
 
@@ -378,12 +381,14 @@ export struct WellbeingCompanion {
               .fontColor($r('app.color.senior_accent'))
               .backgroundColor($r('app.color.senior_tint'))
               .onClick(() => this.chooseOption(option))
-          }, (option: AnswerOption) => option.value)
+          }, (option: AnswerOption) => `${this.question?.id ?? ''}|${option.value}`)
+          // The question id is part of the key: several questions share values such as "yes"/"no", and reusing
+          // their buttons kept the previous question's labels and tap handlers.
         }
         .width('100%')
       }
       if (this.question !== undefined && this.question.kind === QuestionKind.FreeText) {
-        TextArea({ text: $$this.draft, placeholder: 'Type here, or tap Speak' })
+        TextArea({ text: $$this.draft, placeholder: this.voiceInputAvailable ? 'Type here, or tap Speak' : 'Type here' })
           .fontSize(20)
           .height(96)
           .width('100%')
@@ -405,7 +410,7 @@ export struct WellbeingCompanion {
         }
         .width('100%')
       }
-      if (this.question !== undefined && isSpeechInputSupported()) {
+      if (this.question !== undefined && this.voiceInputAvailable) {
         Button({ type: ButtonType.Capsule }) {
           Row({ space: 8 }) {
             SymbolGlyph($r('sys.symbol.mic_fill'))

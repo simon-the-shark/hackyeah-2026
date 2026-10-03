@@ -22,7 +22,10 @@ with `<|endoftext|>`), `length int32[1]` → `scores float32[1,2]`. The tied out
 embedding is reduced to the two answer rows, so the 545 MB output matrix is not stored
 twice. Every tensor has at most three dimensions, because MindSpore Lite 2.3.1
 reinterprets 4-D tensors as NCHW images and scrambled them (`bisect_ops.py` reproduces
-this).
+this). The device runs float16 kernels (fp32 weights did not fit in the emulator's
+memory), and Qwen2.5's residual stream reaches ~1,700, so RMSNorm divides by 16 before
+squaring and q and k are each pre-scaled by the square root of the attention scale; both
+are exact in float32 and keep float16 intermediates below 65,504.
 
 ## Files
 
@@ -31,7 +34,8 @@ this).
 | `Dockerfile` | Python 3.10, torch, transformers, onnxruntime, MindSpore Lite 2.3.1 converter and runtime |
 | `export_classifier.py` | Exports the graph; asserts Hugging Face, the graph and onnxruntime agree; writes tokenizer files and test vectors |
 | `weight_quant.cfg` | Converter settings: int8 weight-only quantization |
-| `check_classifier.cc` | Runs the `.ms` through the MindSpore Lite runtime; fails if any yes/no decision changes |
+| `check_classifier.cc` | Runs the `.ms` through the MindSpore Lite runtime (float32); fails if any yes/no decision changes |
+| `check_fp16.py` | Runs the graph in float16 with PyTorch, as the device does; fails if any decision changes |
 | `eval_narrow.py`, `eval_summaries.py` | Model comparison on synthetic check-ins (why Qwen, and why the model does not write the note) |
 | `bisect_ops.py` | Minimal reproduction of the 4-D tensor conversion problem |
 
@@ -49,6 +53,24 @@ check; fp16 weights were exact but 990 MB. SmolLM2-135M/360M-Instruct were at ch
 concern detection and invented details in replies and notes; Qwen2.5-0.5B also added
 details and medical speculation when asked to write notes, so notes are not generated.
 
-These are measurements on a computer, not on a HarmonyOS device. On-device behaviour
-(MindSpore Lite runtime version, memory, latency) has to be verified with the
-diagnostics action in the app's Developer Tools.
+## Measured on the HarmonyOS emulator (Pura 90, HarmonyOS 6.1.0 API 23, 4 GB RAM)
+
+From the app's Developer Tools diagnostics, 2026-10-04:
+
+| Check | Result |
+| --- | --- |
+| System MindSpore Lite loads the 2.3.1 `.ms` | yes |
+| Model load in the worker (copy check, tokenizer, build) | ≈ 4.0–5.6 s; first launch also copies 512 MB |
+| ArkTS tokenizer vs Hugging Face reference encodings | 6/6 |
+| Decisions on the 12 messages at threshold 0.5 | 12/12 (at threshold 0: 11/12) |
+| Latency per check | ≈ 190–360 ms (average 224 ms on the final run) |
+| App memory (VmRSS) | ≈ 2.2 GB peak while loading, ≈ 1.65–1.8 GB after |
+
+On the device, int8 weights plus float16 kernels raise harmless messages' scores by ~0.4–0.7 (highest
++0.09) while worries stay ≥ 1.50, so the app flags a message only above 0.5. That threshold was chosen
+on the same 12 synthetic messages and needs a larger evaluation set.
+
+Failures found on the emulator and fixed: building the model on the UI thread froze the app for more
+than 6 s and the watchdog killed it (now a Worker); float32 kernels expanded the weights to ~2 GB and the
+low-memory killer stopped the app (now float16 kernels); the original graph overflowed in float16 and
+answered "yes" to every message (now overflow-safe, see Graph).

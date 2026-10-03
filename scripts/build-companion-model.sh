@@ -26,6 +26,9 @@ run() {
 echo "==> Exporting and checking the classifier graph (Hugging Face vs ONNX)"
 run python /src/export_classifier.py --out /work/out
 
+echo "==> Checking the graph in float16 (the device runs float16 kernels)"
+run bash -c 'cd /src && PYTHONDONTWRITEBYTECODE=1 python check_fp16.py'
+
 echo "==> Converting to MindSpore Lite with int8 weights"
 run bash -c 'cd /work/out && rm -f concern_classifier.ms && /opt/msl/tools/converter/converter/converter_lite \
   --fmk=ONNX --modelFile=concern_classifier.onnx --outputFile=concern_classifier --configFile=/src/weight_quant.cfg'
@@ -39,11 +42,17 @@ echo "==> Copying into $DEST"
 cp "$WORK/out/concern_classifier.ms" "$DEST/"
 cp "$WORK/out/tokenizer/vocab.json" "$WORK/out/tokenizer/merges.txt" "$DEST/"
 cp "$WORK/out/tokenizer_config.json" "$WORK/out/tokenizer_vectors.json" "$DEST/"
-python3 - "$WORK/out/model_meta.json" "$DEST/model_meta.json" <<'EOF'
-import json, sys
+python3 - "$WORK/out/model_meta.json" "$DEST/model_meta.json" "$DEST/concern_classifier.ms" <<'EOF'
+import hashlib, json, sys
 meta = json.load(open(sys.argv[1]))
+digest = hashlib.sha256()
+with open(sys.argv[3], "rb") as model:
+    for chunk in iter(lambda: model.read(1 << 20), b""):
+        digest.update(chunk)
 # The app needs the shape and padding; the check prompts let the diagnostics screen re-run the scores on device.
+# modelHash names the app's cached copy, so a rebuilt model is never mistaken for the old one.
 json.dump({"model": meta["model"], "maxTokens": meta["maxTokens"], "padId": meta["padId"],
+           "modelHash": digest.hexdigest()[:16],
            "checks": [{"message": c["message"], "concern": c["concern"], "score": c["score"]} for c in meta["checks"]]},
           open(sys.argv[2], "w"))
 EOF
