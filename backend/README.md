@@ -105,12 +105,22 @@ Timestamps are ISO 8601 with offset.
 | `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
-| `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins |
+| `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins. Acknowledging an uncancelled `sos` sends one push to the senior's devices ("<guardian> has seen your SOS"), so seniors should register a push token too |
 | `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. When **no** device of the senior has sent a heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900), one `monitoring_lost` alert is raised per gap, with each device's last `reportedAt` in `details.devices`. A heartbeat from any device ends the gap. See the note below |
 | `GET /v1/seniors/:id/status` | linked | `{status, devices, serverTime}`. Heartbeats are stored per device, so phone and watch never overwrite each other: `devices` lists the latest heartbeat of each device (newest first, with `deviceKind`), and `status` is the newest of them (null before the first heartbeat). Show age, never an unqualified "safe" |
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
 | `POST /v1/seniors/:id/reports`, `GET .../reports` | POST: senior, GET: guardian | The senior submits but cannot read reports back. Only user-approved content. `source` is `ai`, `structured` or `simulated` |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
+
+### Re-sends
+
+The watchdog re-sends pushes that may not have reached anyone. Alerts expose
+`pushAttempts` and `lastPushAt`:
+
+- An `sos` that is not acknowledged, cancelled or resolved is pushed again every
+  `SOS_REPUSH_SECONDS` (default 120, unvalidated) as "Reminder: … (not yet
+  acknowledged)", at most 3 times.
+- Any other alert whose push `failed` is retried once, a minute later.
 
 ### Alert resolution
 
@@ -178,8 +188,8 @@ device testing.
 - `POST /v1/pairing/claim` always creates a new guardian, so one guardian cannot
   yet be linked to several seniors through the API (the data model and
   `GET /v1/alerts` already support it).
-- One alert is stored before pushing; a failed push is not retried. Clients
-  recover by refreshing alerts.
+- Push retries are limited: one retry for a failed non-SOS push, and at most
+  three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.
 
 ## Breaking changes

@@ -159,3 +159,51 @@ describe("alert resolution", () => {
     expect(t.push.calls.at(-1)!.message.title).toBe("Halina took the missed dose of Demo");
   });
 });
+
+describe("delivery feedback", () => {
+  it("tells the senior once when a guardian acknowledges their SOS", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    await t.call("PUT", "/v1/devices/me/push-token", seniorToken, { pushToken: "senior-push" });
+    const alertId = (await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, event("sos"))).body.alert.id;
+    await t.call("POST", `/v1/alerts/${alertId}/ack`, guardianToken);
+    await t.call("POST", `/v1/alerts/${alertId}/ack`, guardianToken);
+    const toSenior = t.push.calls.filter((c) => c.tokens.includes("senior-push"));
+    expect(toSenior.map((c) => c.message.title)).toEqual(["Marek has seen your SOS"]);
+  });
+
+  it("reminds guardians of an unacknowledged SOS, capped, and stops on ack", async () => {
+    const { seniorId, seniorToken } = await t.pair();
+    await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, event("sos"));
+    for (let i = 1; i <= 5; i++) {
+      t.time.now = new Date(Date.parse("2026-10-03T12:00:00Z") + i * 121_000);
+      await runWatchdogOnce(t.deps);
+    }
+    expect(t.push.calls).toHaveLength(4); // first push + 3 reminders
+    expect(t.push.calls[1]!.message.title).toBe("Reminder: SOS from Halina (not yet acknowledged)");
+
+    const other = await t.pair();
+    await t.call("POST", `/v1/seniors/${other.seniorId}/events`, other.seniorToken, event("sos"));
+    const [a] = (await t.call("GET", "/v1/alerts", other.guardianToken)).body.items;
+    await t.call("POST", `/v1/alerts/${a.id}/ack`, other.guardianToken);
+    const before = t.push.calls.length;
+    t.time.now = new Date(t.time.now.getTime() + 600_000);
+    await runWatchdogOnce(t.deps);
+    expect(t.push.calls).toHaveLength(before);
+  });
+
+  it("retries a failed non-SOS push once", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    t.push.result = "failed";
+    await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, event("area_exit"));
+    t.push.result = "sent";
+    t.time.now = new Date("2026-10-03T12:00:30Z");
+    await runWatchdogOnce(t.deps); // too early
+    t.time.now = new Date("2026-10-03T12:02:00Z");
+    await runWatchdogOnce(t.deps);
+    t.time.now = new Date("2026-10-03T12:10:00Z");
+    await runWatchdogOnce(t.deps);
+    expect(t.push.calls).toHaveLength(2);
+    const [alert] = (await t.call("GET", `/v1/seniors/${seniorId}/alerts`, guardianToken)).body.items;
+    expect(alert.pushStatus).toBe("sent");
+  });
+});

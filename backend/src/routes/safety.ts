@@ -5,7 +5,7 @@ import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, devices, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
-import { ingestEvent, resolveAlerts } from "../services/alerts.js";
+import { ingestEvent, pushToSenior, resolveAlerts } from "../services/alerts.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -47,6 +47,8 @@ const alertView = (row: {
   resolvedAt: row.alert.resolvedAt,
   resolvedByEventId: row.alert.resolvedByEventId,
   pushStatus: row.alert.pushStatus,
+  pushAttempts: row.alert.pushAttempts,
+  lastPushAt: row.alert.lastPushAt,
   details: row.alert.details,
   acknowledgedAt: row.alert.acknowledgedAt,
   acknowledgedBy: row.alert.acknowledgedBy,
@@ -187,10 +189,19 @@ export function safetyRoutes(deps: Deps) {
     const row = await loadAlert(id);
     await assertLinked(db, auth, row.alert.seniorId);
     // Idempotent: the first acknowledgement wins and later ones return it unchanged.
-    await db
+    const [acked] = await db
       .update(alerts)
       .set({ acknowledgedAt: deps.clock(), acknowledgedBy: auth.userId })
-      .where(and(eq(alerts.id, id), isNull(alerts.acknowledgedAt)));
+      .where(and(eq(alerts.id, id), isNull(alerts.acknowledgedAt)))
+      .returning();
+    // Tell the senior a person has seen their SOS (the "guardian acknowledged" state), once.
+    if (acked && acked.kind === "sos" && !acked.cancelledAt) {
+      const [guardian] = await db.select({ name: users.displayName }).from(users).where(eq(users.id, auth.userId));
+      await pushToSenior(deps, acked.seniorId, `${guardian?.name ?? "Your guardian"} has seen your SOS`, {
+        alertId: acked.id,
+        kind: acked.kind,
+      });
+    }
     return c.json(alertView(await loadAlert(id)));
   });
 

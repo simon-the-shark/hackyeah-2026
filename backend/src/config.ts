@@ -9,6 +9,7 @@ const schema = z
     PUSH_KIT_KEY_FILE: z.string().optional(),
     HEARTBEAT_STALE_SECONDS: z.coerce.number().int().positive().default(900),
     DOSE_MISSED_GRACE_MINUTES: z.coerce.number().int().positive().default(60),
+    SOS_REPUSH_SECONDS: z.coerce.number().int().positive().default(120),
   })
   .superRefine((env, ctx) => {
     if (env.PUSH_PROVIDER === "pushkit" && !env.PUSH_KIT_KEY_FILE) {

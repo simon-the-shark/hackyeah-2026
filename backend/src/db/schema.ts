@@ -209,6 +209,9 @@ export const alerts = pgTable(
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     /** Request accepted by the push provider. Not proof a guardian saw it. */
     pushStatus: pushStatusEnum("push_status").notNull().default("none"),
+    /** Push sends to guardians so far (first send, SOS reminders, failed-push retry). */
+    pushAttempts: integer("push_attempts").notNull().default(0),
+    lastPushAt: timestamp("last_push_at", { withTimezone: true }),
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
     acknowledgedBy: uuid("acknowledged_by").references(() => users.id, { onDelete: "set null" }),
     /** The condition ended (e.g. back inside the safe area). Separate from acknowledgement; the alert is kept. */

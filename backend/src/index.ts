@@ -18,6 +18,7 @@ const deps = {
   clock: () => new Date(),
   staleSeconds: config.HEARTBEAT_STALE_SECONDS,
   doseGraceMinutes: config.DOSE_MISSED_GRACE_MINUTES,
+  sosRepushSeconds: config.SOS_REPUSH_SECONDS,
 };
 startWatchdog(deps);
 

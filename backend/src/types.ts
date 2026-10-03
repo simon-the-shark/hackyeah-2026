@@ -13,6 +13,8 @@ export type Deps = {
   clock: () => Date;
   staleSeconds: number;
   doseGraceMinutes: number;
+  /** An unacknowledged SOS is pushed again after this many seconds (up to SOS_MAX_REMINDERS times). */
+  sosRepushSeconds: number;
 };
 
 export type AppEnv = { Variables: { auth: Auth } };

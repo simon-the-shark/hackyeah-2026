@@ -50,14 +50,16 @@ async function pushToGuardians(deps: Deps, seniorId: string, title: string, data
   return deps.push.send(tokens, { title, body: "Open the app for details.", data });
 }
 
-/** Sends a push to every guardian device and records the provider result on the alert. */
+/** Sends a push to every guardian device and records the provider result and attempt on the alert. */
 export async function notifyGuardians(
   deps: Deps,
   alert: { id: string; seniorId: string; kind: AlertKind },
-  opts: { cancelled?: boolean; source?: EventSource } = {},
+  opts: { cancelled?: boolean; reminder?: boolean; source?: EventSource } = {},
 ) {
   const name = await seniorName(deps, alert.seniorId);
-  let title = opts.cancelled ? `Cancelled: ${TITLES[alert.kind](name)}` : TITLES[alert.kind](name);
+  let title = TITLES[alert.kind](name);
+  if (opts.cancelled) title = `Cancelled: ${title}`;
+  if (opts.reminder) title = `Reminder: ${title} (not yet acknowledged)`;
   // Guardians must never mistake a replayed trace or demo trigger for a real event.
   if (opts.source && opts.source !== "device") title = `[Simulation] ${title}`;
   const status = await pushToGuardians(deps, alert.seniorId, title, {
@@ -65,8 +67,24 @@ export async function notifyGuardians(
     seniorId: alert.seniorId,
     kind: alert.kind,
   });
-  if (status !== "none") await deps.db.update(alerts).set({ pushStatus: status }).where(eq(alerts.id, alert.id));
+  if (status !== "none") {
+    await deps.db
+      .update(alerts)
+      .set({ pushStatus: status, pushAttempts: sql`${alerts.pushAttempts} + 1`, lastPushAt: deps.clock() })
+      .where(eq(alerts.id, alert.id));
+  }
   return status;
+}
+
+/** Pushes to the senior's own devices, e.g. to confirm a guardian has seen their SOS. */
+export async function pushToSenior(deps: Deps, seniorId: string, title: string, data: Record<string, string>) {
+  const rows = await deps.db
+    .select({ token: devices.pushToken })
+    .from(devices)
+    .where(and(eq(devices.userId, seniorId), isNotNull(devices.pushToken)));
+  const tokens = rows.map((r) => r.token).filter((t): t is string => !!t);
+  if (tokens.length === 0) return "none" as const;
+  return deps.push.send(tokens, { title, body: "Open the app for details.", data });
 }
 
 /**
