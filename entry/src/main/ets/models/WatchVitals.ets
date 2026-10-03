@@ -3,16 +3,6 @@ export const HEART_RATE_STALE_MS: number = 5 * 60 * 1000;
 /** Matches the backend's default heartbeat staleness (`HEARTBEAT_STALE_SECONDS`, 900 s). */
 export const WATCH_STALE_MS: number = 15 * 60 * 1000;
 
-/** The watch's own last reported position; never mixed with the phone's. */
-export class WatchLocation {
-  lat: number = 0;
-  lng: number = 0;
-  /** Negative when the watch did not report accuracy. */
-  accuracyM: number = -1;
-  /** Negative when no safe area is configured. */
-  distanceFromHomeM: number = -1;
-}
-
 export class HeartRateAlertSummary {
   bpm: number = 0;
   direction: string = '';
@@ -28,11 +18,10 @@ export class HeartRateAlertSummary {
 export class WatchVitalsSnapshot {
   hasWatch: boolean = false;
   heartbeatAgeMs: number = 0;
-  monitoringState: string = 'unknown';
   /** Negative when the watch did not report a battery level. */
   battery: number = -1;
-  location: WatchLocation | undefined = undefined;
-  locationSimulated: boolean = false;
+  /** The watch's last heartbeat came from an emulator or replay, not a real watch. */
+  statusSimulated: boolean = false;
   /** 0 when there is no reading yet. */
   latestBpm: number = 0;
   latestAgeMs: number = 0;
@@ -65,23 +54,6 @@ export function formatAge(ms: number): string {
   }
   const days = Math.floor(hours / 24);
   return days === 1 ? '1 day ago' : `${days} days ago`;
-}
-
-export function formatDistance(meters: number): string {
-  if (meters < 1000) {
-    return `${Math.round(meters / 10) * 10} m`;
-  }
-  return `${(meters / 1000).toFixed(meters < 10000 ? 1 : 0)} km`;
-}
-
-export function distanceMeters(latA: number, lngA: number, latB: number, lngB: number): number {
-  const earthRadiusMeters = 6371000;
-  const toRadians = Math.PI / 180;
-  const dLat = (latB - latA) * toRadians;
-  const dLng = (lngB - lngA) * toRadians;
-  const value = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(latA * toRadians) * Math.cos(latB * toRadians) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
 }
 
 /** Plain-language summary of an episode the watch reported; never a diagnosis. */

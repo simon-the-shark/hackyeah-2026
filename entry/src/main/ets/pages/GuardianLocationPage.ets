@@ -1,15 +1,22 @@
 import { common } from '@kit.AbilityKit';
 import { CareButtonStyle } from '../components/DesignSystem';
 import { IconBadge, NoticeBanner } from '../components/Common';
-import { MapScene, SeniorMap } from '../components/SeniorMap';
+import { MapMarker, MapScene, SeniorMap, markerIcon, markerLabel } from '../components/SeniorMap';
 import {
+  DeviceReport,
   Freshness,
+  PHONE,
   SeniorSnapshot,
+  WATCH,
   ageHeadline,
+  deviceAgeText,
+  deviceClockTime,
+  deviceIsStale,
+  deviceName,
   distanceMeters,
   formatDistance,
   freshnessOf,
-  reportClockTime,
+  hasAnyLocation,
   stateSentence
 } from '../models/SeniorLocation';
 import { formatClockTime } from '../models/Safety';
@@ -17,14 +24,16 @@ import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
 
-/** Light polling while the tab is visible; the senior phone reports on location changes. */
+/** Light polling while the tab is visible; the senior's phone and watch report on their own schedules. */
 const POLL_INTERVAL_MS: number = 30000;
 const EMPTY_SNAPSHOT: SeniorSnapshot = new SeniorSnapshot();
+const EMPTY_DEVICE: DeviceReport = new DeviceReport();
 
 /**
- * Guardian Location tab: the senior's last reported position from
- * `GET /seniors/:id/status`, drawn with the safe area, plus how old it is.
- * It shows a past report, never live tracking, and never says "safe".
+ * Guardian Location tab: the last reported positions of the senior's phone and
+ * watch from `GET /seniors/:id/status`, drawn on one map with the safe area,
+ * plus how old each one is. It shows past reports, never live tracking, and
+ * never says "safe".
  */
 @Component
 export struct GuardianLocationView {
@@ -117,23 +126,42 @@ export struct GuardianLocationView {
     }
   }
 
+  /** The report of one device, or an empty one when that device never reported. */
+  private device(kind: string): DeviceReport {
+    const snapshot = this.current();
+    return (kind === WATCH ? snapshot.watch : snapshot.phone) ?? EMPTY_DEVICE;
+  }
+
+  private hasDevice(kind: string): boolean {
+    const snapshot = this.current();
+    return (kind === WATCH ? snapshot.watch : snapshot.phone) !== undefined;
+  }
+
   private sceneFor(snapshot: SeniorSnapshot): MapScene {
     const scene = new MapScene();
-    scene.hasMarker = snapshot.hasLocation;
-    scene.markerLat = snapshot.lat;
-    scene.markerLng = snapshot.lng;
-    scene.accuracyM = snapshot.accuracyM;
+    const reports: (DeviceReport | undefined)[] = [snapshot.phone, snapshot.watch];
+    reports.forEach((report: DeviceReport | undefined) => {
+      if (report !== undefined && report.hasLocation) {
+        const marker = new MapMarker();
+        marker.kind = report.kind;
+        marker.lat = report.lat;
+        marker.lng = report.lng;
+        marker.accuracyM = report.accuracyM;
+        marker.stale = deviceIsStale(report, snapshot, this.now);
+        scene.markers.push(marker);
+      }
+    });
     scene.hasArea = snapshot.hasSafeArea;
     scene.areaLat = snapshot.areaLat;
     scene.areaLng = snapshot.areaLng;
     scene.areaRadiusM = snapshot.areaRadiusM;
-    scene.stale = freshnessOf(snapshot, this.now) === Freshness.Stale;
     return scene;
   }
 
-  private async openMap(snapshot: SeniorSnapshot): Promise<void> {
+  private async openMap(kind: string): Promise<void> {
+    const report = this.device(kind);
     const handOff = await openInMaps(this.getUIContext().getHostContext() as common.UIAbilityContext,
-      snapshot.lat, snapshot.lng, `${snapshot.seniorName}, last known location`);
+      report.lat, report.lng, `${this.current().seniorName}'s ${deviceName(kind)}, last known location`);
     if (handOff === MapsHandOff.None) {
       try {
         this.getUIContext().getPromptAction().showToast({ message: 'No maps app or browser could open this location' });
@@ -166,18 +194,19 @@ export struct GuardianLocationView {
     return snapshot.monitoringState === 'outside' ? $r('sys.symbol.figure_walk') : $r('sys.symbol.clock_fill');
   }
 
-  private accuracyText(snapshot: SeniorSnapshot): string {
-    if (!snapshot.hasLocation) {
+  private accuracyText(report: DeviceReport): string {
+    if (!report.hasLocation) {
       return 'No position in last update';
     }
-    return snapshot.accuracyM >= 0 ? `Within about ${formatDistance(snapshot.accuracyM)}` : 'Not reported';
+    return report.accuracyM >= 0 ? `Within about ${formatDistance(report.accuracyM)}` : 'Not reported';
   }
 
-  private distanceText(snapshot: SeniorSnapshot): string {
-    if (!snapshot.hasSafeArea || !snapshot.hasLocation) {
+  private distanceText(report: DeviceReport): string {
+    const snapshot = this.current();
+    if (!snapshot.hasSafeArea || !report.hasLocation) {
       return 'Unknown';
     }
-    return `About ${formatDistance(distanceMeters(snapshot.areaLat, snapshot.areaLng, snapshot.lat, snapshot.lng))}`;
+    return `About ${formatDistance(distanceMeters(snapshot.areaLat, snapshot.areaLng, report.lat, report.lng))}`;
   }
 
   private safeAreaText(snapshot: SeniorSnapshot): string {
@@ -187,8 +216,8 @@ export struct GuardianLocationView {
     return snapshot.safeAreaKnown ? 'Not set up' : 'Could not load';
   }
 
-  private batteryText(snapshot: SeniorSnapshot): string {
-    return snapshot.battery >= 0 ? `${snapshot.battery}%` : 'Not reported';
+  private batteryText(report: DeviceReport): string {
+    return report.battery >= 0 ? `${report.battery}%` : 'Not reported';
   }
 
   @Builder
@@ -226,17 +255,38 @@ export struct GuardianLocationView {
   }
 
   @Builder
+  deviceCard(kind: string) {
+    DeviceLocationCard({
+      kind: kind,
+      ageText: deviceAgeText(this.device(kind), this.current(), this.now),
+      stale: deviceIsStale(this.device(kind), this.current(), this.now),
+      simulated: this.device(kind).simulated,
+      hasLocation: this.device(kind).hasLocation,
+      lastUpdate: deviceClockTime(this.device(kind), this.current(), this.now),
+      accuracy: this.accuracyText(this.device(kind)),
+      distance: this.distanceText(this.device(kind)),
+      battery: this.batteryText(this.device(kind)),
+      onOpenMap: () => this.openMap(kind)
+    })
+  }
+
+  @Builder
   details() {
-    Column() {
-      LocationInfoRow({ label: 'Last update', value: reportClockTime(this.current(), this.now), showDivider: true })
-      LocationInfoRow({ label: 'Accuracy', value: this.accuracyText(this.current()), showDivider: true })
-      LocationInfoRow({ label: 'From home centre', value: this.distanceText(this.current()), showDivider: true })
-      LocationInfoRow({ label: 'Safe area', value: this.safeAreaText(this.current()), showDivider: true })
-      LocationInfoRow({ label: 'Phone battery', value: this.batteryText(this.current()), showDivider: false })
+    Column({ space: 16 }) {
+      if (this.hasDevice(PHONE)) {
+        this.deviceCard(PHONE)
+      }
+      if (this.hasDevice(WATCH)) {
+        this.deviceCard(WATCH)
+      }
+      Column() {
+        LocationInfoRow({ label: 'Safe area', value: this.safeAreaText(this.current()), showDivider: false })
+      }
+      .width('100%')
+      .borderRadius(20)
+      .backgroundColor($r('app.color.surface'))
     }
     .width('100%')
-    .borderRadius(20)
-    .backgroundColor($r('app.color.surface'))
   }
 
   @Builder
@@ -252,7 +302,7 @@ export struct GuardianLocationView {
         .fontSize(22)
         .fontWeight(FontWeight.Bold)
         .fontColor($r('app.color.text_primary'))
-      Text(`${this.current().seniorName}'s phone has not shared an update. It appears after location sharing is turned on in Safe Area on the senior's phone.`)
+      Text(`Neither ${this.current().seniorName}'s phone nor watch has shared an update. The phone shares after location sharing is turned on in Safe Area; the watch shares while Carely is open on it.`)
         .fontSize(16)
         .fontColor($r('app.color.text_secondary'))
         .textAlign(TextAlign.Center)
@@ -287,24 +337,6 @@ export struct GuardianLocationView {
       .attributeModifier(new CareButtonStyle())
       .enabled(!this.loading)
       .onClick(() => this.reload())
-
-      if (this.snapshot !== undefined && this.snapshot.hasLocation) {
-        Button() {
-          Row({ space: 8 }) {
-            SymbolGlyph($r('sys.symbol.map'))
-              .fontSize(20)
-              .fontColor([$r('app.color.guardian_accent')])
-            Text('Open in Maps')
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.guardian_accent'))
-          }
-        }
-        .width('100%')
-        .height(56)
-        .attributeModifier(new CareButtonStyle('secondary'))
-        .onClick(() => this.openMap(this.current()))
-      }
     }
     .width('100%')
   }
@@ -337,13 +369,13 @@ export struct GuardianLocationView {
           }
         } else {
           this.hero()
-          if (!this.snapshot.hasLocation) {
+          if (!hasAnyLocation(this.snapshot)) {
             NoticeBanner({
               icon: $r('sys.symbol.questionmark_circle_fill'),
-              text: 'The last update did not include a position.'
+              text: 'The last updates did not include a position.'
             })
           }
-          if (this.snapshot.hasLocation || this.snapshot.hasSafeArea) {
+          if (hasAnyLocation(this.snapshot) || this.snapshot.hasSafeArea) {
             SeniorMap({ scene: this.scene })
           }
           this.details()
@@ -370,7 +402,7 @@ export struct GuardianLocationView {
   }
 
   private footerText(): string {
-    const base = 'Shared by the senior\'s phone while location sharing is on in Carely. This is the last report, not live tracking.';
+    const base = 'Shared by the senior\'s phone while location sharing is on, and by the watch while Carely is open on it. These are the last reports, not live tracking.';
     return this.lastCheckedAt > 0 ? `${base} Checked at ${formatClockTime(this.lastCheckedAt)}.` : base;
   }
 }
@@ -405,5 +437,94 @@ struct LocationInfoRow {
       }
     }
     .accessibilityGroup(true)
+  }
+}
+
+/** One device's last report, with the same icon as its map marker. A component so it updates after each refresh. */
+@Component
+struct DeviceLocationCard {
+  @Prop kind: string = PHONE;
+  @Prop ageText: string = '';
+  @Prop stale: boolean = false;
+  @Prop simulated: boolean = false;
+  @Prop hasLocation: boolean = false;
+  @Prop lastUpdate: string = '';
+  @Prop accuracy: string = '';
+  @Prop distance: string = '';
+  @Prop battery: string = '';
+  onOpenMap: () => void = () => {};
+
+  build() {
+    Column() {
+      Row({ space: 12 }) {
+        Row() {
+          SymbolGlyph(markerIcon(this.kind))
+            .fontSize(22)
+            .fontColor([Color.White])
+        }
+        .width(44)
+        .height(44)
+        .borderRadius(22)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(this.stale ? $r('app.color.action_danger') : $r('app.color.action_primary'))
+
+        Column({ space: 2 }) {
+          Text(markerLabel(this.kind))
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+          Text(this.ageText)
+            .fontSize(15)
+            .fontColor(this.stale ? $r('app.color.warning') : $r('app.color.text_secondary'))
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+
+        if (this.simulated) {
+          Text('Simulated')
+            .fontSize(13)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.warning'))
+            .padding({ left: 10, right: 10, top: 4, bottom: 4 })
+            .borderRadius(12)
+            .backgroundColor($r('app.color.warning_tint'))
+        }
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 14, bottom: 6 })
+      .accessibilityGroup(true)
+
+      LocationInfoRow({ label: 'Last update', value: this.lastUpdate, showDivider: true })
+      LocationInfoRow({ label: 'Accuracy', value: this.accuracy, showDivider: true })
+      LocationInfoRow({ label: 'From home centre', value: this.distance, showDivider: true })
+      LocationInfoRow({ label: 'Battery', value: this.battery, showDivider: this.hasLocation })
+
+      if (this.hasLocation) {
+        Column() {
+          Button() {
+            Row({ space: 8 }) {
+              SymbolGlyph($r('sys.symbol.map'))
+                .fontSize(20)
+                .fontColor([$r('app.color.guardian_accent')])
+              Text('Open in Maps')
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.guardian_accent'))
+            }
+          }
+          .width('100%')
+          .height(56)
+          .attributeModifier(new CareButtonStyle('secondary'))
+          .accessibilityText(`Open the ${markerLabel(this.kind).toLowerCase()}'s last known location in Maps`)
+          .onClick(() => this.onOpenMap())
+        }
+        .width('100%')
+        .padding({ left: 16, right: 16, top: 12 })
+      }
+    }
+    .width('100%')
+    .padding({ bottom: 16 })
+    .borderRadius(20)
+    .backgroundColor($r('app.color.surface'))
   }
 }

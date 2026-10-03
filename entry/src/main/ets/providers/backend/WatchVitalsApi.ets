@@ -38,12 +38,6 @@ export interface RemoteHeartRate {
   serverTime: string;
 }
 
-export interface RemoteSafeArea {
-  lat: number;
-  lng: number;
-  radiusM: number;
-}
-
 /** What the watch reported when a heart-rate alert was raised (`alert.details`). */
 export interface RemoteHeartRateDetails {
   bpm?: number;
@@ -102,10 +96,6 @@ export class WatchVitalsApi {
   async heartRate(seniorId: string, from: Date): Promise<RemoteHeartRate> {
     return this.client.get<RemoteHeartRate>(
       `${this.senior(seniorId)}/vitals/heart-rate?from=${encodeURIComponent(from.toISOString())}`);
-  }
-
-  async safeArea(seniorId: string): Promise<RemoteSafeArea> {
-    return this.client.get<RemoteSafeArea>(`${this.senior(seniorId)}/safe-area`);
   }
 
   /** The newest heart-rate alert for this senior from the guardian inbox, if any. */

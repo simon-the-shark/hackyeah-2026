@@ -4,7 +4,6 @@ import { formatClockTime } from '../models/Safety';
 import {
   describeHeartRateAlert,
   formatAge,
-  formatDistance,
   HEART_RATE_STALE_MS,
   sparklinePoints,
   WATCH_STALE_MS,
@@ -18,9 +17,10 @@ const CHART_WIDTH = 280;
 const CHART_HEIGHT = 72;
 
 /**
- * The guardian's view of the senior's watch: the watch's own last location and
- * battery, and the heart rate it shares. Everything is shown with its age, and
- * nothing here is a medical assessment.
+ * The guardian's view of the senior's watch: its battery and last update, and
+ * the heart rate it shares. The watch's position is on the Location tab map,
+ * next to the phone's. Everything is shown with its age, and nothing here is a
+ * medical assessment.
  */
 @Component
 export struct GuardianWatchPage {
@@ -156,7 +156,7 @@ export struct GuardianWatchPage {
   }
 
   @Builder
-  locationCard(snapshot: WatchVitalsSnapshot) {
+  statusCard(snapshot: WatchVitalsSnapshot) {
     Column({ space: 10 }) {
       Row({ space: 12 }) {
         IconBadge({
@@ -165,7 +165,7 @@ export struct GuardianWatchPage {
           tint: $r('app.color.guardian_tint')
         })
         Column({ space: 2 }) {
-          Text('Watch location')
+          Text('Watch')
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
@@ -178,27 +178,15 @@ export struct GuardianWatchPage {
         }
         .alignItems(HorizontalAlign.Start)
         .layoutWeight(1)
-        if (snapshot.locationSimulated) {
+        if (snapshot.statusSimulated) {
           this.simulatedBadge()
         }
       }
       .width('100%')
 
-      if (snapshot.location !== undefined) {
-        this.infoRow('Position', `${snapshot.location.lat.toFixed(5)}, ${snapshot.location.lng.toFixed(5)}`)
-        if (snapshot.location.accuracyM >= 0) {
-          this.infoRow('Accuracy', `±${Math.round(snapshot.location.accuracyM)} m`)
-        }
-        if (snapshot.location.distanceFromHomeM >= 0) {
-          this.infoRow('From home', formatDistance(snapshot.location.distanceFromHomeM))
-        }
-        this.infoRow('Safe area', snapshot.monitoringState === 'inside' ? 'Was inside'
-          : snapshot.monitoringState === 'outside' ? 'Was outside' : 'Unknown')
-      } else {
-        Text('The watch has not shared a location yet. Location is shared only while Carely is open on the watch.')
-          .fontSize(15)
-          .fontColor($r('app.color.text_secondary'))
-      }
+      Text('Its last position is on the Location tab map, next to the phone\'s.')
+        .fontSize(15)
+        .fontColor($r('app.color.text_secondary'))
       this.infoRow('Watch battery', snapshot.battery >= 0 ? `${snapshot.battery}%` : 'Not reported')
     }
     .width('100%')
@@ -221,7 +209,7 @@ export struct GuardianWatchPage {
         .alignItems(HorizontalAlign.Start)
         Column({ space: 8 }) {
           sectionTitle('Watch')
-          this.locationCard(snapshot)
+          this.statusCard(snapshot)
         }
         .alignItems(HorizontalAlign.Start)
       }
