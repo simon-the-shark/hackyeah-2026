@@ -78,6 +78,13 @@
       "when": 1791039033030,
       "tag": "0010_tense_electro",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791039069511,
+      "tag": "0011_cheerful_goliath",
+      "breakpoints": true
     }
   ]
 }

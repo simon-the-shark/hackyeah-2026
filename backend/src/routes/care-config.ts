@@ -39,10 +39,16 @@ const tripBody = z
     destLat: lat,
     destLng: lng,
     radiusM,
+    route: z.array(z.object({ lat, lng })).min(2).max(200).optional(),
+    corridorM: z.number().int().min(20).max(2000).optional(),
     windowStart: isoDate,
     windowEnd: isoDate,
   })
-  .refine((t) => t.windowEnd > t.windowStart, { message: "windowEnd must be after windowStart", path: ["windowEnd"] });
+  .refine((t) => t.windowEnd > t.windowStart, { message: "windowEnd must be after windowStart", path: ["windowEnd"] })
+  .refine((t) => t.corridorM === undefined || t.route !== undefined, {
+    message: "corridorM needs a route",
+    path: ["corridorM"],
+  });
 
 /** Guardian-managed configuration. Reads: linked senior or guardian. Writes: guardian. */
 export function careConfigRoutes(deps: Deps) {
@@ -291,7 +297,8 @@ export function careConfigRoutes(deps: Deps) {
       const { version: v, ...fields } = c.req.valid("json");
       const [updated] = await db
         .update(trips)
-        .set({ ...fields, version: sql`${trips.version} + 1` })
+        // Full replacement: an omitted route or corridor is cleared.
+        .set({ ...fields, route: fields.route ?? null, corridorM: fields.corridorM ?? null, version: sql`${trips.version} + 1` })
         .where(and(eq(trips.id, id), eq(trips.seniorId, seniorId), eq(trips.version, v)))
         .returning();
       if (updated) return c.json(updated);

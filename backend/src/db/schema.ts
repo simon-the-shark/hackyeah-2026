@@ -294,6 +294,10 @@ export const trips = pgTable(
     destLat: doublePrecision("dest_lat").notNull(),
     destLng: doublePrecision("dest_lng").notNull(),
     radiusM: integer("radius_m").notNull(),
+    /** Optional intended route; the device checks deviation from it, the server only stores it. */
+    route: jsonb("route").$type<{ lat: number; lng: number }[]>(),
+    /** Allowed distance from the route before the device reports trip_deviation. */
+    corridorM: integer("corridor_m"),
     windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
     windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
     status: tripStatusEnum("status").notNull().default("planned"),

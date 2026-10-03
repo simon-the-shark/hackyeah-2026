@@ -236,3 +236,37 @@ describe("fall detection", () => {
     expect(byKind.area_exit).toBeNull();
   });
 });
+
+describe("trip routes", () => {
+  const trip = {
+    label: "Doctor",
+    destLat: 50.07,
+    destLng: 19.94,
+    radiusM: 100,
+    windowStart: "2026-10-03T12:00:00Z",
+    windowEnd: "2026-10-03T13:00:00Z",
+  };
+  const route = [
+    { lat: 50.06, lng: 19.93 },
+    { lat: 50.065, lng: 19.935 },
+    { lat: 50.07, lng: 19.94 },
+  ];
+
+  it("stores an optional route and corridor, and clears them on a PUT without them", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const base = `/v1/seniors/${seniorId}/trips`;
+    const created = await t.call("POST", base, guardianToken, { ...trip, route, corridorM: 150 });
+    expect(created.status).toBe(201);
+    expect((await t.call("GET", base, seniorToken)).body.items[0].route).toHaveLength(3);
+    const updated = await t.call("PUT", `${base}/${created.body.id}`, guardianToken, { ...trip, version: 1 });
+    expect(updated.body.route).toBeNull();
+    expect(updated.body.corridorM).toBeNull();
+  });
+
+  it("rejects a corridor without a route and a one-point route", async () => {
+    const { seniorId, guardianToken } = await t.pair();
+    const base = `/v1/seniors/${seniorId}/trips`;
+    expect((await t.call("POST", base, guardianToken, { ...trip, corridorM: 150 })).status).toBe(400);
+    expect((await t.call("POST", base, guardianToken, { ...trip, route: [route[0]] })).status).toBe(400);
+  });
+});
