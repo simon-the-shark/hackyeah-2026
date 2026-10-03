@@ -1,6 +1,7 @@
-import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { Feature, GUARDIAN_PROFILE, SENIOR_PROFILE } from '../models/Features';
 import { DoseRecord, Medication } from '../models/Medication';
 import { CareAlert } from '../models/Safety';
+import { apiSession } from '../services/CareApi';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
@@ -26,7 +27,31 @@ struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
   // Today's dose answers by occurrence ID, shared by the medicine list and detail screens.
   @Provide('doseRecords') doseRecords: Map<string, DoseRecord> = new Map<string, DoseRecord>();
-  @StorageLink('paired') private paired: boolean = false;
+  @StorageLink('paired') @Watch('onPairedChanged') private paired: boolean = false;
+
+  aboutToAppear(): void {
+    this.ensureRoleHome();
+  }
+
+  private onPairedChanged(): void {
+    if (this.paired) {
+      this.ensureRoleHome();
+    }
+  }
+
+  private roleHomeRoute(): string {
+    return apiSession.role === 'guardian' ? GUARDIAN_PROFILE.route : SENIOR_PROFILE.route;
+  }
+
+  /** Paired phones skip role picking and open the saved senior or guardian home. */
+  private ensureRoleHome(): void {
+    if (!this.paired || !apiSession.configured()) {
+      return;
+    }
+    if (this.navStack.size() === 0) {
+      this.navStack.pushPathByName(this.roleHomeRoute(), null);
+    }
+  }
 
   @Builder
   routes(name: string, param: Object) {
@@ -61,53 +86,12 @@ struct Index {
     } else if (name === 'developer-tools') {
       DeveloperToolsPage()
     } else if (name === 'connection') {
-      ConnectionPage({ onConnected: (role: string) => {
+      ConnectionPage({ onConnected: (_role: string) => {
         this.paired = true;
         this.navStack.pop();
-        this.navStack.pushPathByName(role === 'guardian' ? GUARDIAN_PROFILE.route : SENIOR_PROFILE.route, null);
+        this.ensureRoleHome();
       } })
     }
-  }
-
-  @Builder
-  roleCard(profile: RoleProfile) {
-    Row({ space: 16 }) {
-      Row() {
-        SymbolGlyph(profile.icon)
-          .fontSize(30)
-          .fontColor([profile.accent])
-      }
-      .width(60)
-      .height(60)
-      .borderRadius(18)
-      .justifyContent(FlexAlign.Center)
-      .backgroundColor(profile.tint)
-
-      Column({ space: 4 }) {
-        Text(profile.label)
-          .fontSize(22)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-        Text(profile.description)
-          .fontSize(15)
-          .fontColor($r('app.color.text_secondary'))
-      }
-      .layoutWeight(1)
-      .alignItems(HorizontalAlign.Start)
-
-      SymbolGlyph($r('sys.symbol.chevron_right'))
-        .fontSize(20)
-        .fontColor([$r('app.color.text_secondary')])
-    }
-    .width('100%')
-    .padding(20)
-    .borderRadius(24)
-    .backgroundColor($r('app.color.surface'))
-    .shadow({ radius: 16, color: $r('app.color.card_shadow'), offsetY: 4 })
-    .accessibilityGroup(true)
-    .onClick(() => {
-      this.navStack.pushPathByName(profile.route, null);
-    })
   }
 
   build() {
@@ -130,16 +114,17 @@ struct Index {
             .fontSize(34)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
-          Text('Who will use this device?')
+          Text('Set up this phone to connect with your care companion.')
             .fontSize(18)
             .fontColor($r('app.color.text_secondary'))
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)
+        .onAppear(() => this.ensureRoleHome())
 
         if (!this.paired) {
           Column({ space: 12 }) {
-            Text('Set up this phone before using safety features.')
+            Text('Pair once to enable SOS, location sharing, and guardian alerts.')
               .fontSize(17)
               .fontColor($r('app.color.text_secondary'))
               .width('100%')
@@ -155,12 +140,6 @@ struct Index {
         }
 
         Blank()
-
-        Text(this.paired ? 'This phone is paired.' : 'Pair once to enable SOS, location sharing, and guardian alerts.')
-          .fontSize(14)
-          .fontColor($r('app.color.text_secondary'))
-          .width('100%')
-          .textAlign(TextAlign.Center)
       }
       .width('100%')
       .height('100%')

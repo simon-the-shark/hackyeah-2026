@@ -1,4 +1,3 @@
-import { NoticeBanner } from '../components/Common';
 import { http } from '@kit.NetworkKit';
 import { formatClockTime } from '../models/Safety';
 import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
@@ -10,7 +9,6 @@ export struct SosPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private secondsLeft: number = COUNTDOWN_SECONDS;
   @State private sentAt: number = 0;
-  @State private deliveryMessage: string = '';
   @State private sendState: string = '';
   private timerId: number = -1;
   private sosEventId: string = '';
@@ -40,21 +38,15 @@ export struct SosPage {
     this.stopTimer();
     this.sentAt = Date.now();
     this.sendState = 'sending';
-    this.deliveryMessage = 'Sending SOS to the care service...';
     if (!apiSession.configured() || apiSession.role !== 'senior') {
-      this.deliveryMessage = 'This phone is not paired. SOS cannot be sent.';
       this.sendState = 'failed';
       return;
     }
     try {
       const event = new SafetyEventRequest(this.sosEventId, 'sos');
-      const result = await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event) as Record<string, Object>;
-      this.deliveryMessage = result['alert'] === undefined
-        ? 'SOS accepted by the care service.'
-        : 'SOS accepted. Guardian notification delivery was requested.';
+      await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
       this.sendState = 'sent';
     } catch (error) {
-      this.deliveryMessage = 'SOS could not reach the care service. Please try again.';
       this.sendState = 'failed';
     }
   }
@@ -141,10 +133,6 @@ export struct SosPage {
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
       }
-
-      NoticeBanner({
-        text: this.deliveryMessage
-      })
 
       Button(this.sendState === 'failed' ? 'Try again' : 'Done')
         .width('100%')

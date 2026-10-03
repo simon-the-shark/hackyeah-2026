@@ -248,6 +248,8 @@ export struct RoleHome {
     }
     .title(this.selectedTab === 0 ? this.profile.label : this.profile.tabs[this.selectedTab - 1].title)
     .backgroundColor($r('app.color.page_background'))
+    .hideBackButton(true)
     .onShown(() => this.tabRefresh++)
+    .onBackPressed(() => this.navStack.size() <= 1)
   }
 }

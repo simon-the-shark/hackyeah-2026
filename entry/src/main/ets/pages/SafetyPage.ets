@@ -14,6 +14,7 @@ export struct SafetyPage {
   @State private monitoringEnabled: boolean = false;
   @State private starting: boolean = false;
   @State private locationPermissionDenied: boolean = false;
+  @State private locationSwitchOff: boolean = false;
   @State private errorMessage: string = '';
   private readonly locationCallback: (location: geoLocationManager.Location) => void =
     (location: geoLocationManager.Location): void => {
@@ -92,6 +93,7 @@ export struct SafetyPage {
   private startLocationMonitoring(): void {
     this.starting = true;
     this.errorMessage = '';
+    this.locationSwitchOff = false;
     const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
     const atManager = abilityAccessCtrl.createAtManager();
     atManager.requestPermissionsFromUser(context, [
@@ -99,7 +101,7 @@ export struct SafetyPage {
       'ohos.permission.LOCATION'
     ]).then((result) => {
       this.starting = false;
-      if (result.authResults[0] !== 0) {
+      if (result.authResults[0] !== 0 || result.authResults[1] !== 0) {
         this.locationPermissionDenied = true;
         return;
       }
@@ -117,11 +119,39 @@ export struct SafetyPage {
         this.locationMessage = 'Checking where you are…';
       } catch (error) {
         const businessError = error as BusinessError;
-        this.errorMessage = `Location sharing could not start (error ${businessError.code}).`;
+        if (businessError.code === 3301100) {
+          this.locationSwitchOff = true;
+          this.errorMessage = 'Location is turned off on this phone. Turn it on to share your location.';
+        } else {
+          this.errorMessage = `Location sharing could not start (error ${businessError.code}).`;
+        }
       }
     }).catch((error: BusinessError) => {
       this.starting = false;
       this.errorMessage = `Location permission request failed (error ${error.code}).`;
+    });
+  }
+
+  private requestLocationSwitch(): void {
+    this.starting = true;
+    this.errorMessage = '';
+    const atManager = abilityAccessCtrl.createAtManager();
+    atManager.requestGlobalSwitch(this.hostContext(), abilityAccessCtrl.SwitchType.LOCATION).then((enabled: boolean) => {
+      this.starting = false;
+      if (!enabled) {
+        this.errorMessage = 'Location needs to be turned on before sharing can start.';
+        return;
+      }
+      this.locationSwitchOff = false;
+      this.startLocationMonitoring();
+    }).catch((error: BusinessError) => {
+      this.starting = false;
+      if (error.code === 12100013) {
+        this.locationSwitchOff = false;
+        this.startLocationMonitoring();
+        return;
+      }
+      this.errorMessage = `Could not open the location switch (error ${error.code}).`;
     });
   }
 
@@ -275,6 +305,15 @@ export struct SafetyPage {
         })
       }
 
+      if (this.locationSwitchOff) {
+        NoticeBanner({
+          icon: $r('sys.symbol.exclamationmark_circle_fill'),
+          text: 'Location is turned off for this phone. Turn it on to share your location.',
+          accent: $r('app.color.sos'),
+          tint: $r('app.color.sos_tint')
+        })
+      }
+
       if (this.errorMessage !== '') {
         NoticeBanner({
           icon: $r('sys.symbol.exclamationmark_circle_fill'),
@@ -286,7 +325,8 @@ export struct SafetyPage {
 
       Button(this.starting ? 'Starting…'
         : this.monitoringEnabled ? 'Turn off sharing'
-          : this.locationPermissionDenied ? 'Open Settings' : 'Turn on sharing')
+          : this.locationPermissionDenied ? 'Open Settings'
+            : this.locationSwitchOff ? 'Turn on location' : 'Turn on sharing')
         .width('100%')
         .height(56)
         .fontSize(19)
@@ -299,6 +339,8 @@ export struct SafetyPage {
             this.stopLocationMonitoring();
           } else if (this.locationPermissionDenied) {
             this.openLocationSettings();
+          } else if (this.locationSwitchOff) {
+            this.requestLocationSwitch();
           } else {
             this.startLocationMonitoring();
           }
