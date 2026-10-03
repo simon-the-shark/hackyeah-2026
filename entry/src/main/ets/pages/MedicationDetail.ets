@@ -1,4 +1,5 @@
 import { DoseAction } from '../components/DoseAction';
+import { MedicineModelViewer } from '../components/MedicineModelViewer';
 import { DoseOccurrence, DoseRecord, Medication } from '../models/Medication';
 import { nextDose, todaysDoses } from '../services/MedicationSchedule';
 
@@ -96,17 +97,7 @@ export struct MedicationDetail {
             this.matchBanner()
           }
 
-          Row() {
-            SymbolGlyph($r('sys.symbol.cross_case'))
-              .fontSize(72)
-              .fontColor([$r('app.color.senior_accent')])
-          }
-          .width('100%')
-          .height(160)
-          .borderRadius(24)
-          .justifyContent(FlexAlign.Center)
-          .backgroundColor($r('app.color.senior_tint'))
-          .accessibilityText('Medicine')
+          MedicineModelViewer()
 
           Column({ space: 4 }) {
             Text(this.params.medication.name)
