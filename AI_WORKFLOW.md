@@ -12,6 +12,8 @@ endpoints, or confidential prompts.
 | OpenCode | `openai/gpt-6-astra` | Product documentation and mobile implementation planning |
 | Cursor Agent | Claude Opus 5.5 | Navigation baseline and build validation |
 | Claude Code | Claude Opus 5.5 | Senior home navigation refinements and build validation |
+| Claude Code | Claude Opus 5.5, Claude Sonnet 5.5 | Backend planning, implementation, tests, PR review fixes, and documentation |
+| Prelint | GitHub app | Automated decision review on backend pull requests |
 | Context7 MCP | Context7 | Current third-party library documentation when required |
 
 ## Important Prompts And Instructions
@@ -23,6 +25,12 @@ endpoints, or confidential prompts.
   and on-device wellbeing AI with guardian reporting. Prepare `MOBILE_PLAN.md`;
   backend implementation belongs to a separate parallel agent. Planned trips,
   learned routes, voice interaction, and fall detection are stretch features.
+- Backend request: decide which features need a backend versus mobile only, and
+  build it in `backend/` with the latest Hono and pnpm. User decisions: PostgreSQL
+  with Drizzle ORM, the guardian as a second role in the ArkTS app, HarmonyOS Push
+  Kit as the real default push provider (a log provider only by explicit opt-in),
+  the backend README updated with every contract change, and project docs
+  switched from OpenHarmony/Oniro to HarmonyOS.
 
 ## AI-Assisted Work Log
 
@@ -33,6 +41,11 @@ endpoints, or confidential prompts.
 | 2026-10-03 | OpenCode / `openai/gpt-6-astra` | Document selected concept and plan mobile delivery | Updated README, brief, repository instructions, technical stack, and AI disclosure; added `MOBILE_PLAN.md` with priorities, role flows, architecture, feasibility gates, integration needs, and validation plan | Reviewed against the current official challenge statement and checked documentation diff; documentation-only work, no new build or runtime validation. Platform APIs, watch support, push transport, and local inference remain unverified. |
 | 2026-10-03 | Cursor Agent / Claude Opus 5.5 | Build the navigation baseline from the mobile and backend feature lists | Role picker, senior and guardian home screens with grouped features, a shared "Coming soon" placeholder screen using `Navigation`/`NavPathStack`, light/dark color resources, and SDK-verified system symbols | `./scripts/build-hap.sh` passed with API 24 (unsigned HAP); `git diff --check` clean. Not run on an emulator because no target was connected. No feature behavior, data, platform service, or integration was added. |
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | Move senior Medication, Contacts and Wellbeing from the home list into a bottom navigation bar | Senior home now uses `Tabs` with a large-label custom bottom bar (Home, Medication, Contacts, Wellbeing); placeholder content extracted into a reusable `FeaturePlaceholder`; guardian home unchanged | `./scripts/build-hap.sh` passed with API 24 (unsigned HAP); `git diff --check` clean. Not run on an emulator because no HDC target was connected. |
+
+| 2026-10-03 | Claude Code / Claude Opus 5.5 | Backend scope and plan | `backend/PLAN.md`: backend/mobile feature split, data model, API contract, push design, verification plan | Reviewed and amended by the user (Drizzle ORM, real push default, README-per-change rule) before implementation. |
+| 2026-10-03 | Claude Code / Claude Sonnet 5.5 | Implement the backend | `backend/`: Hono API, Drizzle schema and migrations, pairing and device tokens, versioned guardian config, idempotent events, alerts with Push Kit and log providers, heartbeat/trip watchdog, doses, reports, synthetic catalog and seed data, README contract | `pnpm typecheck` clean; 19 integration tests passed against Postgres in Docker; curl smoke test on the running server. Push Kit request format taken from secondary sources because the official pages did not render; never sent live. |
+| 2026-10-03 | Claude Code / Claude Sonnet 5.5 | Address Prelint review on the backend PR | Guardian-only report reads, dose history kept after medication deletion, `trip_started` event, guardian-wide alert inbox, documented heartbeat threshold and late trip arrival | 28 integration tests passed; curl checks of each fix; PR squash-merged after the final review reported no code defects (the last doc-only commit was not re-reviewed). |
+| 2026-10-03 | Claude Code / Claude Opus 5.5 | Switch project docs to HarmonyOS | `AGENTS.md`, `README.md`, `HACKATHON_BRIEF.md`, `docs/TECH_STACK.md`, `MOBILE_PLAN.md`, this file | Checked against `build-profile.json5`, which already sets `runtimeOS: "HarmonyOS"` and SDK `6.1.1(24)`. Documentation only; no build or emulator run. Challenge copies under `docs/challenge/` were left unchanged. |
 
 ## Workflow
 
@@ -53,10 +66,18 @@ ArkTS project configuration before acceptance.
 Record builds, linting, tests, emulator runs, logs, screenshots, and manual
 checks here as they are completed.
 
+- Backend: `pnpm typecheck` and `pnpm test` (28 integration tests through
+  `app.request()` against a PostgreSQL test database with an injected fake push
+  provider), plus curl checks against the running server with seed data.
+
 ## Unsuccessful Approaches
 
 - `npx hvigor` did not resolve the build tool; DevEco's bundled wrapper worked.
 - Selecting API 23 before its SDK was available failed; the recorded build used API 24.
+- Fetching Huawei's Push Kit documentation pages returned only navigation text
+  (client-side rendering); the request format came from secondary sources.
+- Starting Postgres in Docker first failed because the Docker disk was full; the
+  user approved removing unused Docker data.
 
 ## Known Limitations
 
@@ -64,8 +85,11 @@ checks here as they are completed.
   product functionality is implemented.
 - The `.hap` is unsigned because no signing profile is configured. Emulator
   installation and launch remain unverified.
-- API 23 cannot be selected until its SDK components are downloaded in DevEco
-  Studio; the project currently compiles with the installed API 24 SDK.
+- Backend Push Kit delivery is unverified against a real AppGallery Connect
+  project and the HarmonyOS emulator. The push payload carries no
+  click-through data yet, and the backend has not been called from an emulator.
+- Backend pairing and demo bootstrap are unauthenticated and not rate limited;
+  they are meant for the hackathon demo only.
 
 ## Lessons Learned
 

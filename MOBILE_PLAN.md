@@ -2,7 +2,7 @@
 
 ## Goal And Current State
 
-Build an accessible elderly-care companion for OpenHarmony/Oniro using ArkTS,
+Build an accessible elderly-care companion for HarmonyOS using ArkTS,
 ArkUI, and the Stage model. The senior uses a phone and, where supported, a
 smartwatch; the guardian uses a phone. Human-Centric Technology leads the pitch.
 
@@ -170,10 +170,12 @@ mobile scope. A self-hosted server model would be a separate decision.
 
 ## Platform Feasibility Gates
 
-Before implementing an unfamiliar API, consult current official OpenHarmony or
-Oniro documentation and record supported API level, Public versus Full SDK,
+Before implementing an unfamiliar API, consult current official HarmonyOS
+documentation and record supported API level, Public versus Full SDK,
 permissions, device support, and foreground/background restrictions. Confirm
-behavior on the actual image. HarmonyOS proprietary services are not assumed.
+behavior on the actual emulator or device. HarmonyOS Push Kit is the selected
+remote alert transport (backend sender implemented, live delivery unverified);
+other HarmonyOS Kits are not assumed until verified.
 
 | Capability | Question to resolve | Honest demo fallback |
 | --- | --- | --- |
@@ -194,8 +196,8 @@ until the relevant capability is selected and justified.
 
 ## Backend Coordination: Mobile Needs Only
 
-These are proposed integration needs, not endpoint or infrastructure decisions.
-Agree the contract with the backend owner before wiring the real provider:
+The backend now implements these needs; its API contract is
+`backend/README.md`. The original list of needs is kept for reference:
 
 - Identity/pairing: identify senior, guardian, and source device and obtain the
   allowed relationship/configuration.
