@@ -71,6 +71,13 @@
       "when": 1791038946968,
       "tag": "0009_pink_triathlon",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791039033030,
+      "tag": "0010_tense_electro",
+      "breakpoints": true
     }
   ]
 }

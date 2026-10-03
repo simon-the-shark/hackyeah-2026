@@ -1,7 +1,7 @@
-import { and, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, lt, ne, notInArray, sql } from "drizzle-orm";
 import { alerts, events, statusHeartbeats, trips } from "../db/schema.js";
 import type { Deps } from "../types.js";
-import { notifyGuardians, raiseServerAlert } from "./alerts.js";
+import { isUrgent, notifyGuardians, raiseServerAlert, URGENT_KINDS } from "./alerts.js";
 import { checkMissedDoses } from "./doses.js";
 
 /** One pass: stale heartbeats -> monitoring_lost; elapsed trip windows -> trip_not_completed; overdue doses -> dose_missed. */
@@ -54,26 +54,26 @@ export async function runWatchdogOnce(deps: Deps) {
   return raised;
 }
 
-/** Reminders after the first SOS push; a guardian acknowledgement, cancel or resolution stops them. */
+/** Reminders after the first SOS or fall push; a guardian acknowledgement, cancel or resolution stops them. */
 export const SOS_MAX_REMINDERS = 3;
 /** A failed non-SOS push is retried once, this long after the failure. */
 const FAILED_RETRY_MS = 60_000;
 
 /**
- * Re-sends pushes that may not have reached anyone: unacknowledged SOS alerts get up to
+ * Re-sends pushes that may not have reached anyone: unacknowledged SOS and fall alerts get up to
  * SOS_MAX_REMINDERS reminders, and other alerts whose only push failed get one retry. Each row is
  * claimed by bumping last_push_at first, so concurrent passes cannot double-send.
  */
 async function repushAlerts(deps: Deps) {
   const now = deps.clock();
   const open = and(isNull(alerts.acknowledgedAt), isNull(alerts.cancelledAt), isNull(alerts.resolvedAt));
-  const sosDue = await deps.db
+  const urgentDue = await deps.db
     .update(alerts)
     .set({ lastPushAt: now })
     .where(
       and(
         open,
-        eq(alerts.kind, "sos"),
+        inArray(alerts.kind, [...URGENT_KINDS]),
         lt(alerts.pushAttempts, 1 + SOS_MAX_REMINDERS),
         lt(alerts.lastPushAt, new Date(now.getTime() - deps.sosRepushSeconds * 1000)),
       ),
@@ -85,7 +85,7 @@ async function repushAlerts(deps: Deps) {
     .where(
       and(
         open,
-        ne(alerts.kind, "sos"),
+        notInArray(alerts.kind, [...URGENT_KINDS]),
         eq(alerts.pushStatus, "failed"),
         lt(alerts.pushAttempts, 2),
         lt(alerts.lastPushAt, new Date(now.getTime() - FAILED_RETRY_MS)),
@@ -93,11 +93,11 @@ async function repushAlerts(deps: Deps) {
     )
     .returning();
 
-  for (const alert of [...sosDue, ...failedDue]) {
+  for (const alert of [...urgentDue, ...failedDue]) {
     const [event] = alert.eventId
       ? await deps.db.select({ source: events.source }).from(events).where(eq(events.id, alert.eventId))
       : [];
-    await notifyGuardians(deps, alert, { reminder: alert.kind === "sos", source: event?.source });
+    await notifyGuardians(deps, alert, { reminder: isUrgent(alert.kind), source: event?.source });
   }
 }
 

@@ -207,3 +207,32 @@ describe("delivery feedback", () => {
     expect(alert.pushStatus).toBe("sent");
   });
 });
+
+describe("fall detection", () => {
+  it("requires an explicit source and raises a fall alert", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const path = `/v1/seniors/${seniorId}/events`;
+    expect((await t.call("POST", path, seniorToken, event("fall_detected"))).status).toBe(400);
+    const res = await t.call("POST", path, seniorToken, event("fall_detected", { source: "simulated" }));
+    expect(res.status).toBe(201);
+    expect(res.body.alert.kind).toBe("fall");
+    expect(t.push.calls[0]!.message.title).toBe("[Simulation] Possible fall detected for Halina");
+    const [alert] = (await t.call("GET", "/v1/alerts", guardianToken)).body.items;
+    expect(alert.event.source).toBe("simulated");
+  });
+
+  it("cancels a fall with the generic cancel event, but not a non-urgent alert", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const path = `/v1/seniors/${seniorId}/events`;
+    const fall = event("fall_detected", { source: "device" });
+    await t.call("POST", path, seniorToken, fall);
+    const exit = event("area_exit");
+    await t.call("POST", path, seniorToken, exit);
+    expect((await t.call("POST", path, seniorToken, event("cancel", { cancelsEventId: exit.id }))).status).toBe(404);
+    expect((await t.call("POST", path, seniorToken, event("cancel", { cancelsEventId: fall.id }))).status).toBe(201);
+    const items = (await t.call("GET", `/v1/seniors/${seniorId}/alerts`, guardianToken)).body.items;
+    const byKind = Object.fromEntries(items.map((a: { kind: string; cancelledAt: string | null }) => [a.kind, a.cancelledAt]));
+    expect(byKind.fall).not.toBeNull();
+    expect(byKind.area_exit).toBeNull();
+  });
+});

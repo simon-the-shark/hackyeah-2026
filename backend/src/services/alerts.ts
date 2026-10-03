@@ -5,6 +5,10 @@ import { ApiError } from "../errors.js";
 import type { Auth, Deps } from "../types.js";
 
 type AlertKind = (typeof alerts.$inferSelect)["kind"];
+
+/** Urgent alerts: the senior may need help now. They can be cancelled, get reminders, and the senior is told when a guardian has seen them. */
+export const URGENT_KINDS = ["sos", "fall"] as const satisfies AlertKind[];
+export const isUrgent = (kind: AlertKind) => (URGENT_KINDS as readonly AlertKind[]).includes(kind);
 type EventType = (typeof events.$inferSelect)["type"];
 type EventSource = (typeof events.$inferSelect)["source"];
 
@@ -20,6 +24,7 @@ export type EventInput = {
 
 const ALERT_KIND_FOR_EVENT: Partial<Record<EventType, AlertKind>> = {
   sos: "sos",
+  fall_detected: "fall",
   area_exit: "area_exit",
   trip_deviation: "trip_deviation",
 };
@@ -31,6 +36,7 @@ const TITLES: Record<AlertKind, (name: string) => string> = {
   trip_deviation: (n) => `${n} deviated from the planned trip`,
   trip_not_completed: (n) => `${n} did not complete the planned trip`,
   monitoring_lost: (n) => `Monitoring lost for ${n}`,
+  fall: (n) => `Possible fall detected for ${n}`,
 };
 
 async function seniorName(deps: Deps, seniorId: string): Promise<string> {
@@ -153,16 +159,22 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
       return { event: existing, alert: existingAlert ?? null, created: false, cancelled: false };
     }
 
-    if (input.type === "sos_cancel") {
+    if (input.type === "sos_cancel" || input.type === "cancel") {
       if (!input.cancelsEventId) {
-        throw new ApiError(400, "validation_error", "sos_cancel requires cancelsEventId");
+        throw new ApiError(400, "validation_error", `${input.type} requires cancelsEventId`);
       }
       const [cancelled] = await tx
         .update(alerts)
         .set({ cancelledAt: deps.clock() })
-        .where(and(eq(alerts.eventId, input.cancelsEventId), eq(alerts.seniorId, seniorId)))
+        .where(
+          and(
+            eq(alerts.eventId, input.cancelsEventId),
+            eq(alerts.seniorId, seniorId),
+            inArray(alerts.kind, [...URGENT_KINDS]),
+          ),
+        )
         .returning();
-      if (!cancelled) throw new ApiError(404, "not_found", "Event to cancel not found");
+      if (!cancelled) throw new ApiError(404, "not_found", "SOS or fall event to cancel not found");
       return { event: inserted, alert: cancelled, created: true, cancelled: true };
     }
 

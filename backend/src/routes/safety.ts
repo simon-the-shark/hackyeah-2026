@@ -5,7 +5,7 @@ import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
-import { ingestEvent, pushToSenior, resolveAlerts } from "../services/alerts.js";
+import { ingestEvent, isUrgent, pushToSenior, resolveAlerts } from "../services/alerts.js";
 import { seniorStatus } from "../services/status.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
@@ -13,16 +13,31 @@ import { validate } from "../validate.js";
 const eventBody = z
   .object({
     id: uuid,
-    type: z.enum(["sos", "sos_cancel", "area_exit", "area_enter", "dose_missed", "trip_started", "trip_arrived", "trip_deviation"]),
+    type: z.enum([
+      "sos",
+      "sos_cancel",
+      "cancel",
+      "fall_detected",
+      "area_exit",
+      "area_enter",
+      "dose_missed",
+      "trip_started",
+      "trip_arrived",
+      "trip_deviation",
+    ]),
     occurredAt: isoDate,
     cancelsEventId: uuid.optional(),
     tripId: uuid.optional(),
     location: geoPoint.optional(),
-    source: eventSource,
+    // Optional, except for falls: a fall must say whether it came from a sensor or a demo trigger.
+    source: eventSource.unwrap().optional(),
   })
   .superRefine((e, ctx) => {
-    if (e.type === "sos_cancel" && !e.cancelsEventId) {
-      ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: "Required for sos_cancel" });
+    if ((e.type === "sos_cancel" || e.type === "cancel") && !e.cancelsEventId) {
+      ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: `Required for ${e.type}` });
+    }
+    if (e.type === "fall_detected" && !e.source) {
+      ctx.addIssue({ code: "custom", path: ["source"], message: "Required for fall_detected" });
     }
     if ((e.type === "trip_started" || e.type === "trip_arrived" || e.type === "trip_deviation") && !e.tripId) {
       ctx.addIssue({ code: "custom", path: ["tripId"], message: "Required for trip events" });
@@ -83,7 +98,7 @@ export function safetyRoutes(deps: Deps) {
       if (!trip) throw new ApiError(404, "not_found", "Trip not found");
     }
 
-    const result = await ingestEvent(deps, auth, seniorId, body);
+    const result = await ingestEvent(deps, auth, seniorId, { ...body, source: body.source ?? "device" });
     if (result.created && body.type === "trip_started" && body.tripId) {
       // Only a planned trip becomes active; a missed or completed trip is never revived.
       await db
@@ -195,10 +210,11 @@ export function safetyRoutes(deps: Deps) {
       .set({ acknowledgedAt: deps.clock(), acknowledgedBy: auth.userId })
       .where(and(eq(alerts.id, id), isNull(alerts.acknowledgedAt)))
       .returning();
-    // Tell the senior a person has seen their SOS (the "guardian acknowledged" state), once.
-    if (acked && acked.kind === "sos" && !acked.cancelledAt) {
+    // Tell the senior a person has seen their SOS or fall alert (the "guardian acknowledged" state), once.
+    if (acked && isUrgent(acked.kind) && !acked.cancelledAt) {
       const [guardian] = await db.select({ name: users.displayName }).from(users).where(eq(users.id, auth.userId));
-      await pushToSenior(deps, acked.seniorId, `${guardian?.name ?? "Your guardian"} has seen your SOS`, {
+      const what = acked.kind === "sos" ? "your SOS" : "your fall alert";
+      await pushToSenior(deps, acked.seniorId, `${guardian?.name ?? "Your guardian"} has seen ${what}`, {
         alertId: acked.id,
         kind: acked.kind,
       });

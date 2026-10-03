@@ -106,7 +106,7 @@ Timestamps are ISO 8601 with offset.
 | `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | `{name, phone, sortOrder?, isEmergency?}`. `isEmergency` marks the person to offer first when an SOS cannot be delivered. PUT needs `version` and, like `sortOrder`, resets an omitted `isEmergency` to `false` |
 | `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered. Optional `missedGraceMinutes` and `maxSnoozes`, see Missed doses |
 | `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
-| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
+| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `fall_detected`, `cancel` / `sos_cancel` (needs `cancelsEventId` of an `sos` or `fall_detected` event; `sos_cancel` is kept as an alias), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `fall_detected` (alert kind `fall`), `area_exit` and `trip_deviation` create an alert. `fall_detected` **must** send `source` explicitly (400 otherwise), so a synthetic trigger can never pass as sensor data. SOS and fall alerts are "urgent": they can be cancelled, get reminders and tell the senior when acknowledged. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
 | `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
@@ -126,7 +126,7 @@ Timestamps are ISO 8601 with offset.
 The watchdog re-sends pushes that may not have reached anyone. Alerts expose
 `pushAttempts` and `lastPushAt`:
 
-- An `sos` that is not acknowledged, cancelled or resolved is pushed again every
+- An `sos` or `fall` that is not acknowledged, cancelled or resolved is pushed again every
   `SOS_REPUSH_SECONDS` (default 120, unvalidated) as "Reminder: … (not yet
   acknowledged)", at most 3 times.
 - Any other alert whose push `failed` is retried once, a minute later.
@@ -149,7 +149,7 @@ resolved by a heartbeat or dose record). `sos` is ended by cancellation
 (`cancelledAt`), not resolution.
 
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
-`trip_not_completed`, `monitoring_lost`. Alert `pushStatus`: `none` (no guardian
+`trip_not_completed`, `monitoring_lost`, `fall`. Alert `pushStatus`: `none` (no guardian
 device had a push token), `sent`, `failed`, `simulated`.
 
 ## Missed doses
@@ -204,6 +204,10 @@ device testing.
 
 Changes to request or response shapes, error codes or semantics are recorded
 here with a date so the mobile side can follow.
+
+- 2026-10-03: `sos_cancel` (and the new `cancel`) only cancels `sos` and
+  `fall` alerts; pointing it at another event returns 404. Before, it cancelled
+  whatever alert that event had.
 
 - 2026-10-03: heartbeats are stored per device. `GET .../status` adds
   `devices` (`status` keeps its meaning: the newest heartbeat). `monitoring_lost`

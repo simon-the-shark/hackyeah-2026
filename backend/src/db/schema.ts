@@ -25,6 +25,8 @@ export const eventTypeEnum = pgEnum("event_type", [
   "trip_started",
   "trip_arrived",
   "trip_deviation",
+  "fall_detected",
+  "cancel",
 ]);
 export const alertKindEnum = pgEnum("alert_kind", [
   "sos",
@@ -33,6 +35,7 @@ export const alertKindEnum = pgEnum("alert_kind", [
   "trip_deviation",
   "trip_not_completed",
   "monitoring_lost",
+  "fall",
 ]);
 export const pushStatusEnum = pgEnum("push_status", ["none", "sent", "failed", "simulated"]);
 export const doseStatusEnum = pgEnum("dose_status", ["taken", "skipped", "snoozed"]);
