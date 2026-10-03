@@ -30,7 +30,9 @@ Use:
 - Empty Ability project structure
 
 Target OpenHarmony 6.1 / API 23 for current development unless a documented
-compatibility reason requires another API level.
+compatibility reason requires another API level. This project's installed
+DevEco SDK supports `6.1.1(24)` as its compile SDK, so compilation uses API 24
+while retaining API 20 compatibility.
 
 The hackathon requires API 20 or later.
 

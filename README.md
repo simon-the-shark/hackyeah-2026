@@ -6,16 +6,33 @@ Stage model. The product concept is not selected yet.
 ## Requirements
 
 - DevEco Studio with OpenHarmony SDK 6.1
-- API 23 compile SDK
+- API 24 compile SDK (the version supported by the installed DevEco SDK)
 - API 24 emulator for runtime testing
 
 The project retains compatibility with API 20, the hackathon minimum.
 
+## API 23 Setup
+
+The challenge baseline is API 23 for compilation, API 24 for runtime testing,
+and API 20 as the minimum supported API. This machine currently has only the
+API 24 SDK installed. In DevEco Studio, open **DevEco Studio > Settings >
+OpenHarmony SDK**, select **API Version 23**, and click **Apply** to download
+the ArkTS, toolchain, and previewer components. Once the download completes,
+change `compileSdkVersion` in `build-profile.json5` to `6.1.0(23)` and rebuild.
+
 ## Build
 
-Open the project in DevEco Studio and build the `entry` module with hvigor.
-Use Previewer for fast ArkUI iteration and an OpenHarmony or Oniro emulator for
-runtime, lifecycle, permission, and platform-integration verification.
+On macOS, run:
+
+```zsh
+./scripts/build-hap.sh
+```
+
+The script uses DevEco Studio's bundled hvigor wrapper and SDK. If DevEco Studio
+is installed elsewhere, set `DEVECO_STUDIO_HOME` to its `.app` directory before
+running the script. Use Previewer for fast ArkUI iteration and an OpenHarmony
+or Oniro emulator for runtime, lifecycle, permission, and platform-integration
+verification.
 
 ## Run
 

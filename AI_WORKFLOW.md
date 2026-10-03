@@ -21,7 +21,7 @@ endpoints, or confidential prompts.
 | Date | Tool/model | Request or task | Generated or changed | Human review and validation |
 | --- | --- | --- | --- | --- |
 | 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Align project with the HackYeah challenge starter and requirements | Challenge documentation, resource references, skills archive, SDK policy, and starter screen | Build verification pending |
-| 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Verify build tooling | Attempted the project build and checked for DevEco CLI | `npx hvigor` cannot resolve an OpenHarmony build tool from npm; `devecocli` is not installed |
+| 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Configure DevEco environment and build across several sessions | Located DevEco's bundled hvigor and SDK root, resolved SDK sync configuration, added the macOS build wrapper, and assessed API 23 installation | `assembleHap` completed successfully with API 24; API 23 is being installed through DevEco Studio. Signing, emulator installation, and launch remain unverified. |
 
 ## Workflow
 
@@ -46,8 +46,10 @@ checks here as they are completed.
 ## Known Limitations
 
 - The starter contains no product functionality beyond the generated screen.
-- This environment does not have DevEco's `hvigor` wrapper or `devecocli`, so a
-  native build and emulator run remain unverified.
+- The `.hap` is unsigned because no signing profile is configured. Emulator
+  installation and launch remain unverified.
+- API 23 cannot be selected until its SDK components are downloaded in DevEco
+  Studio; the project currently compiles with the installed API 24 SDK.
 
 ## Lessons Learned
 
