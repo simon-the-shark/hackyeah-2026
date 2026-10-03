@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import { createMiddleware } from "hono/factory";
 import type { Db } from "../db/client.js";
 import { careLinks, devices, users } from "../db/schema.js";
@@ -12,7 +12,7 @@ export async function findAuth(db: Db, token: string): Promise<Auth | null> {
     .select({ deviceId: devices.id, userId: users.id, role: users.role })
     .from(devices)
     .innerJoin(users, eq(users.id, devices.userId))
-    .where(eq(devices.tokenHash, hashToken(token)))
+    .where(and(eq(devices.tokenHash, hashToken(token)), isNull(devices.revokedAt)))
     .limit(1);
   return row ?? null;
 }

@@ -101,6 +101,8 @@ export const devices = pgTable(
     /** sha256 of the opaque bearer token; the token itself is never stored. */
     tokenHash: text("token_hash").notNull(),
     lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    /** Revoked devices cannot authenticate; the row is kept so its events stay attributable. */
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex("devices_token_hash_idx").on(t.tokenHash), index("devices_user_idx").on(t.userId)],

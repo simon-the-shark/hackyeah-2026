@@ -98,6 +98,8 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
+| `GET /v1/devices?seniorId=` | any | Own devices, or (guardian) a linked senior's devices: `id, kind, createdAt, lastSeenAt, hasPushToken, isCurrent`. Never returns tokens |
+| `DELETE /v1/devices/:id` | owner | Revokes one of your **other** devices (a device cannot revoke itself: 400). Its token stops working (401) and its push token and heartbeat are removed; its events and alerts are kept |
 | `GET /v1/me` | any | Role and linked seniors (guardian) or guardians (senior) |
 | `GET /v1/seniors/:id/config` | linked | Everything the senior device needs to run offline: `safeArea` (or null), `contacts`, `medications`, planned or active `trips`, plus `configVersion` (a content hash). The response carries `ETag: "<configVersion>"`; send it back as `If-None-Match` to get `304` when nothing changed. Poll this to reschedule reminders after guardian edits; there is no "config changed" push yet |
 | `GET/PUT /v1/seniors/:id/safe-area` `{lat,lng,radiusM,version?}` | read: linked, write: guardian | First PUT omits `version` (201). Later PUTs need the current `version` |
@@ -190,7 +192,8 @@ device testing.
 ## Limitations
 
 - Pairing and the demo bootstrap are unauthenticated and meant for the hackathon
-  demo, not production: no rate limiting, token rotation or revocation.
+  demo, not production: no rate limiting or token rotation. A lost device can be
+  revoked from another device of the same user.
 - Push retries are limited: one retry for a failed non-SOS push, and at most
   three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.

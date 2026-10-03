@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { setup } from "./helpers.js";
 
@@ -40,5 +41,40 @@ describe("care links", () => {
     expect((await t.call("DELETE", path, a.seniorToken)).status).toBe(204);
     expect((await t.call("DELETE", path, a.seniorToken)).status).toBe(404);
     expect((await t.call("GET", `/v1/seniors/${a.seniorId}/alerts`, a.guardianToken)).status).toBe(403);
+  });
+});
+
+describe("device management", () => {
+  it("lists own devices and a linked senior's devices without tokens", async () => {
+    const a = await t.pair();
+    await t.call("POST", "/v1/devices", a.seniorToken, { kind: "watch" });
+    const own = (await t.call("GET", "/v1/devices", a.seniorToken)).body.items;
+    expect(own.map((d: { kind: string; isCurrent: boolean }) => [d.kind, d.isCurrent])).toEqual([
+      ["phone", true],
+      ["watch", false],
+    ]);
+    expect(own[0].tokenHash).toBeUndefined();
+    const seen = (await t.call("GET", `/v1/devices?seniorId=${a.seniorId}`, a.guardianToken)).body.items;
+    expect(seen).toHaveLength(2);
+    const other = await t.pair();
+    expect((await t.call("GET", `/v1/devices?seniorId=${a.seniorId}`, other.guardianToken)).status).toBe(403);
+  });
+
+  it("revokes a lost watch: its token stops working and its events are kept", async () => {
+    const a = await t.pair();
+    const watch = (await t.call("POST", "/v1/devices", a.seniorToken, { kind: "watch" })).body;
+    await t.call("POST", `/v1/seniors/${a.seniorId}/events`, watch.token, {
+      id: randomUUID(),
+      type: "sos",
+      occurredAt: "2026-10-03T11:59:00Z",
+    });
+    await t.call("PUT", `/v1/seniors/${a.seniorId}/status`, watch.token, { monitoringState: "inside" });
+
+    expect((await t.call("DELETE", `/v1/devices/${watch.deviceId}`, a.guardianToken)).status).toBe(404);
+    expect((await t.call("DELETE", `/v1/devices/${watch.deviceId}`, watch.token)).status).toBe(400);
+    expect((await t.call("DELETE", `/v1/devices/${watch.deviceId}`, a.seniorToken)).status).toBe(204);
+    expect((await t.call("GET", "/v1/me", watch.token)).status).toBe(401);
+    expect((await t.call("GET", `/v1/seniors/${a.seniorId}/alerts`, a.guardianToken)).body.items).toHaveLength(1);
+    expect((await t.call("GET", `/v1/seniors/${a.seniorId}/status`, a.guardianToken)).body.devices).toHaveLength(0);
   });
 });

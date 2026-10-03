@@ -1,9 +1,9 @@
-import { and, desc, eq, gt, isNull } from "drizzle-orm";
+import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { generatePairingCode, generateToken, hashToken } from "../auth/tokens.js";
-import { bearerToken, findAuth, requireRole } from "../auth/middleware.js";
-import { careLinks, devices, pairingCodes, users } from "../db/schema.js";
+import { assertLinked, bearerToken, findAuth, requireRole } from "../auth/middleware.js";
+import { careLinks, devices, pairingCodes, statusHeartbeats, users } from "../db/schema.js";
 import { ApiError } from "../errors.js";
 import { deviceKind, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
@@ -152,6 +152,44 @@ export function identityRoutes(deps: Deps) {
     requireRole(auth, "senior");
     const device = await createDevice(deps, auth.userId, c.req.valid("json").kind);
     return c.json(device, 201);
+  });
+
+  /** Own devices, or (guardian, ?seniorId=) a linked senior's devices. Never returns tokens. */
+  app.get("/devices", validate("query", z.object({ seniorId: uuid.optional() })), async (c) => {
+    const auth = c.get("auth");
+    const { seniorId } = c.req.valid("query");
+    if (seniorId) await assertLinked(deps.db, auth, seniorId);
+    const rows = await deps.db
+      .select()
+      .from(devices)
+      .where(and(eq(devices.userId, seniorId ?? auth.userId), isNull(devices.revokedAt)))
+      .orderBy(asc(devices.createdAt));
+    return c.json({
+      items: rows.map((d) => ({
+        id: d.id,
+        kind: d.kind,
+        createdAt: d.createdAt,
+        lastSeenAt: d.lastSeenAt,
+        hasPushToken: d.pushToken !== null,
+        isCurrent: d.id === auth.deviceId,
+      })),
+    });
+  });
+
+  /** Revoke one of your other devices, e.g. a lost watch. Its events are kept; it can no longer sign in. */
+  app.delete("/devices/:id", validate("param", z.object({ id: uuid })), async (c) => {
+    const auth = c.get("auth");
+    const { id } = c.req.valid("param");
+    if (id === auth.deviceId) throw new ApiError(400, "validation_error", "A device cannot revoke itself");
+    const [revoked] = await deps.db
+      .update(devices)
+      .set({ revokedAt: deps.clock(), pushToken: null })
+      .where(and(eq(devices.id, id), eq(devices.userId, auth.userId), isNull(devices.revokedAt)))
+      .returning({ id: devices.id });
+    if (!revoked) throw new ApiError(404, "not_found", "Device not found");
+    // A revoked device must not keep the senior "monitored".
+    await deps.db.delete(statusHeartbeats).where(eq(statusHeartbeats.deviceId, id));
+    return c.body(null, 204);
   });
 
   /** Either side ends a care relationship; the guardian loses all access to that senior. */
