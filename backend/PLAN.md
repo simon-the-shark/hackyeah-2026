@@ -91,7 +91,7 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 - `PUT /v1/devices/me/push-token` (any role) registers the token. `GET /v1/me` returns the role, linked seniors and guardians.
 - Config: `GET|PUT /v1/seniors/:id/safe-area`, `GET|POST|PUT|DELETE …/contacts`, `…/medications`, `…/trips`. Guardian writes; the senior reads. Writes carry `version`, and a mismatch returns **409** with the current entity.
 - `POST /v1/seniors/:id/events` (senior) is **idempotent on client `id`**: a repeat returns 200 with the original record. A first insert returns 201. Both return `{event, alert:{id, pushStatus}}`. `sos_cancel` references `cancelsEventId` and updates the alert, never deletes it.
-- `GET /v1/seniors/:id/alerts?since=` and `GET /v1/alerts/:id` (guardian). `POST /v1/alerts/:id/ack` is idempotent.
+- `GET /v1/seniors/:id/alerts?since=` and `GET /v1/alerts/:id` (linked: the guardian, or the senior for their own alerts, to show accepted vs acknowledged). `GET /v1/alerts?unacknowledged=true` is the guardian-wide inbox. `POST /v1/alerts/:id/ack` (guardian only) is idempotent.
 - `PUT /v1/seniors/:id/status` (senior heartbeat). `GET …/status` (guardian) includes `reportedAt` so the UI can show freshness.
 - `POST /v1/seniors/:id/doses` (idempotent by `occurrenceId`). `GET …/doses?from=&to=`.
 - `POST /v1/seniors/:id/reports` (senior, approved content only). `GET …/reports` (guardian only).

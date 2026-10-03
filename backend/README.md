@@ -9,7 +9,7 @@ for the mobile side.
 
 ## Setup
 
-Requirements: Node 22+, pnpm, Docker.
+Requirements: Node, pnpm, Docker. Developed and tested on Node 23.11; the dev scripts use `node --env-file-if-exists` through `tsx`, so use a recent Node 22 or newer (older 22.x releases were not tested).
 
 ```sh
 cd backend
