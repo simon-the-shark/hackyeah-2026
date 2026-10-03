@@ -68,19 +68,21 @@ backend/
 
 Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Version checks use `update … where id = ? and version = ?` with `.returning()`, and an empty result means 409.
 
-`users(id, role senior|guardian, display_name)`, `care_links(senior_id, guardian_id)`,
+`users(id, role senior|guardian, display_name, created_at)`, `care_links(senior_id, guardian_id, created_at)`,
 `pairing_codes(code, senior_id, expires_at, used_at)`,
-`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at)`,
-`safe_areas(senior_id PK, lat, lng, radius_m, version)`,
-`contacts(id, senior_id, name, phone, sort_order)`,
+`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, created_at)`,
+`safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
+`contacts(id, senior_id, name, phone, sort_order, version)`,
 `medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version)`,
-`dose_records(occurrence_id PK, medication_id, status taken|skipped|snoozed, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_arrived|trip_deviation, occurred_at, received_at, location jsonb null)`,
-`alerts(id, event_id, senior_id, kind, created_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by)`,
-`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at)`,
+`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, scheduled_for, recorded_at)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null)`,
+`alerts(id, event_id, senior_id, kind sos|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost, created_at, cancelled_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by, dedup_key unique)`,
+`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at (server receipt time), stale_alerted_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
-`trips(id, senior_id, dest_lat, dest_lng, radius_m, window_start, window_end, status)`,
-`medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic)`.
+`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, window_start, window_end, status planned|active|completed|missed, version)`,
+`medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic boolean)`.
+
+`src/db/schema.ts` is the source of truth; this list is a summary.
 
 ## API contract (`/v1`, JSON, `Authorization: Bearer <deviceToken>`)
 
@@ -89,10 +91,10 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 - `PUT /v1/devices/me/push-token` (any role) registers the token. `GET /v1/me` returns the role, linked seniors and guardians.
 - Config: `GET|PUT /v1/seniors/:id/safe-area`, `GET|POST|PUT|DELETE …/contacts`, `…/medications`, `…/trips`. Guardian writes; the senior reads. Writes carry `version`, and a mismatch returns **409** with the current entity.
 - `POST /v1/seniors/:id/events` (senior) is **idempotent on client `id`**: a repeat returns 200 with the original record. A first insert returns 201. Both return `{event, alert:{id, pushStatus}}`. `sos_cancel` references `cancelsEventId` and updates the alert, never deletes it.
-- `GET /v1/seniors/:id/alerts?since=` and `GET /v1/alerts/:id` (guardian). `POST /v1/alerts/:id/ack` is idempotent.
+- `GET /v1/seniors/:id/alerts?since=` and `GET /v1/alerts/:id` (linked: the guardian, or the senior for their own alerts, to show accepted vs acknowledged). `GET /v1/alerts?unacknowledged=true` is the guardian-wide inbox. `POST /v1/alerts/:id/ack` (guardian only) is idempotent.
 - `PUT /v1/seniors/:id/status` (senior heartbeat). `GET …/status` (guardian) includes `reportedAt` so the UI can show freshness.
 - `POST /v1/seniors/:id/doses` (idempotent by `occurrenceId`). `GET …/doses?from=&to=`.
-- `POST /v1/seniors/:id/reports` (senior, approved content only). `GET …/reports` (guardian).
+- `POST /v1/seniors/:id/reports` (senior, approved content only). `GET …/reports` (guardian only).
 - `GET /v1/catalog/:barcode` returns 404 for unknown codes, and the mobile app falls back to manual entry.
 - `GET /health`.
 - Errors use a uniform `{error:{code, message}}` shape: 400 validation, 401 unauthenticated, 403 not linked, 404, 409 version conflict, 410 expired pairing code.
@@ -102,7 +104,7 @@ Every route checks through one `assertLinked(user, seniorId)` helper in `auth/mi
 ## Push delivery
 
 `PushProvider.send(tokens, {title, body, data:{alertId, seniorId, kind}})` → `sent|failed`.
-- `harmony-push-kit.ts` implements the Push Kit REST v3 send endpoint with service-account JWT auth. Credentials come only from env (`PUSH_KIT_PROJECT_ID`, `PUSH_KIT_KEY_ID`, `PUSH_KIT_SUB_ACCOUNT`, `PUSH_KIT_PRIVATE_KEY_PATH`), and the key file is git-ignored. **Before coding, verify the endpoint, JWT claims and payload shape against the official HarmonyOS Push Kit server docs.**
+- `harmony-push-kit.ts` implements the Push Kit REST v3 send endpoint with service-account JWT auth. Credentials come only from the service-account key file named by `PUSH_KIT_KEY_FILE` (it holds `project_id`, `key_id`, `sub_account` and `private_key`); the file is git-ignored. **Before coding, verify the endpoint, JWT claims and payload shape against the official HarmonyOS Push Kit server docs.**
 - **The real Push Kit provider is the default** (`PUSH_PROVIDER=pushkit`). If its credentials are missing, the server refuses to start with a clear error rather than silently falling back.
 - `log-provider.ts` runs only when explicitly opted in with `PUSH_PROVIDER=log`. It exists for teammates who don't have the AGC key, because secrets can't be in the public repo. It records `push_status = 'simulated'`, never `sent`.
 - Unit tests inject an in-memory fake through `createApp({ push })`. They never call Huawei.
@@ -144,3 +146,16 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
   - a push failure still stores the alert
 - Manual: run `pnpm dev`, then a curl script: create senior → claim → set safe area → post SOS twice → guardian lists alerts (one) → ack.
 - Real Push Kit end-to-end: put AGC service-account credentials in a git-ignored `.env`, take a push token from the guardian app on the DevEco HarmonyOS emulator, send an SOS and confirm the notification shows on the emulator. This needs the user's AGC project and the mobile app switched to HarmonyOS signing. Until that is done it is reported as unverified.
+
+## Implementation notes (deviations from the plan above)
+
+- Postgres runs from docker-compose on the default port 5432.
+- Push Kit credentials come from a single service-account key file (`PUSH_KIT_KEY_FILE`) rather than four env vars; the file already holds `project_id`, `key_id`, `sub_account` and `private_key`.
+- Added `POST /v1/devices` (senior adds a watch device and gets its token) and `events.trip_id` for trip events.
+- `status_heartbeats.reported_at` is server receipt time; the device's own sample time lives in `location.sampledAt`.
+- Dose records keep history when a medication is deleted (`medication_id` set null, plus a `medication_name` snapshot).
+- Added a `trip_started` event (planned to active) and a guardian-wide `GET /v1/alerts?unacknowledged=true` inbox, so the app can resolve a notification tap without push payload data.
+- `HEARTBEAT_STALE_SECONDS` stays 900, documented as unvalidated.
+- Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
+- Push Kit notification click-through data is not sent yet (payload shape unverified); `GET /v1/alerts` covers the tap case.
+- The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.
