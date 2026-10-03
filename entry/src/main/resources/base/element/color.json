@@ -55,6 +55,14 @@
     {
       "name": "sos_tint",
       "value": "#FBE3E3"
+    },
+    {
+      "name": "warning",
+      "value": "#B45309"
+    },
+    {
+      "name": "warning_tint",
+      "value": "#FEF3C7"
     }
   ]
 }

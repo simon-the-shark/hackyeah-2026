@@ -41,6 +41,8 @@ endpoints, or confidential prompts.
 | 2026-10-03 | OpenCode / `openai/gpt-6-astra` | Document selected concept and plan mobile delivery | Updated README, brief, repository instructions, technical stack, and AI disclosure; added `MOBILE_PLAN.md` with priorities, role flows, architecture, feasibility gates, integration needs, and validation plan | Reviewed against the current official challenge statement and checked documentation diff; documentation-only work, no new build or runtime validation. Platform APIs, watch support, push transport, and local inference remain unverified. |
 | 2026-10-03 | Cursor Agent / Claude Opus 5.5 | Build the navigation baseline from the mobile and backend feature lists | Role picker, senior and guardian home screens with grouped features, a shared "Coming soon" placeholder screen using `Navigation`/`NavPathStack`, light/dark color resources, and SDK-verified system symbols | `./scripts/build-hap.sh` passed with API 24 (unsigned HAP); `git diff --check` clean. Not run on an emulator because no target was connected. No feature behavior, data, platform service, or integration was added. |
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | Move senior Medication, Contacts and Wellbeing from the home list into a bottom navigation bar | Senior home now uses `Tabs` with a large-label custom bottom bar (Home, Medication, Contacts, Wellbeing); placeholder content extracted into a reusable `FeaturePlaceholder`; guardian home unchanged | `./scripts/build-hap.sh` passed with API 24 (unsigned HAP); `git diff --check` clean. Not run on an emulator because no HDC target was connected. |
+| 2026-10-03 | OpenCode / `openai/gpt-5.6-terra`, Context7 MCP | Implement the phone safety slice and developer-only test tools | Added a configurable session-only home circle, foreground `geoLocationManager.on('locationChange')` auto-reporting after consent, local SOS and safe-area-exit events, guardian alert list/detail, and permission recovery through system settings. Deterministic trace replay and the phone-hosted watch simulation are hidden behind session-only Developer Mode in Settings. | Consulted current public OpenHarmony LocationKit and permission documentation. `./scripts/build-hap.sh` and `git diff --check` passed before the final UI-only removal of the nested SOS control. No emulator or device runtime validation was performed. Background location, remote delivery, and watch connectivity remain unimplemented and unverified. |
+| 2026-10-03 | Cursor Agent / Claude Opus 5.5 | Visual and UX pass over the phone safety slice | Added a dedicated senior SOS screen (5-second countdown with Send now/Cancel, then an honest local-only confirmation); color-coded Safe Area status and plain-language location sharing card; guardian alert list with New/Seen state, readable times and empty state; alert detail with working acknowledge; safe-area setup with radius presets, decimal-friendly inputs and inline validation; restyled Settings, trace replay and a watch-face simulation. Fixed alerts and acknowledgement not refreshing, duplicated page titles, and low-accuracy live samples being labelled as demo traces. Shared `IconBadge`, `NoticeBanner` and `ActionRow` components. | `./scripts/build-hap.sh` passed with API 24 (unsigned HAP) with no ArkTS warnings; `git diff --check` clean. Symbols and `NavDestination.onShown`, `getPromptAction` were checked against the installed SDK.  |
 
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | Backend scope and plan | `backend/PLAN.md`: backend/mobile feature split, data model, API contract, push design, verification plan | Reviewed and amended by the user (Drizzle ORM, real push default, README-per-change rule) before implementation. |
 | 2026-10-03 | Claude Code / Claude Sonnet 5.5 | Implement the backend | `backend/`: Hono API, Drizzle schema and migrations, pairing and device tokens, versioned guardian config, idempotent events, alerts with Push Kit and log providers, heartbeat/trip watchdog, doses, reports, synthetic catalog and seed data, README contract | `pnpm typecheck` clean; 19 integration tests passed against Postgres in Docker; curl smoke test on the running server. Push Kit request format taken from secondary sources because the official pages did not render; never sent live. |
@@ -100,8 +102,15 @@ handled:
 
 ## Known Limitations
 
-- The app contains only role navigation and "Coming soon" feature screens; no
-  product functionality is implemented.
+- Phone safety is implemented only for the active app session. The configured
+  home circle and alerts are not persisted. Remote SOS/guardian delivery is a
+  clearly labelled local fixture; no backend or push transport is connected.
+- Current-location access uses public LocationKit after user consent, but has
+  not been exercised on an emulator or device. Background location is not
+  requested or claimed; it requires separate target validation and a continuous
+  LOCATION task before implementation.
+- Watch Safety is a phone-hosted simulation only. No wearable module, device
+  connection, or watch location path has been verified.
 - The `.hap` is unsigned because no signing profile is configured. Emulator
   installation and launch remain unverified.
 - Backend Push Kit delivery is unverified against a real AppGallery Connect
