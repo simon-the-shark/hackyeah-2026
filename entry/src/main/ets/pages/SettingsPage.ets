@@ -1,11 +1,32 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
-import { apiSession } from '../services/CareApi';
+import { http } from '@kit.NetworkKit';
+import { apiSession, careApi } from '../services/CareApi';
 
 @Component
 export struct SettingsPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private developerMode: boolean = safetyStore.developerMode;
+  @State private pairingCode: string = '';
+  @State private pairingMessage: string = '';
+
+  aboutToAppear(): void {
+    if (apiSession.role === 'senior') {
+      this.loadPairingCode();
+    }
+  }
+
+  private async loadPairingCode(): Promise<void> {
+    this.pairingMessage = 'Loading pairing code...';
+    try {
+      const result = await careApi.request('/pairing/codes', http.RequestMethod.POST) as Record<string, string>;
+      this.pairingCode = result['pairingCode'];
+      this.pairingMessage = 'Share this code with your guardian.';
+    } catch (error) {
+      this.pairingCode = '';
+      this.pairingMessage = 'Could not load a pairing code.';
+    }
+  }
 
   private setDeveloperMode(enabled: boolean): void {
     this.developerMode = enabled;
@@ -16,6 +37,40 @@ export struct SettingsPage {
     NavDestination() {
       Scroll() {
         Column({ space: 24 }) {
+          if (apiSession.role === 'senior') {
+            Column({ space: 12 }) {
+              sectionTitle('Pairing')
+              Column({ space: 8 }) {
+                Text('Guardian pairing code')
+                  .fontSize(18)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_primary'))
+                Text(this.pairingCode === '' ? '------' : this.pairingCode)
+                  .fontSize(36)
+                  .fontWeight(FontWeight.Bold)
+                  .fontColor($r('app.color.senior_accent'))
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                Text(this.pairingMessage)
+                  .fontSize(14)
+                  .fontColor($r('app.color.text_secondary'))
+                  .width('100%')
+                  .textAlign(TextAlign.Center)
+                Button('Refresh code')
+                  .width('100%')
+                  .fontColor($r('app.color.senior_accent'))
+                  .backgroundColor($r('app.color.senior_tint'))
+                  .onClick(() => this.loadPairingCode())
+              }
+              .width('100%')
+              .padding(16)
+              .borderRadius(20)
+              .backgroundColor($r('app.color.surface'))
+            }
+            .width('100%')
+            .alignItems(HorizontalAlign.Start)
+          }
+
           Button('Sign out')
             .width('100%')
             .height(56)

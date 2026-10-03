@@ -63,7 +63,7 @@ Timestamps are ISO 8601 with offset.
 | `GET /health` | none | |
 | `POST /v1/seniors` `{displayName, deviceKind?}` | none | Returns `seniorId, deviceId, token, pairingCode, pairingExpiresAt` (code lives 10 min) |
 | `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token` |
-| `POST /v1/pairing/codes` | senior | New pairing code |
+| `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
 | `GET /v1/me` | any | Role and linked seniors (guardian) or guardians (senior) |
