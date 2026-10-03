@@ -94,6 +94,7 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/seniors` `{displayName, deviceKind?}` | none | Returns `seniorId, deviceId, token, pairingCode, pairingExpiresAt` (code lives 10 min) |
 | `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token` |
 | `POST /v1/pairing/claim` with a guardian bearer token | guardian | Links the **existing** guardian to the code's senior (no new account or token; `displayName` is ignored). Returns `guardianId, seniorId, deviceId`. Invalid token: 401; senior token: 403 (the code is not consumed) |
+| `DELETE /v1/seniors/:id` `{confirm: "DELETE"}` | that senior | Deletes the senior's account and everything stored for them (devices, configuration, events, alerts, doses, reports, routines). Guardian accounts remain but lose the link. Irreversible (204) |
 | `DELETE /v1/care-links/:seniorId/:guardianId` | that senior or guardian | Ends the relationship (204); the guardian immediately loses access |
 | `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |

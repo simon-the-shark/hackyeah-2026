@@ -78,3 +78,21 @@ describe("device management", () => {
     expect((await t.call("GET", `/v1/seniors/${a.seniorId}/status`, a.guardianToken)).body.devices).toHaveLength(0);
   });
 });
+
+describe("account deletion", () => {
+  it("deletes the senior and their data after explicit confirmation", async () => {
+    const a = await t.pair();
+    await t.call("POST", `/v1/seniors/${a.seniorId}/events`, a.seniorToken, {
+      id: randomUUID(),
+      type: "sos",
+      occurredAt: "2026-10-03T11:59:00Z",
+    });
+    const path = `/v1/seniors/${a.seniorId}`;
+    expect((await t.call("DELETE", path, a.guardianToken, { confirm: "DELETE" })).status).toBe(403);
+    expect((await t.call("DELETE", path, a.seniorToken, {})).status).toBe(400);
+    expect((await t.call("DELETE", path, a.seniorToken, { confirm: "DELETE" })).status).toBe(204);
+    expect((await t.call("GET", "/v1/me", a.seniorToken)).status).toBe(401);
+    expect((await t.call("GET", "/v1/alerts", a.guardianToken)).body.items).toHaveLength(0);
+    expect((await t.call("GET", "/v1/me", a.guardianToken)).body.linked.seniors).toHaveLength(0);
+  });
+});

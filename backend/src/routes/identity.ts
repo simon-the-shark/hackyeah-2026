@@ -192,6 +192,24 @@ export function identityRoutes(deps: Deps) {
     return c.body(null, 204);
   });
 
+  /**
+   * The senior deletes their account and all data held for them (devices, configuration, events,
+   * alerts, doses, reports, routines). Guardians keep their own accounts but lose the link.
+   */
+  app.delete(
+    "/seniors/:seniorId",
+    validate("param", z.object({ seniorId: uuid })),
+    validate("json", z.object({ confirm: z.literal("DELETE") })),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "senior");
+      const { seniorId } = c.req.valid("param");
+      if (auth.userId !== seniorId) throw new ApiError(403, "forbidden", "Not your account");
+      await deps.db.delete(users).where(eq(users.id, seniorId));
+      return c.body(null, 204);
+    },
+  );
+
   /** Either side ends a care relationship; the guardian loses all access to that senior. */
   app.delete(
     "/care-links/:seniorId/:guardianId",
