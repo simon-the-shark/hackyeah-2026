@@ -34,6 +34,12 @@ export class ApiSession {
   configured(): boolean {
     return this.baseUrl !== '' && this.token !== '' && this.seniorId !== '';
   }
+
+  clear(): void {
+    this.token = '';
+    this.seniorId = '';
+    this.role = '';
+  }
 }
 
 export const apiSession: ApiSession = new ApiSession();

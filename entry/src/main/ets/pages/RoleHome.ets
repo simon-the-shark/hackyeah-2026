@@ -1,4 +1,5 @@
 import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { apiSession } from '../services/CareApi';
 import { FeaturePlaceholder } from './FeaturePage';
 
 @Component
@@ -8,7 +9,11 @@ export struct RoleHome {
   @State selectedTab: number = 0;
 
   private open(feature: Feature): void {
-    if (feature.id === 'sos') {
+    if (feature.id === 'sign-out') {
+      apiSession.clear();
+      AppStorage.set('paired', false);
+      this.navStack.clear();
+    } else if (feature.id === 'sos') {
       this.navStack.pushPathByName('sos', null);
     } else if (feature.id === 'safe-area') {
       this.navStack.pushPathByName('safety', null);

@@ -1,5 +1,6 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
+import { apiSession } from '../services/CareApi';
 
 @Component
 export struct SettingsPage {
@@ -15,9 +16,18 @@ export struct SettingsPage {
     NavDestination() {
       Scroll() {
         Column({ space: 24 }) {
-          Button('Connect to care service')
+          Button('Sign out')
             .width('100%')
-            .onClick(() => this.navStack.pushPathByName('connection', null))
+            .height(56)
+            .fontSize(18)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.sos'))
+            .backgroundColor($r('app.color.sos_tint'))
+            .onClick(() => {
+              apiSession.clear();
+              AppStorage.set('paired', false);
+              this.navStack.clear();
+            })
           Column({ space: 8 }) {
             sectionTitle('Advanced')
             Row({ space: 16 }) {
