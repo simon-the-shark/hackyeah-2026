@@ -26,6 +26,7 @@ const CHART_HEIGHT = 72;
 export struct GuardianWatchPage {
   @State private snapshot: WatchVitalsSnapshot | undefined = undefined;
   @State private loading: boolean = true;
+  @State private refreshing: boolean = false;
   @State private errorMessage: string = '';
   private timer: number = -1;
 
@@ -37,6 +38,7 @@ export struct GuardianWatchPage {
       this.errorMessage = describeWatchVitalsError(error as Object);
     } finally {
       this.loading = false;
+      this.refreshing = false;
     }
   }
 
@@ -179,29 +181,37 @@ export struct GuardianWatchPage {
 
   @Builder
   content(snapshot: WatchVitalsSnapshot) {
-    Scroll() {
-      Column({ space: 16 }) {
-        NoticeBanner({
-          text: 'Watch readings are informational, not a medical assessment. If you are worried, call the senior.'
-        })
-        Column({ space: 8 }) {
-          sectionTitle('Heart rate')
-          this.heartRateCard(snapshot)
+    Refresh({ refreshing: $$this.refreshing }) {
+      Scroll() {
+        Column({ space: 16 }) {
+          NoticeBanner({
+            text: 'Watch readings are informational, not a medical assessment. If you are worried, call the senior.'
+          })
+          Column({ space: 8 }) {
+            sectionTitle('Heart rate')
+            this.heartRateCard(snapshot)
+          }
+          .alignItems(HorizontalAlign.Start)
+          Column({ space: 8 }) {
+            sectionTitle('Watch')
+            this.statusCard(snapshot)
+          }
+          .alignItems(HorizontalAlign.Start)
         }
-        .alignItems(HorizontalAlign.Start)
-        Column({ space: 8 }) {
-          sectionTitle('Watch')
-          this.statusCard(snapshot)
-        }
-        .alignItems(HorizontalAlign.Start)
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
       }
       .width('100%')
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+      .height('100%')
+      .align(Alignment.Top)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
+    .onRefreshing(() => {
+      this.load();
+    })
   }
 
   build() {

@@ -1,5 +1,5 @@
 import { common } from '@kit.AbilityKit';
-import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
+import { CareFocusStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { Contact } from '../models/Contact';
 import { DialResult, openDialer } from '../platform/PhoneDialer';
@@ -200,15 +200,6 @@ export struct ContactsList {
           } else if (this.refreshFailed) {
             this.notice(`Showing the last loaded list. ${this.errorMessage}`)
           }
-
-          Button(this.refreshing ? 'Refreshing contacts…' : 'Refresh contacts')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle('secondary'))
-            .enabled(!this.refreshing)
-            .onClick(() => {
-              this.refreshing = true;
-              this.load();
-            })
 
           if (this.contacts.length === 0) {
             Text('You have no contacts yet. Your guardian can add them in the Carely app.')

@@ -1,5 +1,5 @@
 import { IconBadge } from '../components/Common';
-import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
+import { CareFocusStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { AttentionPill, attentionAccent, attentionTint, WellbeingReportView } from '../components/WellbeingReportView';
 import { dayLabel, localDateKey } from '../models/CareOverview';
@@ -174,14 +174,6 @@ export struct WellbeingReportsPage {
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .padding({ left: 4, right: 4 })
-          Button(this.refreshing ? 'Refreshing…' : 'Refresh')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle('secondary'))
-            .enabled(!this.refreshing)
-            .onClick(() => {
-              this.refreshing = true;
-              this.load();
-            })
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)

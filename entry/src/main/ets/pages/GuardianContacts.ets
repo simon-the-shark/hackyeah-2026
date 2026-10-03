@@ -69,6 +69,7 @@ export struct GuardianContactsList {
   @State private errorMessage: string = '';
   // Set when a reload failed but an earlier list is still shown.
   @State private refreshFailed: boolean = false;
+  @State private refreshing: boolean = false;
   // Ignores responses from older reloads that finish after a newer one.
   private requestSeq: number = 0;
 
@@ -100,6 +101,10 @@ export struct GuardianContactsList {
       } else {
         this.contacts = [];
         this.phase = ListPhase.Failed;
+      }
+    } finally {
+      if (seq === this.requestSeq) {
+        this.refreshing = false;
       }
     }
   }
@@ -226,70 +231,78 @@ export struct GuardianContactsList {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 16 }) {
-        if (this.phase === ListPhase.Loading) {
-          Column({ space: 12 }) {
-            LoadingProgress()
-              .width(48)
-              .height(48)
-              .color($r('app.color.guardian_accent'))
-            Text('Loading contacts…')
-              .fontSize(16)
-              .fontColor($r('app.color.text_secondary'))
-          }
-          .width('100%')
-          .padding({ top: 64, bottom: 32 })
-        } else if (this.phase === ListPhase.Failed) {
-          this.centered($r('sys.symbol.wifi_slash'), 'Contacts not loaded', this.errorMessage)
-          if (guardianSessionReady()) {
-            Button('Try again')
-              .width('100%')
-              .height(56)
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.guardian_accent'))
-              .attributeModifier(new CareButtonStyle('secondary'))
-              .onClick(() => {
-                this.phase = ListPhase.Loading;
-                this.reload();
-              })
-          }
-        } else {
-          if (this.refreshFailed) {
-            NoticeBanner({ text: `Showing the last loaded list. ${this.errorMessage}` })
-          }
-          if (this.contacts.length === 0) {
-            this.centered($r('sys.symbol.person_2_fill'), 'No trusted contacts yet',
-              'Add the people your senior should be able to call with one tap.')
-          } else {
-            Column({ space: 8 }) {
-              sectionTitle(this.contacts.length === 1 ? '1 trusted contact' :
-                `${this.contacts.length} trusted contacts`)
-              Column() {
-                ForEach(this.contacts, (contact: Contact, index: number) => {
-                  this.contactRow(contact, index < this.contacts.length - 1)
-                }, (contact: Contact, index: number) =>
-                  `${contact.id}-${contact.version}-${index === this.contacts.length - 1}`)
-              }
-              .width('100%')
-              .borderRadius(20)
-              .clip(true)
-              .backgroundColor($r('app.color.surface'))
+    Refresh({ refreshing: $$this.refreshing }) {
+      Scroll() {
+        Column({ space: 16 }) {
+          if (this.phase === ListPhase.Loading) {
+            Column({ space: 12 }) {
+              LoadingProgress()
+                .width(48)
+                .height(48)
+                .color($r('app.color.guardian_accent'))
+              Text('Loading contacts…')
+                .fontSize(16)
+                .fontColor($r('app.color.text_secondary'))
             }
             .width('100%')
-            .alignItems(HorizontalAlign.Start)
+            .padding({ top: 64, bottom: 32 })
+          } else if (this.phase === ListPhase.Failed) {
+            this.centered($r('sys.symbol.wifi_slash'), 'Contacts not loaded', this.errorMessage)
+            if (guardianSessionReady()) {
+              Button('Try again')
+                .width('100%')
+                .height(56)
+                .fontSize(18)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.guardian_accent'))
+                .attributeModifier(new CareButtonStyle('secondary'))
+                .onClick(() => {
+                  this.phase = ListPhase.Loading;
+                  this.reload();
+                })
+            }
+          } else {
+            if (this.refreshFailed) {
+              NoticeBanner({ text: `Showing the last loaded list. ${this.errorMessage}` })
+            }
+            if (this.contacts.length === 0) {
+              this.centered($r('sys.symbol.person_2_fill'), 'No trusted contacts yet',
+                'Add the people your senior should be able to call with one tap.')
+            } else {
+              Column({ space: 8 }) {
+                sectionTitle(this.contacts.length === 1 ? '1 trusted contact' :
+                  `${this.contacts.length} trusted contacts`)
+                Column() {
+                  ForEach(this.contacts, (contact: Contact, index: number) => {
+                    this.contactRow(contact, index < this.contacts.length - 1)
+                  }, (contact: Contact, index: number) =>
+                    `${contact.id}-${contact.version}-${index === this.contacts.length - 1}`)
+                }
+                .width('100%')
+                .borderRadius(20)
+                .clip(true)
+                .backgroundColor($r('app.color.surface'))
+              }
+              .width('100%')
+              .alignItems(HorizontalAlign.Start)
+            }
+            this.addButton()
           }
-          this.addButton()
         }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
       }
       .width('100%')
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+      .height('100%')
+      .align(Alignment.Top)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
+    .onRefreshing(() => {
+      this.reload();
+    })
   }
 }
 
