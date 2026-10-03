@@ -6,6 +6,7 @@ import { FeaturePlaceholder } from './FeaturePage';
 import { MedicationToday } from './MedicationToday';
 import { AlertsList } from './AlertsPage';
 import { GuardianMedicationList } from './GuardianMedication';
+import { GuardianContactsList } from './GuardianContacts';
 
 @Component
 export struct RoleHome {
@@ -193,6 +194,8 @@ export struct RoleHome {
       GuardianMedicationList({ refreshKey: this.tabRefresh })
     } else if (feature.id === 'contacts') {
       ContactsList()
+    } else if (feature.id === 'trusted-contacts') {
+      GuardianContactsList({ refreshKey: this.tabRefresh })
     } else {
       FeaturePlaceholder({ feature: feature })
     }

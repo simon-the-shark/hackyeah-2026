@@ -12,6 +12,7 @@ import {
 } from './GuardianMedication';
 import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { MedicationFormPage, MedicationFormParams } from './MedicationFormPage';
+import { ContactEditorPage, ContactEditorTarget } from './GuardianContacts';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
@@ -55,6 +56,8 @@ struct Index {
       SafeAreaSetupPage()
     } else if (name === 'settings') {
       SettingsPage()
+    } else if (name === 'contact-editor') {
+      ContactEditorPage({ target: param as ContactEditorTarget })
     } else if (name === 'developer-tools') {
       DeveloperToolsPage()
     } else if (name === 'connection') {
