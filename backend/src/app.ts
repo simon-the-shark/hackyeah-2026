@@ -8,8 +8,43 @@ import { identityRoutes, publicIdentityRoutes } from "./routes/identity.js";
 import { safetyRoutes } from "./routes/safety.js";
 import type { AppEnv, Deps } from "./types.js";
 
+const SENSITIVE_HEADERS = new Set(["authorization", "cookie", "proxy-authorization", "set-cookie"]);
+
+function headersForLog(headers: Headers): Record<string, string> {
+  const result: Record<string, string> = {};
+  headers.forEach((value, name) => {
+    result[name] = SENSITIVE_HEADERS.has(name.toLowerCase()) ? "[REDACTED]" : value;
+  });
+  return result;
+}
+
+async function bodyForLog(message: Request | Response): Promise<string | undefined> {
+  const body = await message.clone().text();
+  return body === "" ? undefined : body;
+}
+
 export function createApp(deps: Deps) {
   const app = new Hono<AppEnv>();
+
+  app.use("*", async (c, next) => {
+    const startedAt = performance.now();
+    const requestBody = await bodyForLog(c.req.raw);
+    await next();
+    console.info("[request]", {
+      method: c.req.method,
+      url: c.req.url,
+      request: {
+        headers: headersForLog(c.req.raw.headers),
+        body: requestBody,
+      },
+      response: {
+        status: c.res.status,
+        headers: headersForLog(c.res.headers),
+        body: await bodyForLog(c.res),
+      },
+      durationMs: Math.round(performance.now() - startedAt),
+    });
+  });
 
   app.get("/health", (c) => c.json({ status: "ok" }));
 

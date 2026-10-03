@@ -26,7 +26,7 @@ export class SafetyEventRequest {
 class EmptyResponse {}
 
 export class ApiSession {
-  baseUrl: string = 'http://10.250.161.104:8787';
+  baseUrl: string = 'http://localhost:8787';
   token: string = '';
   seniorId: string = '';
   role: string = '';
