@@ -100,10 +100,6 @@ export struct MedicationDetail {
           MedicineModelViewer()
 
           Column({ space: 4 }) {
-            Text(this.params.medication.name)
-              .fontSize(32)
-              .fontWeight(FontWeight.Bold)
-              .fontColor($r('app.color.text_primary'))
             if (this.params.medication.doseText.length > 0) {
               Text(this.params.medication.doseText)
                 .fontSize(20)
@@ -149,7 +145,7 @@ export struct MedicationDetail {
       .align(Alignment.Top)
       .scrollBar(BarState.Off)
     }
-    .title('Medicine')
+    .title(this.params.medication.name)
     .backgroundColor($r('app.color.page_background'))
   }
 }

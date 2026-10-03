@@ -17,12 +17,6 @@ export struct FeaturePlaceholder {
       .justifyContent(FlexAlign.Center)
       .backgroundColor(this.feature.tint)
 
-      Text(this.feature.title)
-        .fontSize(30)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.text_primary'))
-        .textAlign(TextAlign.Center)
-
       Text(this.feature.summary)
         .fontSize(19)
         .fontColor($r('app.color.text_secondary'))
@@ -53,7 +47,7 @@ export struct FeaturePage {
       FeaturePlaceholder({ feature: this.feature })
       }.width('100%').height('100%')
     }
-    .title('')
+    .title(this.feature.title)
     .backgroundColor($r('app.color.page_background'))
   }
 }

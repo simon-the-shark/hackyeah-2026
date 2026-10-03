@@ -465,10 +465,6 @@ export struct AlertDetailPage {
               tint: $r('app.color.surface'),
               badgeSize: 64
             })
-            Text(this.alert.title)
-              .fontSize(28)
-              .fontWeight(FontWeight.Bold)
-              .fontColor($r('app.color.text_primary'))
             Text(this.alert.detail)
               .fontSize(17)
               .fontColor($r('app.color.text_primary'))
@@ -557,7 +553,7 @@ export struct AlertDetailPage {
       .align(Alignment.Top)
       .scrollBar(BarState.Off)
     }
-    .title('Alert')
+    .title(this.alert.title)
     .backgroundColor($r('app.color.page_background'))
   }
 

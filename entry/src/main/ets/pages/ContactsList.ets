@@ -190,17 +190,10 @@ export struct ContactsList {
     Refresh({ refreshing: $$this.refreshing }) {
       Scroll() {
         Column({ space: 16 }) {
-          Column({ space: 4 }) {
-            Text('My contacts')
-              .fontSize(28)
-              .fontWeight(FontWeight.Bold)
-              .fontColor($r('app.color.text_primary'))
-            Text('Tap a person to open the phone app. Confirm the call there.')
-              .fontSize(17)
-              .fontColor($r('app.color.text_secondary'))
-          }
-          .width('100%')
-          .alignItems(HorizontalAlign.Start)
+          Text('Tap a person to open the phone app. Confirm the call there.')
+            .fontSize(17)
+            .fontColor($r('app.color.text_secondary'))
+            .width('100%')
 
           if (this.cachedAt !== undefined) {
             this.notice(`You are offline. These contacts were saved on this phone on ${this.savedAtLabel()}.`)
