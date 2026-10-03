@@ -1,5 +1,6 @@
 import { http } from '@kit.NetworkKit';
 import { util } from '@kit.ArkTS';
+import { BACKEND_BASE_URL } from './BackendUrl';
 
 /** Same generator as the phone app: platform UUID, with a v4 fallback where the runtime returns an empty value. */
 export function generateEventId(): string {
@@ -30,7 +31,7 @@ export class WatchApiError extends Error {
 
 /** The watch is a device of the senior: its token acts for the senior, so it only calls what it needs. */
 export class WatchSession {
-  baseUrl: string = 'http://localhost:8787';
+  baseUrl: string = BACKEND_BASE_URL;
   token: string = '';
   seniorId: string = '';
   deviceId: string = '';

@@ -83,12 +83,13 @@ To try it on the DevEco Studio emulator (team images use API 23):
 
 1. Install and create a wearable emulator, for example
    `Emulator -install -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
-   then `Emulator -create carely-watch -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
+   then `Emulator -create Carely_Watch_23 -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
    (`Emulator` lives in `DevEco-Studio.app/Contents/tools/emulator/`), or use
-   the Device Manager.
-2. Start the backend (`backend/README.md`) and forward its port into each
-   emulator, because the apps call `http://localhost:8787`:
-   `hdc -t <target> rport tcp:8787 tcp:8787`.
+   the Device Manager. When a phone emulator already runs on the default hdc
+   port 5555, start the watch on another one: `Emulator -start Carely_Watch_23 -hdcPort 5557`.
+2. The watch uses the same built-in production backend address as the phone
+   (`watch/src/main/ets/services/BackendUrl.ets`). The watch endpoints must be
+   deployed there first (see `backend/README.md`).
 3. On the senior phone: Settings, Smartwatch, Pair a watch. Enter the code on
    the watch within 5 minutes and allow heart rate and location.
 4. Set a heart rate in the emulator's Virtual Sensor panel and a position in

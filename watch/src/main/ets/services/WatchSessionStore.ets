@@ -1,5 +1,6 @@
 import { preferences } from '@kit.ArkData';
 import { common } from '@kit.AbilityKit';
+import { BACKEND_BASE_URL } from './BackendUrl';
 import { watchSession } from './WatchApi';
 
 const STORE_NAME = 'carely_watch_session';
@@ -37,7 +38,8 @@ export class WatchSessionStore {
     if (prefs === undefined) {
       return;
     }
-    watchSession.baseUrl = await this.read(prefs, 'baseUrl', watchSession.baseUrl);
+    // Like the phone app, the address is fixed in the build, so a stale stored address cannot linger.
+    watchSession.baseUrl = BACKEND_BASE_URL;
     watchSession.token = await this.read(prefs, 'token', '');
     watchSession.seniorId = await this.read(prefs, 'seniorId', '');
     watchSession.deviceId = await this.read(prefs, 'deviceId', '');
@@ -49,7 +51,6 @@ export class WatchSessionStore {
       return;
     }
     try {
-      await prefs.put('baseUrl', watchSession.baseUrl);
       await prefs.put('token', watchSession.token);
       await prefs.put('seniorId', watchSession.seniorId);
       await prefs.put('deviceId', watchSession.deviceId);
