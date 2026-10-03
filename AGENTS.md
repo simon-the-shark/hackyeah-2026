@@ -110,6 +110,13 @@ Before using an unfamiliar platform API:
 
 Never invent platform API names.
 
+Context7 library IDs for ArkTS/ArkUI/HarmonyOS APIs:
+
+- `/websites/developer_huawei_consumer_cn_doc_harmonyos-guides`
+- `/websites/developer_huawei_consumer_cn_doc_harmonyos-references`
+
+Project: HarmonyOS, `compatibleSdkVersion` 6.0.0(20), target 6.1.1(24).
+
 ---
 
 # Dependency Policy
