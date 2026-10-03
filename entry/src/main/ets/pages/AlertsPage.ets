@@ -49,12 +49,23 @@ function alertTint(alert: CareAlert): Resource {
   return alert.type === AlertType.Sos ? $r('app.color.sos_tint') : $r('app.color.warning_tint');
 }
 
+/** Guardian alert inbox; used both as a standalone page and as the guardian Alerts tab. */
 @Component
-export struct AlertsPage {
+export struct AlertsList {
   @Consume('navStack') navStack: NavPathStack;
+  /** Bump to reload, e.g. when the tab or page becomes visible again. */
+  @Prop @Watch('onRefresh') refreshKey: number = 0;
   @State private alerts: CareAlert[] = [];
   @State private pendingCount: number = 0;
   @State private loadError: string = '';
+
+  aboutToAppear(): void {
+    this.reload();
+  }
+
+  private onRefresh(): void {
+    this.reload();
+  }
 
   private async reload(): Promise<void> {
     if (!apiSession.configured() || apiSession.role !== 'guardian') {
@@ -159,54 +170,63 @@ export struct AlertsPage {
   }
 
   build() {
-    NavDestination() {
-      Scroll() {
-        Column({ space: 16 }) {
-          if (this.alerts.length === 0) {
-            this.emptyState()
-          } else {
-            if (this.pendingCount > 0) {
-              NoticeBanner({
-                icon: $r('sys.symbol.exclamationmark_circle_fill'),
-                text: this.pendingCount === 1 ? '1 alert needs your attention' : `${this.pendingCount} alerts need your attention`,
-                accent: $r('app.color.sos'),
-                tint: $r('app.color.sos_tint')
-              })
-            }
-
-            Column() {
-              ForEach(this.alerts, (alert: CareAlert, index: number) => {
-                this.alertRow(alert, index < this.alerts.length - 1)
-              }, (alert: CareAlert, index: number) =>
-                `${alert.id}-${alert.acknowledged}-${alert.deliveryState}-${index === this.alerts.length - 1}`)
-            }
-            .width('100%')
-            .borderRadius(20)
-            .clip(true)
-            .backgroundColor($r('app.color.surface'))
+    Scroll() {
+      Column({ space: 16 }) {
+        if (this.alerts.length === 0) {
+          this.emptyState()
+        } else {
+          if (this.pendingCount > 0) {
+            NoticeBanner({
+              icon: $r('sys.symbol.exclamationmark_circle_fill'),
+              text: this.pendingCount === 1 ? '1 alert needs your attention' : `${this.pendingCount} alerts need your attention`,
+              accent: $r('app.color.sos'),
+              tint: $r('app.color.sos_tint')
+            })
           }
 
-          if (this.loadError !== '') {
-            NoticeBanner({ text: this.loadError })
+          Column() {
+            ForEach(this.alerts, (alert: CareAlert, index: number) => {
+              this.alertRow(alert, index < this.alerts.length - 1)
+            }, (alert: CareAlert, index: number) =>
+              `${alert.id}-${alert.acknowledged}-${alert.deliveryState}-${index === this.alerts.length - 1}`)
           }
-          Text('Alerts are shown from the care service.')
-            .fontSize(13)
-            .fontColor($r('app.color.text_secondary'))
-            .width('100%')
-            .textAlign(TextAlign.Center)
-            .padding({ left: 8, right: 8 })
+          .width('100%')
+          .borderRadius(20)
+          .clip(true)
+          .backgroundColor($r('app.color.surface'))
         }
-        .width('100%')
-        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+
+        if (this.loadError !== '') {
+          NoticeBanner({ text: this.loadError })
+        }
+        Text('Alerts are shown from the care service.')
+          .fontSize(13)
+          .fontColor($r('app.color.text_secondary'))
+          .width('100%')
+          .textAlign(TextAlign.Center)
+          .padding({ left: 8, right: 8 })
       }
       .width('100%')
-      .height('100%')
-      .align(Alignment.Top)
-      .scrollBar(BarState.Off)
+      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+    }
+    .width('100%')
+    .height('100%')
+    .align(Alignment.Top)
+    .scrollBar(BarState.Off)
+  }
+}
+
+@Component
+export struct AlertsPage {
+  @State private shownCount: number = 0;
+
+  build() {
+    NavDestination() {
+      AlertsList({ refreshKey: this.shownCount })
     }
     .title('Alerts')
     .backgroundColor($r('app.color.page_background'))
-    .onShown(() => this.reload())
+    .onShown(() => this.shownCount++)
   }
 }
 

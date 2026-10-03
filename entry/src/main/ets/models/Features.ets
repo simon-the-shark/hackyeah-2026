@@ -101,16 +101,9 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
   $r('app.color.guardian_accent'),
   [
     new FeatureSection('Safety', [
-      guardianFeature('alerts', 'Alerts', 'SOS and safe-area notifications', $r('sys.symbol.bell_fill')),
       guardianFeature('planned-trips', 'Planned Trips', 'Destinations and expected arrival times',
-        $r('sys.symbol.figure_walk'))
-    ]),
-    new FeatureSection('Care setup', [
-      guardianFeature('safe-area-setup', 'Safe Area', 'Set the home area and its radius', $r('sys.symbol.map')),
-      guardianFeature('trusted-contacts', 'Trusted Contacts', 'People the senior can call',
-        $r('sys.symbol.phone_fill')),
-      guardianFeature('medication-schedule', 'Medication Schedule', 'Medicines and dose times',
-        $r('sys.symbol.calendar_badge_clock'))
+        $r('sys.symbol.figure_walk')),
+      guardianFeature('safe-area-setup', 'Safe Area', 'Set the home area and its radius', $r('sys.symbol.map'))
     ]),
     new FeatureSection('Insights', [
       guardianFeature('dose-history', 'Dose History', 'Taken, skipped and snoozed doses',
@@ -122,6 +115,12 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
       new Feature('sign-out', 'Sign out', 'Return this device to setup', $r('sys.symbol.arrow_right'),
         $r('app.color.sos'), $r('app.color.sos_tint'))
     ])
+  ],
+  [
+    guardianFeature('alerts', 'Alerts', 'SOS and safe-area notifications', $r('sys.symbol.bell_fill')),
+    guardianFeature('location', 'Location', 'Where your senior was last seen', $r('sys.symbol.location_up_fill')),
+    guardianFeature('medication-schedule', 'Medication', 'Medicines and dose times', $r('sys.symbol.cross_case')),
+    guardianFeature('trusted-contacts', 'Contacts', 'People the senior can call', $r('sys.symbol.phone_fill'))
   ]
 );
 
