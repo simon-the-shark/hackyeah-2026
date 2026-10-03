@@ -2,15 +2,15 @@
   "string": [
     {
       "name": "module_desc",
-      "value": "module description"
+      "value": "Carely elderly-care companion"
     },
     {
       "name": "EntryAbility_desc",
-      "value": "description"
+      "value": "Carely elderly-care companion"
     },
     {
       "name": "EntryAbility_label",
-      "value": "label"
+      "value": "Carely"
     }
   ]
 }
