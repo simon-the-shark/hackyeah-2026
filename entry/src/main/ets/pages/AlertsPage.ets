@@ -4,8 +4,25 @@ import {
   CareAlert,
   deliveryLabel,
   formatAlertTime,
-  safetyStore
 } from '../models/Safety';
+import { http } from '@kit.NetworkKit';
+import { apiSession, careApi } from '../services/CareApi';
+
+interface RemoteAlert {
+  id: string;
+  kind: string;
+  createdAt: string;
+  acknowledgedAt?: string;
+  event?: RemoteEvent;
+}
+
+interface RemoteEvent {
+  type: string;
+}
+
+interface RemoteAlertList {
+  items: RemoteAlert[];
+}
 
 function alertIcon(alert: CareAlert): Resource {
   return alert.type === AlertType.Sos ? $r('sys.symbol.exclamationmark_shield_fill') : $r('sys.symbol.house_shield_fill');
@@ -24,10 +41,33 @@ export struct AlertsPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private alerts: CareAlert[] = [];
   @State private pendingCount: number = 0;
+  @State private loadError: string = '';
 
-  private reload(): void {
-    this.alerts = safetyStore.alerts.slice();
-    this.pendingCount = safetyStore.unacknowledgedCount();
+  private async reload(): Promise<void> {
+    if (!apiSession.configured() || apiSession.role !== 'guardian') {
+      this.alerts = [];
+      this.loadError = 'This phone is not paired as a guardian.';
+      return;
+    }
+    try {
+      const response = await careApi.request('/alerts?limit=50', http.RequestMethod.GET) as RemoteAlertList;
+      this.alerts = response.items.map((item: RemoteAlert) => this.fromRemote(item));
+      this.pendingCount = this.alerts.filter((alert: CareAlert) => !alert.acknowledged).length;
+      this.loadError = '';
+    } catch (error) {
+      this.alerts = [];
+      this.loadError = 'Could not load alerts from the care service.';
+    }
+  }
+
+  private fromRemote(item: RemoteAlert): CareAlert {
+    const type = item.kind === 'sos' ? AlertType.Sos : AlertType.SafeAreaExit;
+    const alert = new CareAlert(item.id, type, item.kind === 'sos' ? 'SOS requested' : 'Safe area exit',
+      item.kind === 'sos' ? 'The senior requested help.' : 'The senior left the safe area.', 'Care service');
+    alert.createdAt = Date.parse(item.createdAt);
+    alert.acknowledged = item.acknowledgedAt !== undefined;
+    alert.remote = true;
+    return alert;
   }
 
   @Builder
@@ -134,7 +174,10 @@ export struct AlertsPage {
             .backgroundColor($r('app.color.surface'))
           }
 
-          Text('Alerts are created on this device only. Notifications to other phones are not connected yet.')
+          if (this.loadError !== '') {
+            NoticeBanner({ text: this.loadError })
+          }
+          Text('Alerts are shown from the care service.')
             .fontSize(13)
             .fontColor($r('app.color.text_secondary'))
             .width('100%')
@@ -257,8 +300,7 @@ export struct AlertDetailPage {
           .enabled(!this.acknowledged)
           .backgroundColor(this.acknowledged ? $r('app.color.guardian_tint') : $r('app.color.guardian_accent'))
           .onClick(() => {
-            safetyStore.acknowledge(this.alert);
-            this.acknowledged = true;
+            this.acknowledge();
           })
 
           Column({ space: 8 }) {
@@ -287,5 +329,16 @@ export struct AlertDetailPage {
     }
     .title('Alert')
     .backgroundColor($r('app.color.page_background'))
+  }
+
+  private async acknowledge(): Promise<void> {
+    try {
+      if (this.alert.remote && apiSession.configured() && apiSession.role === 'guardian') {
+        await careApi.request(`/alerts/${this.alert.id}/ack`, http.RequestMethod.POST);
+      }
+      this.acknowledged = true;
+    } catch (error) {
+      // Keep the server state unchanged if acknowledgement cannot be sent.
+    }
   }
 }

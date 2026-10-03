@@ -1,8 +1,11 @@
 import { abilityAccessCtrl, common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { geoLocationManager } from '@kit.LocationKit';
+import { util } from '@kit.ArkTS';
+import { http } from '@kit.NetworkKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
+import { apiSession, careApi, SafetyEventRequest } from '../services/CareApi';
 
 @Component
 export struct SafetyPage {
@@ -14,9 +17,34 @@ export struct SafetyPage {
   @State private errorMessage: string = '';
   private readonly locationCallback: (location: geoLocationManager.Location) => void =
     (location: geoLocationManager.Location): void => {
-      safetyStore.recordLiveLocation(location.latitude, location.longitude, location.accuracy);
+      safetyStore.recordLiveLocation(location.latitude, location.longitude, location.accuracy, false);
       this.syncFromStore();
+      this.reportLocation(location.latitude, location.longitude, location.accuracy, safetyStore.didLeaveSafeArea);
     };
+
+  private async reportLocation(latitude: number, longitude: number, accuracy: number, exited: boolean): Promise<void> {
+    if (!apiSession.configured() || apiSession.role !== 'senior') {
+      return;
+    }
+    const point = new LocationPoint(latitude, longitude, accuracy);
+    try {
+      await careApi.request(`/seniors/${apiSession.seniorId}/status`, http.RequestMethod.PUT,
+        new StatusReport(this.backendStatus(), point));
+      if (exited) {
+        const event = new SafetyEventRequest(util.generateRandomUUID(), 'area_exit');
+        event.location = point;
+        await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+      }
+    } catch (error) {
+      this.errorMessage = 'Location was checked, but could not reach the care service.';
+    }
+  }
+
+  private backendStatus(): string {
+    if (this.status === GeofenceStatus.Inside) return 'inside';
+    if (this.status === GeofenceStatus.Outside) return 'outside';
+    return 'unknown';
+  }
 
   private syncFromStore(): void {
     this.status = safetyStore.geofenceStatus;
@@ -262,5 +290,29 @@ export struct SafetyPage {
     .title('Safe Area')
     .backgroundColor($r('app.color.page_background'))
     .onShown(() => this.syncFromStore())
+  }
+}
+
+class LocationPoint {
+  lat: number;
+  lng: number;
+  accuracyM: number;
+  sampledAt: string;
+
+  constructor(lat: number, lng: number, accuracyM: number) {
+    this.lat = lat;
+    this.lng = lng;
+    this.accuracyM = accuracyM;
+    this.sampledAt = new Date().toISOString();
+  }
+}
+
+class StatusReport {
+  monitoringState: string;
+  location: LocationPoint;
+
+  constructor(monitoringState: string, location: LocationPoint) {
+    this.monitoringState = monitoringState;
+    this.location = location;
   }
 }

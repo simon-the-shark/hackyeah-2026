@@ -1,5 +1,7 @@
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
 import { CareAlert } from '../models/Safety';
+import { apiSession } from '../services/CareApi';
+import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
 import { FeaturePage } from './FeaturePage';
@@ -14,6 +16,7 @@ import { WatchSafetyPage } from './WatchSafetyPage';
 @Component
 struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
+  @State private paired: boolean = apiSession.configured();
 
   @Builder
   routes(name: string, param: Object) {
@@ -39,6 +42,12 @@ struct Index {
       SettingsPage()
     } else if (name === 'developer-tools') {
       DeveloperToolsPage()
+    } else if (name === 'connection') {
+      ConnectionPage({ onConnected: (role: string) => {
+        this.paired = true;
+        this.navStack.pop();
+        this.navStack.pushPathByName(role === 'guardian' ? GUARDIAN_PROFILE.route : SENIOR_PROFILE.route, null);
+      } })
     }
   }
 
@@ -110,16 +119,26 @@ struct Index {
         .width('100%')
         .alignItems(HorizontalAlign.Start)
 
-        Column({ space: 16 }) {
-          ForEach(ROLE_PROFILES, (profile: RoleProfile) => {
-            this.roleCard(profile)
-          }, (profile: RoleProfile) => profile.route)
+        if (!this.paired) {
+          Column({ space: 12 }) {
+            Text('Set up this phone before using safety features.')
+              .fontSize(17)
+              .fontColor($r('app.color.text_secondary'))
+              .width('100%')
+              .textAlign(TextAlign.Center)
+            Button('Set up Care Companion')
+              .width('100%')
+              .height(56)
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .onClick(() => this.navStack.pushPathByName('connection', null))
+          }
+          .width('100%')
         }
-        .width('100%')
 
         Blank()
 
-        Text('Early preview. Simulated features are clearly marked.')
+        Text(this.paired ? 'This phone is paired.' : 'Pair once to enable SOS, location sharing, and guardian alerts.')
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
