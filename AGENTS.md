@@ -26,16 +26,16 @@ as the authoritative challenge statement.
 
 Use:
 
-- OpenHarmony / Oniro
+- HarmonyOS
 - ArkTS
 - ArkUI
 - Stage model
 - Empty Ability project structure
 
-Target OpenHarmony 6.1 / API 23 for current development unless a documented
-compatibility reason requires another API level. This project's installed
-DevEco SDK supports `6.1.1(24)` as its compile SDK, so compilation uses API 24
-while retaining API 20 compatibility.
+The product targets HarmonyOS (`runtimeOS: "HarmonyOS"` in
+`build-profile.json5`). Compile and target the HarmonyOS SDK `6.1.1(24)` bundled
+with DevEco Studio, with `6.0.0(20)` as the compatible SDK, unless a documented
+compatibility reason requires another API level.
 
 The hackathon requires API 20 or later.
 
@@ -60,12 +60,12 @@ that cannot reasonably be implemented in ArkTS.
 The primary development environment is:
 
 - DevEco Studio
-- OpenHarmony SDK
+- HarmonyOS SDK (bundled with DevEco Studio)
 - ArkTS toolchain
 - hvigor
 - HDC
 - Previewer
-- OpenHarmony/Oniro emulator
+- DevEco Studio HarmonyOS emulator
 
 Use Previewer for fast ArkUI iteration.
 
@@ -88,17 +88,18 @@ Use Context7 when:
 - verifying unfamiliar external library usage,
 - generated code depends on a specific library version.
 
-For OpenHarmony, Oniro, ArkTS and ArkUI platform APIs, prefer current official
-OpenHarmony or Oniro documentation as the source of truth.
+For HarmonyOS, ArkTS and ArkUI platform APIs (including HarmonyOS Kits such as
+Push Kit), prefer current official HarmonyOS developer documentation as the
+source of truth.
 
 Do not assume that an API from:
 
-- HarmonyOS,
+- OpenHarmony or Oniro documentation,
 - Android,
 - TypeScript,
 - a third-party library,
 
-exists or behaves identically in OpenHarmony.
+exists or behaves identically in HarmonyOS.
 
 Before using an unfamiliar platform API:
 
@@ -125,7 +126,7 @@ Keep dependencies minimal.
 
 Prefer:
 
-1. OpenHarmony platform APIs,
+1. HarmonyOS platform APIs and Kits,
 2. ArkTS standard capabilities,
 3. small well-maintained external libraries only when they provide clear value.
 
@@ -150,7 +151,7 @@ Prefer simple boundaries such as:
 - components — reusable ArkUI components
 - models/domain — application data and logic
 - services — application-level capabilities
-- platform — wrappers around OpenHarmony APIs
+- platform — wrappers around HarmonyOS APIs
 - providers — external integrations when required
 
 Do not create these directories merely for architecture aesthetics.

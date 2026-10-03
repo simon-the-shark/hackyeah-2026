@@ -25,11 +25,11 @@ At least one real platform integration must be verified in the final demo.
 
 ## Target
 
-- Platform: OpenHarmony / Oniro
+- Platform: HarmonyOS
 - API level: 20 or later
 - Device type: Senior phone, senior smartwatch (primary intended SOS device),
   and guardian phone
-- Validation target: OpenHarmony or Oniro phone emulator first; compatible watch
+- Validation target: DevEco Studio HarmonyOS phone emulator first; compatible watch
   emulator/device support must be established before claiming watch delivery
 
 ## Intended User Flow

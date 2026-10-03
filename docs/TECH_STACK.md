@@ -5,13 +5,13 @@
 - Language: ArkTS
 - UI: ArkUI
 - Application model: Stage
-- Platform: OpenHarmony / Oniro
+- Platform: HarmonyOS (`runtimeOS: "HarmonyOS"`)
 - Development API: API 24
 - IDE: DevEco Studio
 - Build: hvigor
 - Device tooling: HDC
 - UI iteration: Previewer
-- Runtime verification: OpenHarmony/Oniro emulator
+- Runtime verification: DevEco Studio HarmonyOS emulator
 - Documentation MCP: Context7
 
 ## Selected Product And Planned Capabilities
@@ -24,7 +24,8 @@
   rendering, and on-device inference.
 - Start with two roles in the existing phone app for the demo; decide watch
   packaging after checking its actual SDK/device support.
-- Backend and database decisions belong to the parallel backend workstream.
+- Backend: Hono + Drizzle ORM + PostgreSQL in `../backend/`; guardian alerts
+  are sent through HarmonyOS Push Kit.
 
 ## Not Selected Or Verified Yet
 
@@ -32,15 +33,16 @@
 - Public SDK support, API levels, permissions, and background restrictions for
   each planned platform integration.
 - Watch target, phone relay versus independent connectivity, and pairing method.
-- Remote push mechanism available on the selected OpenHarmony/Oniro image.
+- Live HarmonyOS Push Kit delivery: the backend sender is implemented but has
+  not been verified against a real AppGallery Connect project or emulator.
 - Barcode catalog and 3D asset source/licensing.
 - Optional voice recognition and fall-detection feasibility.
 
 ## SDK Compatibility Note
 
-The challenge guide recommends compiling against API 23. The installed DevEco
-Studio SDK supports `6.1.1(24)` as its compile SDK, so this project compiles
-and targets API 24 while declaring API 20 as its minimum supported API level.
+The project compiles and targets the HarmonyOS SDK `6.1.1(24)` bundled with
+DevEco Studio and declares `6.0.0(20)` (API 20, the hackathon minimum) as its
+compatible SDK.
 
 ## Deferred unless needed
 

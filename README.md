@@ -1,6 +1,6 @@
 # HackYeah 2026
 
-An elderly-care companion for OpenHarmony / Oniro, built with ArkTS, ArkUI,
+An elderly-care companion for HarmonyOS, built with ArkTS, ArkUI,
 and the Stage model. It helps an older person stay within a designated safe
 area, ask for help, follow a medication schedule, and contact trusted people.
 A guardian receives alerts and wellbeing updates. The smartwatch is the
@@ -17,24 +17,17 @@ primary intended SOS surface; a phone provides the full companion experience.
 The repository currently contains the starter application and a verified API 24
 build, not these product features. Watch support, background monitoring, remote
 push delivery, and local LLM execution require feasibility verification.
-Backend implementation is owned by a separate parallel workstream.
+The backend (Hono + Drizzle + PostgreSQL API, with HarmonyOS Push Kit for
+guardian alerts) lives in `backend/`; see `backend/README.md`.
 
 ## Requirements
 
-- DevEco Studio with OpenHarmony SDK 6.1
-- API 24 compile SDK (the version supported by the installed DevEco SDK)
-- API 24 emulator for runtime testing
+- DevEco Studio with its bundled HarmonyOS SDK `6.1.1(24)`
+- A HarmonyOS API 24 emulator (DevEco Studio Device Manager) for runtime testing
 
-The project retains compatibility with API 20, the hackathon minimum.
-
-## API 23 Setup
-
-The challenge baseline is API 23 for compilation, API 24 for runtime testing,
-and API 20 as the minimum supported API. This machine currently has only the
-API 24 SDK installed. In DevEco Studio, open **DevEco Studio > Settings >
-OpenHarmony SDK**, select **API Version 23**, and click **Apply** to download
-the ArkTS, toolchain, and previewer components. Once the download completes,
-change `compileSdkVersion` in `build-profile.json5` to `6.1.0(23)` and rebuild.
+`build-profile.json5` sets `runtimeOS: "HarmonyOS"`, compiles and targets
+`6.1.1(24)`, and declares `6.0.0(20)` as the compatible SDK, so the app keeps
+API 20 compatibility (the hackathon minimum).
 
 ## Build
 
@@ -46,8 +39,8 @@ On macOS, run:
 
 The script uses DevEco Studio's bundled hvigor wrapper and SDK. If DevEco Studio
 is installed elsewhere, set `DEVECO_STUDIO_HOME` to its `.app` directory before
-running the script. Use Previewer for fast ArkUI iteration and an OpenHarmony
-or Oniro emulator for runtime, lifecycle, permission, and platform-integration
+running the script. Use Previewer for fast ArkUI iteration and the DevEco Studio
+HarmonyOS emulator for runtime, lifecycle, permission, and platform-integration
 verification.
 
 ## Run
@@ -62,6 +55,8 @@ and changes to `Welcome` when tapped.
 - `MOBILE_PLAN.md` defines mobile priorities, screens, architecture, feasibility
   gates, integration needs, and acceptance tests.
 - `docs/TECH_STACK.md` records platform choices and unresolved capabilities.
+- `backend/README.md` is the backend setup guide and the API contract for the
+  mobile app; `backend/PLAN.md` records the backend scope.
 - `AI_WORKFLOW.md` records AI-assisted development and validation.
 - `hackathon-resources/` contains challenge-provided emulator and DevEco CLI
   guidance.
