@@ -22,6 +22,7 @@ export const eventTypeEnum = pgEnum("event_type", [
   "area_exit",
   "area_enter",
   "dose_missed",
+  "trip_started",
   "trip_arrived",
   "trip_deviation",
 ]);
@@ -151,9 +152,10 @@ export const medications = pgTable(
 export const doseRecords = pgTable("dose_records", {
   /** Client-generated stable occurrence id (medication + scheduled time). */
   occurrenceId: text("occurrence_id").primaryKey(),
-  medicationId: uuid("medication_id")
-    .notNull()
-    .references(() => medications.id, { onDelete: "cascade" }),
+  /** Null after the medication is deleted; the dose history is kept. */
+  medicationId: uuid("medication_id").references(() => medications.id, { onDelete: "set null" }),
+  /** Name at recording time, so history stays readable after a medication is deleted or renamed. */
+  medicationName: text("medication_name"),
   seniorId: uuid("senior_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),

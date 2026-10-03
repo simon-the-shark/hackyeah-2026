@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { alerts } from "../src/db/schema.js";
+import { alerts, careLinks } from "../src/db/schema.js";
 import { runWatchdogOnce } from "../src/services/watchdog.js";
 import { setup } from "./helpers.js";
 
@@ -237,5 +237,141 @@ describe("watchdog", () => {
     t.time.now = new Date("2026-10-03T13:30:00Z");
     expect(await runWatchdogOnce(t.deps)).toBe(1);
     expect(await runWatchdogOnce(t.deps)).toBe(0);
+  });
+});
+
+describe("review fixes", () => {
+  const reportBody = { structured: { mood: 4 }, summary: "Felt fine.", source: "structured" };
+
+  it("lets only linked guardians read reports; seniors can post but not read", async () => {
+    const a = await t.pair();
+    const b = await t.pair();
+    const path = `/v1/seniors/${a.seniorId}/reports`;
+    expect((await t.call("POST", path, a.seniorToken, reportBody)).status).toBe(201);
+    expect((await t.call("GET", path, a.seniorToken)).status).toBe(403);
+    expect((await t.call("GET", path, b.guardianToken)).status).toBe(403);
+    const ok = await t.call("GET", path, a.guardianToken);
+    expect(ok.status).toBe(200);
+    expect(ok.body.items).toHaveLength(1);
+  });
+
+  it("keeps dose history, with a name snapshot, after the medication is deleted", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const medPath = `/v1/seniors/${seniorId}/medications`;
+    const med = (await t.call("POST", medPath, guardianToken, { name: "Demo", times: ["08:00"], timezone: "Europe/Warsaw" })).body;
+    await t.call("POST", `/v1/seniors/${seniorId}/doses`, seniorToken, {
+      occurrenceId: `${med.id}@1`,
+      medicationId: med.id,
+      status: "taken",
+      recordedAt: "2026-10-03T08:01:00Z",
+    });
+    expect((await t.call("DELETE", `${medPath}/${med.id}`, guardianToken)).status).toBe(204);
+    const doses = (await t.call("GET", `/v1/seniors/${seniorId}/doses`, seniorToken)).body.items;
+    expect(doses).toHaveLength(1);
+    expect(doses[0].medicationId).toBeNull();
+    expect(doses[0].medicationName).toBe("Demo");
+  });
+
+  describe("trip_started", () => {
+    async function withTrip() {
+      const ctx = await t.pair();
+      const trip = (
+        await t.call("POST", `/v1/seniors/${ctx.seniorId}/trips`, ctx.guardianToken, {
+          label: "Doctor",
+          destLat: 50.07,
+          destLng: 19.94,
+          radiusM: 100,
+          windowStart: "2026-10-03T12:00:00Z",
+          windowEnd: "2026-10-03T13:00:00Z",
+        })
+      ).body;
+      const send = (type: string, id = randomUUID()) =>
+        t.call("POST", `/v1/seniors/${ctx.seniorId}/events`, ctx.seniorToken, {
+          id,
+          type,
+          tripId: trip.id,
+          occurredAt: "2026-10-03T12:05:00Z",
+        });
+      const status = async () =>
+        (await t.call("GET", `/v1/seniors/${ctx.seniorId}/trips`, ctx.guardianToken)).body.items[0].status as string;
+      return { ...ctx, send, status };
+    }
+
+    it("makes a planned trip active without an alert or push, and repeats are no-ops", async () => {
+      const { send, status } = await withTrip();
+      const id = randomUUID();
+      const first = await send("trip_started", id);
+      expect(first.status).toBe(201);
+      expect(first.body.alert).toBeNull();
+      expect((await send("trip_started", id)).status).toBe(200);
+      expect(await status()).toBe("active");
+      expect(t.push.calls).toHaveLength(0);
+    });
+
+    it("requires a tripId", async () => {
+      const { seniorId, seniorToken } = await t.pair();
+      const res = await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, {
+        id: randomUUID(),
+        type: "trip_started",
+        occurredAt: "2026-10-03T12:05:00Z",
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("completes on arrival", async () => {
+      const { send, status } = await withTrip();
+      await send("trip_started");
+      await send("trip_arrived");
+      expect(await status()).toBe("completed");
+      t.time.now = new Date("2026-10-03T13:30:00Z");
+      expect(await runWatchdogOnce(t.deps)).toBe(0);
+    });
+
+    it("is marked missed with exactly one alert when the window ends after a start", async () => {
+      const { send, status } = await withTrip();
+      await send("trip_started");
+      t.time.now = new Date("2026-10-03T13:30:00Z");
+      expect(await runWatchdogOnce(t.deps)).toBe(1);
+      expect(await runWatchdogOnce(t.deps)).toBe(0);
+      expect(await status()).toBe("missed");
+    });
+
+    it("does not revive a missed trip", async () => {
+      const { send, status } = await withTrip();
+      t.time.now = new Date("2026-10-03T13:30:00Z");
+      await runWatchdogOnce(t.deps);
+      await send("trip_started");
+      expect(await status()).toBe("missed");
+    });
+  });
+
+  describe("GET /v1/alerts (guardian inbox)", () => {
+    it("returns only linked seniors' alerts, filters unacknowledged, and is guardian-only", async () => {
+      const a = await t.pair();
+      const b = await t.pair();
+      // Link guardian A to a second senior (pairing API always creates a new guardian).
+      const guardianA = (await t.call("GET", "/v1/me", a.guardianToken)).body.id as string;
+      await t.db.insert(careLinks).values({ seniorId: b.seniorId, guardianId: guardianA });
+      const c = await t.pair(); // unlinked to guardian A
+
+      const alertFor = async (s: { seniorId: string; seniorToken: string }) =>
+        (await t.call("POST", `/v1/seniors/${s.seniorId}/events`, s.seniorToken, sosBody())).body.alert.id as string;
+      const idA = await alertFor(a);
+      t.time.now = new Date("2026-10-03T12:01:00Z");
+      const idB = await alertFor(b);
+      await alertFor(c);
+
+      const all = (await t.call("GET", "/v1/alerts", a.guardianToken)).body.items;
+      expect(all.map((x: { id: string }) => x.id)).toEqual([idB, idA]);
+      expect(all[0].seniorName).toBe("Halina");
+
+      await t.call("POST", `/v1/alerts/${idB}/ack`, a.guardianToken);
+      const open = (await t.call("GET", "/v1/alerts?unacknowledged=true", a.guardianToken)).body.items;
+      expect(open.map((x: { id: string }) => x.id)).toEqual([idA]);
+      const notFiltered = (await t.call("GET", "/v1/alerts?unacknowledged=false", a.guardianToken)).body.items;
+      expect(notFiltered).toHaveLength(2);
+
+      expect((await t.call("GET", "/v1/alerts", a.seniorToken)).status).toBe(403);
+    });
   });
 });

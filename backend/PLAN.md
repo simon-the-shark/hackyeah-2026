@@ -74,8 +74,8 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 `safe_areas(senior_id PK, lat, lng, radius_m, version)`,
 `contacts(id, senior_id, name, phone, sort_order)`,
 `medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version)`,
-`dose_records(occurrence_id PK, medication_id, status taken|skipped|snoozed, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_arrived|trip_deviation, occurred_at, received_at, location jsonb null)`,
+`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, status taken|skipped|snoozed, recorded_at)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, occurred_at, received_at, location jsonb null)`,
 `alerts(id, event_id, senior_id, kind, created_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by)`,
 `status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
@@ -92,7 +92,7 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 - `GET /v1/seniors/:id/alerts?since=` and `GET /v1/alerts/:id` (guardian). `POST /v1/alerts/:id/ack` is idempotent.
 - `PUT /v1/seniors/:id/status` (senior heartbeat). `GET …/status` (guardian) includes `reportedAt` so the UI can show freshness.
 - `POST /v1/seniors/:id/doses` (idempotent by `occurrenceId`). `GET …/doses?from=&to=`.
-- `POST /v1/seniors/:id/reports` (senior, approved content only). `GET …/reports` (guardian).
+- `POST /v1/seniors/:id/reports` (senior, approved content only). `GET …/reports` (guardian only).
 - `GET /v1/catalog/:barcode` returns 404 for unknown codes, and the mobile app falls back to manual entry.
 - `GET /health`.
 - Errors use a uniform `{error:{code, message}}` shape: 400 validation, 401 unauthenticated, 403 not linked, 404, 409 version conflict, 410 expired pairing code.
@@ -102,7 +102,7 @@ Every route checks through one `assertLinked(user, seniorId)` helper in `auth/mi
 ## Push delivery
 
 `PushProvider.send(tokens, {title, body, data:{alertId, seniorId, kind}})` → `sent|failed`.
-- `harmony-push-kit.ts` implements the Push Kit REST v3 send endpoint with service-account JWT auth. Credentials come only from env (`PUSH_KIT_PROJECT_ID`, `PUSH_KIT_KEY_ID`, `PUSH_KIT_SUB_ACCOUNT`, `PUSH_KIT_PRIVATE_KEY_PATH`), and the key file is git-ignored. **Before coding, verify the endpoint, JWT claims and payload shape against the official HarmonyOS Push Kit server docs.**
+- `harmony-push-kit.ts` implements the Push Kit REST v3 send endpoint with service-account JWT auth. Credentials come only from the service-account key file named by `PUSH_KIT_KEY_FILE` (it holds `project_id`, `key_id`, `sub_account` and `private_key`); the file is git-ignored. **Before coding, verify the endpoint, JWT claims and payload shape against the official HarmonyOS Push Kit server docs.**
 - **The real Push Kit provider is the default** (`PUSH_PROVIDER=pushkit`). If its credentials are missing, the server refuses to start with a clear error rather than silently falling back.
 - `log-provider.ts` runs only when explicitly opted in with `PUSH_PROVIDER=log`. It exists for teammates who don't have the AGC key, because secrets can't be in the public repo. It records `push_status = 'simulated'`, never `sent`.
 - Unit tests inject an in-memory fake through `createApp({ push })`. They never call Huawei.
@@ -151,6 +151,9 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 - Push Kit credentials come from a single service-account key file (`PUSH_KIT_KEY_FILE`) rather than four env vars; the file already holds `project_id`, `key_id`, `sub_account` and `private_key`.
 - Added `POST /v1/devices` (senior adds a watch device and gets its token) and `events.trip_id` for trip events.
 - `status_heartbeats.reported_at` is server receipt time; the device's own sample time lives in `location.sampledAt`.
+- Dose records keep history when a medication is deleted (`medication_id` set null, plus a `medication_name` snapshot).
+- Added a `trip_started` event (planned to active) and a guardian-wide `GET /v1/alerts?unacknowledged=true` inbox, so the app can resolve a notification tap without push payload data.
+- `HEARTBEAT_STALE_SECONDS` stays 900, documented as unvalidated.
 - Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
-- Push Kit notification click-through data is not sent yet (payload shape unverified).
+- Push Kit notification click-through data is not sent yet (payload shape unverified); `GET /v1/alerts` covers the tap case.
 - The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.

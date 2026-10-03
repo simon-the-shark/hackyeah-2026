@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { alerts, events, statusHeartbeats, trips } from "../db/schema.js";
+import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent } from "../services/alerts.js";
@@ -12,7 +12,7 @@ import { validate } from "../validate.js";
 const eventBody = z
   .object({
     id: uuid,
-    type: z.enum(["sos", "sos_cancel", "area_exit", "area_enter", "dose_missed", "trip_arrived", "trip_deviation"]),
+    type: z.enum(["sos", "sos_cancel", "area_exit", "area_enter", "dose_missed", "trip_started", "trip_arrived", "trip_deviation"]),
     occurredAt: isoDate,
     cancelsEventId: uuid.optional(),
     tripId: uuid.optional(),
@@ -22,7 +22,7 @@ const eventBody = z
     if (e.type === "sos_cancel" && !e.cancelsEventId) {
       ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: "Required for sos_cancel" });
     }
-    if ((e.type === "trip_arrived" || e.type === "trip_deviation") && !e.tripId) {
+    if ((e.type === "trip_started" || e.type === "trip_arrived" || e.type === "trip_deviation") && !e.tripId) {
       ctx.addIssue({ code: "custom", path: ["tripId"], message: "Required for trip events" });
     }
   });
@@ -75,6 +75,13 @@ export function safetyRoutes(deps: Deps) {
     }
 
     const result = await ingestEvent(deps, auth, seniorId, body);
+    if (result.created && body.type === "trip_started" && body.tripId) {
+      // Only a planned trip becomes active; a missed or completed trip is never revived.
+      await db
+        .update(trips)
+        .set({ status: "active" })
+        .where(and(eq(trips.id, body.tripId), eq(trips.seniorId, seniorId), eq(trips.status, "planned")));
+    }
     if (result.created && body.type === "trip_arrived" && body.tripId) {
       await db
         .update(trips)
@@ -89,6 +96,43 @@ export function safetyRoutes(deps: Deps) {
       result.created ? 201 : 200,
     );
   });
+
+  // Guardian-wide inbox: lets the app resolve "which alert?" after a notification tap without push payload data.
+  app.get(
+    "/alerts",
+    validate(
+      "query",
+      z.object({
+        since: isoDate.optional(),
+        unacknowledged: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+        limit: z.coerce.number().int().min(1).max(200).default(50),
+      }),
+    ),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "guardian");
+      const { since, unacknowledged, limit } = c.req.valid("query");
+      const rows = await db
+        .select({ alert: alerts, event: events, seniorName: users.displayName })
+        .from(careLinks)
+        .innerJoin(alerts, eq(alerts.seniorId, careLinks.seniorId))
+        .innerJoin(users, eq(users.id, alerts.seniorId))
+        .leftJoin(events, eq(events.id, alerts.eventId))
+        .where(
+          and(
+            eq(careLinks.guardianId, auth.userId),
+            since ? gt(alerts.createdAt, since) : undefined,
+            unacknowledged ? isNull(alerts.acknowledgedAt) : undefined,
+          ),
+        )
+        .orderBy(desc(alerts.createdAt))
+        .limit(limit);
+      return c.json({
+        items: rows.map((r) => ({ ...alertView(r), seniorName: r.seniorName })),
+        serverTime: deps.clock(),
+      });
+    },
+  );
 
   // Senior may read own alerts too, to show "accepted" vs "guardian acknowledged".
   app.get(

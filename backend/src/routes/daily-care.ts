@@ -34,7 +34,7 @@ export function dailyCareRoutes(deps: Deps) {
     await assertLinked(db, auth, seniorId);
     const body = c.req.valid("json");
     const [med] = await db
-      .select({ id: medications.id })
+      .select({ id: medications.id, name: medications.name })
       .from(medications)
       .where(and(eq(medications.id, body.medicationId), eq(medications.seniorId, seniorId)));
     if (!med) throw notFound("Medication");
@@ -42,6 +42,7 @@ export function dailyCareRoutes(deps: Deps) {
     const values = {
       occurrenceId: body.occurrenceId,
       medicationId: body.medicationId,
+      medicationName: med.name,
       seniorId,
       status: body.status,
       scheduledFor: body.scheduledFor ?? null,
@@ -108,9 +109,12 @@ export function dailyCareRoutes(deps: Deps) {
     return c.json(row, 201);
   });
 
+  // Guardian-only: the senior submits reports but does not read them back.
   app.get("/seniors/:seniorId/reports", validate("param", seniorParam), async (c) => {
+    const auth = c.get("auth");
+    requireRole(auth, "guardian");
     const { seniorId } = c.req.valid("param");
-    await assertLinked(db, c.get("auth"), seniorId);
+    await assertLinked(db, auth, seniorId);
     const items = await db
       .select()
       .from(reports)
