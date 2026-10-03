@@ -103,6 +103,8 @@ endpoints, or confidential prompts.
 | 2026-10-03 | OpenCode / `openai/gpt-6-luna` | Polish onboarding and pairing controls | Anchored the unpaired onboarding guidance and setup button at the bottom while keeping the brand/header at the top; top-aligned the connection form below its navigation title; shortened the pairing-code action label from “Refresh code” to “Refresh” so it fits beside “Copy code”. | `./scripts/build-hap.sh` passed (unsigned HAP; existing `CareApi.ets` ArkTS warnings); `git diff --check` passed. No emulator check. |
 | 2026-10-03 | OpenCode / `openai/gpt-6-luna` | Clarify role picker versus setup action | Made the role selector explicit with “Choose a role” and “Select one option”; role choices are now outlined selection controls with a selected checkmark on the left, distinct from the filled setup action. Added accessible selection descriptions. | `./scripts/build-hap.sh` passed (unsigned HAP; existing `CareApi.ets` ArkTS warnings); `git diff --check` passed. No emulator check. |
 | 2026-10-03 | OpenCode / `openai/gpt-6-luna` | Remove Settings from guardian mode | Removed the Settings item from the guardian Account section; senior Settings remains available. | `./scripts/build-hap.sh` passed (unsigned HAP; existing `CareApi.ets` ArkTS warnings); `git diff --check` passed. |
+| 2026-10-03 | OpenCode / `openai/gpt-5.6-terra` | Show names entered during phone setup | Added the entered display name to the persisted paired session and show it in the senior and guardian home hero. Signing out clears the stored name with the rest of the session. | `./scripts/build-hap.sh` passed (unsigned HAP; only existing `CareApi.ets` warnings); `git diff --check` passed. No emulator check. |
+
 
 ## Workflow
 

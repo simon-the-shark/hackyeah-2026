@@ -44,6 +44,7 @@ export class ApiSession {
   token: string = '';
   seniorId: string = '';
   role: string = '';
+  displayName: string = '';
 
   configured(): boolean {
     return this.baseUrl !== '' && this.token !== '' && this.seniorId !== '';
@@ -53,6 +54,7 @@ export class ApiSession {
     this.token = '';
     this.seniorId = '';
     this.role = '';
+    this.displayName = '';
   }
 }
 

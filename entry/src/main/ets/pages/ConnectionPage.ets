@@ -32,6 +32,7 @@ export struct ConnectionPage {
       apiSession.token = result['token'];
       apiSession.seniorId = result['seniorId'];
       apiSession.role = this.guardian ? 'guardian' : 'senior';
+      apiSession.displayName = this.name.trim();
       await apiSessionStore.save(this.getUIContext().getHostContext() as common.UIAbilityContext);
       this.onConnected(apiSession.role);
     } catch (error) {

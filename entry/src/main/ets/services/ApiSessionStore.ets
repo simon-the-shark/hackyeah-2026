@@ -18,6 +18,7 @@ export class ApiSessionStore {
     apiSession.token = await this.store.getString(context, 'token', '');
     apiSession.seniorId = await this.store.getString(context, 'seniorId', '');
     apiSession.role = await this.store.getString(context, 'role', '');
+    apiSession.displayName = await this.store.getString(context, 'displayName', '');
   }
 
   async save(context: common.Context): Promise<void> {
@@ -25,7 +26,8 @@ export class ApiSessionStore {
       'baseUrl': apiSession.baseUrl,
       'token': apiSession.token,
       'seniorId': apiSession.seniorId,
-      'role': apiSession.role
+      'role': apiSession.role,
+      'displayName': apiSession.displayName
     });
   }
 

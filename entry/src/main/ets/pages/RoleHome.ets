@@ -13,6 +13,7 @@ import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
 import { GUARDIAN_OVERVIEW_ROUTE } from './GuardianOverviewPage';
 import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
 import { CareFocusStyle } from '../components/DesignSystem';
+import { apiSession } from '../services/CareApi';
 
 @Component
 export struct RoleHome {
@@ -67,7 +68,7 @@ export struct RoleHome {
       .justifyContent(FlexAlign.Center)
       .backgroundColor('#33FFFFFF')
 
-      Text(this.profile.hero.title)
+      Text(this.heroTitle())
         .fontSize(34)
         .fontWeight(FontWeight.Bold)
         .fontColor(Color.White)
@@ -92,9 +93,16 @@ export struct RoleHome {
     .shadow({ radius: 24, color: $r('app.color.card_shadow'), offsetY: 8 })
     .accessibilityGroup(true)
     .attributeModifier(new CareFocusStyle())
-    .accessibilityText(`${this.profile.hero.title}. ${this.profile.hero.summary}`)
+    .accessibilityText(`${this.heroTitle()}. ${this.profile.hero.summary}`)
     .accessibilityRole(AccessibilityRoleType.BUTTON)
     .onClick(() => this.open(this.profile.hero))
+  }
+
+  private heroTitle(): string {
+    if (apiSession.displayName === '') {
+      return this.profile.hero.title;
+    }
+    return `${this.profile.hero.title}, ${apiSession.displayName}`;
   }
 
   @Builder
