@@ -249,13 +249,6 @@ export struct GuardianMedicationList {
         if (this.phase !== LoadPhase.Loading) {
           this.addButton()
         }
-
-        Text('You set the medicines and dose times. The senior phone shows them as its daily list.')
-          .fontSize(17)
-          .fontColor($r('app.color.text_secondary'))
-          .width('100%')
-          .textAlign(TextAlign.Center)
-          .padding({ left: 8, right: 8 })
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 8, bottom: 32 })

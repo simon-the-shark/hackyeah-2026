@@ -282,13 +282,6 @@ export struct GuardianContactsList {
           }
           this.addButton()
         }
-
-        Text('Contacts are saved on the care service and appear on the senior\'s phone in this order.')
-          .fontSize(17)
-          .fontColor($r('app.color.text_secondary'))
-          .width('100%')
-          .textAlign(TextAlign.Center)
-          .padding({ left: 8, right: 8 })
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 8, bottom: 32 })

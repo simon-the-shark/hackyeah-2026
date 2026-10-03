@@ -240,11 +240,12 @@ export struct RoleHome {
   tabItem(icon: Resource, label: string, index: number) {
     Column({ space: 4 }) {
       SymbolGlyph(icon)
-        .fontSize(26)
+        .fontSize(24)
         .fontColor([this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary')])
       Text(label)
-        .fontSize(14)
-        .fontWeight(this.selectedTab === index ? FontWeight.Bold : FontWeight.Medium)
+        .fontSize(11)
+        .maxLines(1)
+        .fontWeight(FontWeight.Medium)
         .fontColor(this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary'))
     }
     .width('100%')
@@ -253,7 +254,7 @@ export struct RoleHome {
     .padding({ top: 8, bottom: 8 })
     .borderRadius(16)
     .backgroundColor(this.selectedTab === index ? this.profile.tint : Color.Transparent)
-    .border({ width: this.selectedTab === index ? 2 : 0, color: this.profile.accent })
+    .border({ width: 2, color: this.selectedTab === index ? this.profile.accent : Color.Transparent })
     .accessibilityGroup(true)
     .accessibilityText(label)
     .accessibilitySelected(this.selectedTab === index)

@@ -19,7 +19,6 @@ import {
   hasAnyLocation,
   stateSentence
 } from '../models/SeniorLocation';
-import { formatClockTime } from '../models/Safety';
 import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
@@ -46,7 +45,6 @@ export struct GuardianLocationView {
   @State private loading: boolean = false;
   @State private loadError: string = '';
   @State private now: number = Date.now();
-  @State private lastCheckedAt: number = 0;
   private pollTimer: number = -1;
 
   aboutToAppear(): void {
@@ -113,7 +111,6 @@ export struct GuardianLocationView {
     try {
       const snapshot = await seniorStatusApi.load();
       this.now = Date.now();
-      this.lastCheckedAt = this.now;
       this.snapshot = snapshot;
       this.scene = this.sceneFor(snapshot);
       this.loadError = '';
@@ -384,13 +381,6 @@ export struct GuardianLocationView {
         if (this.pairedAsGuardian()) {
           this.actions()
         }
-
-        Text(this.footerText())
-          .fontSize(17)
-          .fontColor($r('app.color.text_secondary'))
-          .width('100%')
-          .textAlign(TextAlign.Center)
-          .padding({ left: 8, right: 8 })
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 8, bottom: 32 })
@@ -399,11 +389,6 @@ export struct GuardianLocationView {
     .height('100%')
     .align(Alignment.Top)
     .scrollBar(BarState.Off)
-  }
-
-  private footerText(): string {
-    const base = 'Shared by the senior\'s phone while location sharing is on, and by the watch while Carely is open on it. These are the last reports, not live tracking.';
-    return this.lastCheckedAt > 0 ? `${base} Checked at ${formatClockTime(this.lastCheckedAt)}.` : base;
   }
 }
 
