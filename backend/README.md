@@ -57,6 +57,20 @@ these per-request diagnostic logs.
 From a HarmonyOS emulator the host is not `localhost`; use the host's LAN IP
 (or an HDC port-forward) as the API base URL. Not yet verified on an emulator.
 
+## Demo scenario
+
+`pnpm demo` drives the mobile plan's deterministic demo script through the
+HTTP API against `DEMO_BASE_URL` (default `http://localhost:8787`). It creates a
+synthetic senior and guardian with synthetic push tokens, sets up a safe area,
+contact and medication, replays a trace (exit, then re-entry), raises an SOS
+that the guardian acknowledges, and prints the dose schedule, the overview and
+the guardian's alert timeline. Every event and heartbeat it sends has
+`source: "simulated"`, so all of it is labelled as a simulation. Run the server
+with `PUSH_PROVIDER=log` to see each notification in the server log. A
+shorter `WATCHDOG_INTERVAL_MS` (default 30000) makes watchdog effects appear
+sooner. Missed doses are not part of the script, because detection ignores doses
+scheduled before a medication was created.
+
 ## Push delivery
 
 `PUSH_PROVIDER` defaults to `pushkit` (HarmonyOS Push Kit REST v3). It needs

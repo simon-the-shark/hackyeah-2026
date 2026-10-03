@@ -215,7 +215,8 @@ export function safetyRoutes(deps: Deps) {
     if (acked && isUrgent(acked.kind) && !acked.cancelledAt) {
       const [guardian] = await db.select({ name: users.displayName }).from(users).where(eq(users.id, auth.userId));
       const what = acked.kind === "sos" ? "your SOS" : "your fall alert";
-      await pushToSenior(deps, acked.seniorId, `${guardian?.name ?? "Your guardian"} has seen ${what}`, {
+      const simulated = row.event && row.event.source !== "device" ? "[Simulation] " : "";
+      await pushToSenior(deps, acked.seniorId, `${simulated}${guardian?.name ?? "Your guardian"} has seen ${what}`, {
         alertId: acked.id,
         kind: acked.kind,
       });

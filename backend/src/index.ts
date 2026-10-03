@@ -25,7 +25,7 @@ const deps = {
     claimFailuresPer15Min: config.RATE_LIMIT_CLAIM_FAILURES_PER_15MIN,
   },
 };
-startWatchdog(deps);
+startWatchdog(deps, config.WATCHDOG_INTERVAL_MS);
 
 serve({ fetch: createApp(deps).fetch, port: config.PORT }, (info) => {
   console.log(`backend listening on :${info.port} (push=${push.name})`);
