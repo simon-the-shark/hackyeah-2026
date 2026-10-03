@@ -33,6 +33,7 @@ export struct GuardianOverviewPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private overview: CareOverview | undefined = undefined;
   @State private loading: boolean = true;
+  @State private refreshing: boolean = false;
   @State private errorMessage: string = '';
   @State private now: number = Date.now();
   private timer: number = -1;
@@ -54,6 +55,7 @@ export struct GuardianOverviewPage {
     } finally {
       if (seq === this.requestSeq) {
         this.loading = false;
+        this.refreshing = false;
       }
     }
   }
@@ -299,21 +301,29 @@ export struct GuardianOverviewPage {
 
   @Builder
   content() {
-    Scroll() {
-      Column({ space: 24 }) {
-        this.hero()
-        this.card(TODAY)
-        this.card(DEVICES)
-        this.card(CARE_SETUP)
+    Refresh({ refreshing: $$this.refreshing }) {
+      Scroll() {
+        Column({ space: 24 }) {
+          this.hero()
+          this.card(TODAY)
+          this.card(DEVICES)
+          this.card(CARE_SETUP)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Start)
+        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
       }
       .width('100%')
-      .alignItems(HorizontalAlign.Start)
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+      .height('100%')
+      .align(Alignment.Top)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
+    .onRefreshing(() => {
+      this.load();
+    })
   }
 
   build() {
