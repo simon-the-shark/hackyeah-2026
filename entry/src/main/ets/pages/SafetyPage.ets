@@ -342,6 +342,8 @@ class LocationPoint {
   lng: number;
   accuracyM: number;
   sampledAt: string;
+  // This fix comes from the phone's own LocationKit, never from a watch.
+  measuredBy: string = 'phone';
 
   constructor(lat: number, lng: number, accuracyM: number) {
     this.lat = lat;

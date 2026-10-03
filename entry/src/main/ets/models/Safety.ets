@@ -10,7 +10,9 @@ export enum AlertType {
   DoseMissed,
   TripDeviation,
   TripNotCompleted,
-  MonitoringLost
+  MonitoringLost,
+  Fall,
+  LowBattery
 }
 
 export interface RemoteAlertCopy {
@@ -56,6 +58,18 @@ export function remoteAlertCopy(kind: string): RemoteAlertCopy {
         type: AlertType.MonitoringLost,
         title: 'Monitoring lost',
         detail: 'Location updates stopped. Check on the senior.'
+      };
+    case 'fall':
+      return {
+        type: AlertType.Fall,
+        title: 'Possible fall',
+        detail: 'A possible fall was reported. Check on the senior now.'
+      };
+    case 'low_battery':
+      return {
+        type: AlertType.LowBattery,
+        title: 'Low battery',
+        detail: 'One of the senior\'s devices is running low on battery.'
       };
     default:
       return {
