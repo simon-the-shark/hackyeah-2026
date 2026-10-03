@@ -1,0 +1,55 @@
+import { randomUUID } from "node:crypto";
+import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { setup } from "./helpers.js";
+
+const t = setup();
+afterAll(() => t.close());
+beforeEach(async () => {
+  await t.reset();
+  t.push.calls = [];
+  t.time.now = new Date("2026-10-03T05:00:00Z");
+});
+
+describe("guardian overview", () => {
+  it("summarises status, alerts, doses, reports and config in one call", async () => {
+    const ctx = await t.pair();
+    const base = `/v1/seniors/${ctx.seniorId}`;
+    await t.call("POST", `${base}/medications`, ctx.guardianToken, { name: "Demo", times: ["08:00", "20:00"], timezone: "Europe/Warsaw" });
+    await t.call("PUT", `${base}/safe-area`, ctx.guardianToken, { lat: 50.06, lng: 19.93, radiusM: 150 });
+    t.time.now = new Date("2026-10-03T07:30:00Z"); // 08:00 local dose missed
+    await t.call("PUT", `${base}/status`, ctx.seniorToken, { monitoringState: "inside", battery: 70 });
+    await t.call("POST", `${base}/events`, ctx.seniorToken, { id: randomUUID(), type: "area_exit", occurredAt: "2026-10-03T07:29:00Z" });
+    await t.call("POST", `${base}/reports`, ctx.seniorToken, { structured: { mood: 4 }, source: "structured" });
+
+    const res = await t.call("GET", `${base}/overview`, ctx.guardianToken);
+    expect(res.status).toBe(200);
+    const o = res.body;
+    expect(o.senior.displayName).toBe("Halina");
+    expect(o.status.monitoringState).toBe("inside");
+    expect(o.devices).toHaveLength(1);
+    expect(o.alerts).toEqual({ unacknowledged: 1, unresolved: 1 });
+    expect(o.nextDoses.map((d: { localTime: string }) => d.localTime)).toEqual(["20:00", "08:00"]);
+    expect(o.missedDosesLast24h).toBe(1);
+    expect(o.latestReportAt).not.toBeNull();
+    expect(o.safeAreaVersion).toBe(1);
+    expect(o.plannedOrActiveTrips).toBe(0);
+  });
+
+  it("is forbidden for unlinked guardians", async () => {
+    const a = await t.pair();
+    const b = await t.pair();
+    expect((await t.call("GET", `/v1/seniors/${a.seniorId}/overview`, b.guardianToken)).status).toBe(403);
+  });
+});
+
+describe("emergency contacts", () => {
+  it("stores the emergency flag", async () => {
+    const ctx = await t.pair();
+    const c = await t.call("POST", `/v1/seniors/${ctx.seniorId}/contacts`, ctx.guardianToken, {
+      name: "Marek",
+      phone: "+48 600 000 001",
+      isEmergency: true,
+    });
+    expect(c.body.isEmergency).toBe(true);
+  });
+});

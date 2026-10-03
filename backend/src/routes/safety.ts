@@ -2,10 +2,11 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { alerts, careLinks, devices, events, statusHeartbeats, trips, users } from "../db/schema.js";
+import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent, pushToSenior, resolveAlerts } from "../services/alerts.js";
+import { seniorStatus } from "../services/status.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -237,15 +238,7 @@ export function safetyRoutes(deps: Deps) {
   app.get("/seniors/:seniorId/status", validate("param", seniorParam), async (c) => {
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, c.get("auth"), seniorId);
-    const rows = await db
-      .select({ hb: statusHeartbeats, kind: devices.kind })
-      .from(statusHeartbeats)
-      .innerJoin(devices, eq(devices.id, statusHeartbeats.deviceId))
-      .where(eq(statusHeartbeats.seniorId, seniorId))
-      .orderBy(desc(statusHeartbeats.reportedAt));
-    const items = rows.map((r) => ({ ...r.hb, deviceKind: r.kind }));
-    // `status` is the newest heartbeat from any device; `devices` keeps phone and watch apart.
-    return c.json({ status: items[0] ?? null, devices: items, serverTime: deps.clock() });
+    return c.json({ ...(await seniorStatus(db, seniorId)), serverTime: deps.clock() });
   });
 
   return app;

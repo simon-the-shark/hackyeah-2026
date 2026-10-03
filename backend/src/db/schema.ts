@@ -127,6 +127,8 @@ export const contacts = pgTable(
     name: text("name").notNull(),
     phone: text("phone").notNull(),
     sortOrder: integer("sort_order").notNull().default(0),
+    /** Offered first when an SOS cannot be delivered (call this person). */
+    isEmergency: boolean("is_emergency").notNull().default(false),
     version: integer("version").notNull().default(1),
   },
   (t) => [index("contacts_senior_idx").on(t.seniorId)],

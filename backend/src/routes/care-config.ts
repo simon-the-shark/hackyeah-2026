@@ -15,7 +15,12 @@ const rowParam = z.object({ seniorId: uuid, id: uuid });
 const version = z.number().int().min(1);
 
 const safeAreaBody = z.object({ lat, lng, radiusM, version: version.optional() });
-const contactBody = z.object({ name: z.string().min(1).max(80), phone, sortOrder: z.number().int().default(0) });
+const contactBody = z.object({
+  name: z.string().min(1).max(80),
+  phone,
+  sortOrder: z.number().int().default(0),
+  isEmergency: z.boolean().default(false),
+});
 const medicationBody = z.object({
   name: z.string().min(1).max(120),
   doseText: z.string().max(200).optional(),
