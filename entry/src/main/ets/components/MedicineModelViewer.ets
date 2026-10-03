@@ -105,18 +105,6 @@ export struct MedicineModelViewer {
     }
   }
 
-  @Builder
-  rotationButton(label: string, step: number) {
-    Button(label, { type: ButtonType.Normal })
-      .fontSize(18)
-      .fontColor($r('app.color.senior_accent'))
-      .attributeModifier(new CareButtonStyle('secondary'))
-      .constraintSize({ minHeight: 56 })
-      .layoutWeight(1)
-      .enabled(this.options !== undefined)
-      .onClick(() => this.setAngle(this.angle + step))
-  }
-
   build() {
     Column({ space: 12 }) {
       Text('Compare with your medicine')
@@ -129,15 +117,20 @@ export struct MedicineModelViewer {
           Component3D(this.options)
             .width('100%')
             .height('100%')
-            .accessibilityText('Interactive 3D demo medicine bottle. Use the buttons below to rotate it.')
+            .accessibilityText('Interactive 3D demo medicine bottle. Drag left or right to rotate. Double-tap to reset the view.')
             .gesture(
-              PanGesture({ direction: PanDirection.Horizontal })
-                .onActionStart(() => {
-                  this.dragStartAngle = this.angle;
-                })
-                .onActionUpdate((event: GestureEvent) => {
-                  this.setAngle(this.dragStartAngle - event.offsetX * 0.01);
-                })
+              GestureGroup(GestureMode.Exclusive,
+                PanGesture({ fingers: 1, direction: PanDirection.Horizontal })
+                  .onActionStart((event: GestureEvent) => {
+                    this.dragStartAngle = this.angle;
+                    this.setAngle(this.dragStartAngle - event.offsetX * 0.01);
+                  })
+                  .onActionUpdate((event: GestureEvent) => {
+                    this.setAngle(this.dragStartAngle - event.offsetX * 0.01);
+                  }),
+                TapGesture({ count: 2 })
+                  .onAction(() => this.setAngle(0))
+              )
             )
         } else if (this.failed) {
           Column({ space: 12 }) {
@@ -170,24 +163,9 @@ export struct MedicineModelViewer {
       .borderRadius(20)
       .clip(true)
 
-      Text('Drag left or right to turn the bottle.')
+      Text('Drag left or right to turn the bottle. Double-tap to reset.')
         .fontSize(17)
         .fontColor($r('app.color.text_secondary'))
-
-      Row({ space: 12 }) {
-        this.rotationButton('Rotate left', -Math.PI / 4)
-        this.rotationButton('Rotate right', Math.PI / 4)
-      }
-      .width('100%')
-
-      Button('Reset view', { type: ButtonType.Normal })
-        .width('100%')
-        .constraintSize({ minHeight: 56 })
-        .fontSize(18)
-        .fontColor($r('app.color.senior_accent'))
-        .attributeModifier(new CareButtonStyle('secondary'))
-        .enabled(this.options !== undefined)
-        .onClick(() => this.setAngle(0))
 
       Text('Demo reference model · The same bottle is shown for every medicine for now.')
         .fontSize(16)
