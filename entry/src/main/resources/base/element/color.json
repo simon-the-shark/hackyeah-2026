@@ -2,11 +2,11 @@
   "color": [
     {
       "name": "start_window_background",
-      "value": "#FFFFFF"
+      "value": "#FAF8F3"
     },
     {
       "name": "page_background",
-      "value": "#F5F3EE"
+      "value": "#FAF8F3"
     },
     {
       "name": "surface",
@@ -14,15 +14,15 @@
     },
     {
       "name": "text_primary",
-      "value": "#1C1B1A"
+      "value": "#18312E"
     },
     {
       "name": "text_secondary",
-      "value": "#5F5B55"
+      "value": "#586965"
     },
     {
       "name": "divider",
-      "value": "#E7E3DC"
+      "value": "#C9D1CD"
     },
     {
       "name": "pressed",
@@ -34,43 +34,54 @@
     },
     {
       "name": "senior_accent",
-      "value": "#0F766E"
+      "value": "#155E5A"
     },
     {
       "name": "senior_tint",
-      "value": "#DDF1EE"
+      "value": "#DCECE8"
     },
     {
       "name": "guardian_accent",
-      "value": "#4338CA"
+      "value": "#155E5A"
     },
     {
       "name": "guardian_tint",
-      "value": "#E4E3FA"
+      "value": "#DCECE8"
     },
     {
       "name": "sos",
-      "value": "#C62828"
+      "value": "#A33F3F"
     },
     {
       "name": "sos_tint",
-      "value": "#FBE3E3"
+      "value": "#F8E6E4"
     },
     {
       "name": "warning",
-      "value": "#B45309"
+      "value": "#9A641E"
     },
     {
       "name": "warning_tint",
-      "value": "#FEF3C7"
+      "value": "#FFF5E5"
     },
     {
       "name": "success",
-      "value": "#2E7D32"
+      "value": "#287A55"
     },
     {
       "name": "success_tint",
-      "value": "#E3F2E5"
-    }
+      "value": "#EAF5EE"
+    },
+    { "name": "action_primary", "value": "#155E5A" },
+    { "name": "action_danger", "value": "#A33F3F" },
+    { "name": "focus_ring", "value": "#287A75" },
+    { "name": "control_border", "value": "#738681" },
+    { "name": "watch_background", "value": "#071D1A" },
+    { "name": "watch_surface", "value": "#14332F" },
+    { "name": "watch_text", "value": "#FAF8F3" },
+    { "name": "watch_secondary", "value": "#B8CCC6" },
+    { "name": "map_area_fill", "value": "#26155E5A" },
+    { "name": "map_accuracy_fill", "value": "#40155E5A" },
+    { "name": "model_background", "value": "#FAF8F3" }
   ]
 }

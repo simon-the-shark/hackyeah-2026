@@ -1,12 +1,14 @@
 import { ActionRow, NoticeBanner, sectionTitle } from '../components/Common';
 import { common } from '@kit.AbilityKit';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
+import { LocalAlertNotification, notifications } from '../platform/Notifications';
 import { runCompanionDiagnostics } from '../services/CompanionDiagnostics';
 
 @Component
 export struct DeveloperToolsPage {
   @State private result: string = '';
   @State private alertCreated: boolean = false;
+  @State private notificationResult: string = '';
   @State private diagnostics: string[] = [];
   @State private diagnosing: boolean = false;
 
@@ -18,16 +20,33 @@ export struct DeveloperToolsPage {
     this.diagnostics = [];
     try {
       await runCompanionDiagnostics(this.getUIContext().getHostContext() as common.UIAbilityContext,
-        (line: string) => this.diagnostics.push(line));
+        (line: string) => {
+          this.diagnostics.push(line);
+        });
     } finally {
       this.diagnosing = false;
     }
   }
 
+  /** Posts a local notification only; nothing is sent to or received from the care service. */
+  private async simulateSosNotification(): Promise<void> {
+    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
+    if (!await notifications.ensureEnabled(context, true)) {
+      this.notificationResult = 'Notifications are off for Carely. Allow them in system settings, then try again.';
+      return;
+    }
+    const notification = new LocalAlertNotification(`demo-sos-${Date.now()}`, 'SOS from Demo senior (simulation)',
+      'Simulated local notification. No alert was sent or received.', true);
+    const published = await notifications.publish(context, notification);
+    this.notificationResult = published
+      ? 'Simulated SOS notification posted on this device. Open the notification panel to see it.'
+      : 'The system did not accept the notification. Check notification settings for Carely.';
+  }
+
   private replay(status: GeofenceStatus): void {
     this.alertCreated = safetyStore.recordDemoLocation(status) !== undefined;
     this.result = this.alertCreated
-      ? `${safetyStore.lastLocationMessage}. A safe-area alert was created; open Alerts in the Guardian view to see it.`
+      ? `${safetyStore.lastLocationMessage}. A simulated safe-area alert was saved on this phone only. No guardian was notified.`
       : `${safetyStore.lastLocationMessage}.`;
   }
 
@@ -72,6 +91,30 @@ export struct DeveloperToolsPage {
             .borderRadius(20)
             .clip(true)
             .backgroundColor($r('app.color.surface'))
+          }
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+
+          Column({ space: 8 }) {
+            sectionTitle('Guardian notifications (simulation)')
+            Column() {
+              ActionRow({
+                icon: $r('sys.symbol.bell_fill'),
+                title: 'Simulate SOS notification (local only)',
+                summary: 'Posts a test notification on this device; no backend',
+                accent: $r('app.color.sos'),
+                tint: $r('app.color.sos_tint'),
+                showChevron: false,
+                onTap: () => this.simulateSosNotification()
+              })
+            }
+            .width('100%')
+            .borderRadius(20)
+            .clip(true)
+            .backgroundColor($r('app.color.surface'))
+            if (this.notificationResult !== '') {
+              NoticeBanner({ text: this.notificationResult })
+            }
           }
           .width('100%')
           .alignItems(HorizontalAlign.Start)

@@ -1,9 +1,12 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
+import { WatchPairingCard } from '../components/WatchPairingCard';
 import { safetyStore } from '../models/Safety';
+import { pasteboard } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
 import common from '@ohos.app.ability.common';
 import { apiSession, careApi } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 
 @Component
 export struct SettingsPage {
@@ -11,6 +14,7 @@ export struct SettingsPage {
   @State private developerMode: boolean = safetyStore.developerMode;
   @State private pairingCode: string = '';
   @State private pairingMessage: string = '';
+  @State private loadingPairingCode: boolean = false;
 
   aboutToAppear(): void {
     if (apiSession.role === 'senior') {
@@ -19,6 +23,8 @@ export struct SettingsPage {
   }
 
   private async loadPairingCode(): Promise<void> {
+    if (this.loadingPairingCode) return;
+    this.loadingPairingCode = true;
     this.pairingMessage = 'Loading pairing code...';
     try {
       const result = await careApi.request('/pairing/codes', http.RequestMethod.POST) as Record<string, string>;
@@ -27,12 +33,26 @@ export struct SettingsPage {
     } catch (error) {
       this.pairingCode = '';
       this.pairingMessage = 'Could not load a pairing code.';
+    } finally {
+      this.loadingPairingCode = false;
     }
   }
 
   private setDeveloperMode(enabled: boolean): void {
     this.developerMode = enabled;
     safetyStore.developerMode = enabled;
+  }
+
+  private copyPairingCode(): void {
+    if (this.pairingCode === '') {
+      return;
+    }
+    const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, this.pairingCode);
+    pasteboard.getSystemPasteboard().setData(pasteData).then(() => {
+      this.pairingMessage = 'Pairing code copied. Share it with your guardian.';
+    }).catch(() => {
+      this.pairingMessage = 'Could not copy the pairing code. Please share it manually.';
+    });
   }
 
   /** Clears pairing, then returns to setup. Signing out must always take effect. */
@@ -61,15 +81,25 @@ export struct SettingsPage {
                   .width('100%')
                   .textAlign(TextAlign.Center)
                 Text(this.pairingMessage)
-                  .fontSize(14)
+                  .fontSize(19)
                   .fontColor($r('app.color.text_secondary'))
                   .width('100%')
                   .textAlign(TextAlign.Center)
-                Button('Refresh code')
-                  .width('100%')
-                  .fontColor($r('app.color.senior_accent'))
-                  .backgroundColor($r('app.color.senior_tint'))
-                  .onClick(() => this.loadPairingCode())
+                Row({ space: 12 }) {
+                  Button('Copy code')
+                    .layoutWeight(1)
+                    .fontColor(Color.White)
+                    .attributeModifier(new CareButtonStyle())
+                    .enabled(this.pairingCode !== '' && !this.loadingPairingCode)
+                    .onClick(() => this.copyPairingCode())
+                  Button(this.loadingPairingCode ? 'Loading…' : 'Refresh code')
+                    .layoutWeight(1)
+                    .fontColor($r('app.color.senior_accent'))
+                    .attributeModifier(new CareButtonStyle('secondary'))
+                    .enabled(!this.loadingPairingCode)
+                    .onClick(() => this.loadPairingCode())
+                }
+                .width('100%')
               }
               .width('100%')
               .padding(16)
@@ -78,6 +108,8 @@ export struct SettingsPage {
             }
             .width('100%')
             .alignItems(HorizontalAlign.Start)
+
+            WatchPairingCard()
           }
 
           Button('Sign out')
@@ -86,7 +118,7 @@ export struct SettingsPage {
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.sos'))
-            .backgroundColor($r('app.color.sos_tint'))
+            .attributeModifier(new CareButtonStyle('danger-secondary'))
             .onClick(() => {
               this.signOut();
             })
@@ -104,15 +136,20 @@ export struct SettingsPage {
                   .fontSize(18)
                   .fontWeight(FontWeight.Medium)
                   .fontColor($r('app.color.text_primary'))
-                Text('Test tools and simulations')
-                  .fontSize(14)
+                Text(this.developerMode ? 'On · Test tools are available' : 'Off · Test tools are hidden')
+                  .fontSize(17)
                   .fontColor($r('app.color.text_secondary'))
               }
               .layoutWeight(1)
               .alignItems(HorizontalAlign.Start)
 
               Toggle({ type: ToggleType.Switch, isOn: this.developerMode })
-                .selectedColor($r('app.color.senior_accent'))
+                .selectedColor($r('app.color.action_primary'))
+                .width(64)
+                .height(56)
+                .attributeModifier(new CareFocusStyle())
+                .accessibilityText('Developer Mode')
+                .accessibilityDescription('Shows test tools and simulations for this session.')
                 .onChange((enabled: boolean) => this.setDeveloperMode(enabled))
             }
             .width('100%')

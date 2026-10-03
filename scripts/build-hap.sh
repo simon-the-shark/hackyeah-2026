@@ -11,5 +11,6 @@ if [[ ! -x "${hvigorw}" || ! -d "${sdk_home}" ]]; then
   exit 1
 fi
 
+# Builds the phone/tablet app (entry) and the smartwatch app (watch).
 DEVECO_SDK_HOME="${sdk_home}" "${hvigorw}" --mode module \
-  -p module=entry@default -p product=default assembleHap
+  -p module=entry@default,watch@default -p product=default assembleHap

@@ -1,0 +1,24 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Carely on the senior's watch"
+    },
+    {
+      "name": "WatchAbility_desc",
+      "value": "Carely on the senior's watch: SOS, location and heart rate for the guardian"
+    },
+    {
+      "name": "WatchAbility_label",
+      "value": "Carely"
+    },
+    {
+      "name": "location_permission_reason",
+      "value": "Your watch's location is shared with your guardian while Carely is open."
+    },
+    {
+      "name": "health_permission_reason",
+      "value": "Your heart rate is shared with your guardian while Carely is open. It is not a medical measurement."
+    }
+  ]
+}

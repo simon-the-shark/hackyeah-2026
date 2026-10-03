@@ -1,4 +1,5 @@
 import { IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 import { DoseRecord, DoseStatus, Medication } from '../models/Medication';
 import { sortTimes, timesLabel } from '../models/MedicationDraft';
 import {
@@ -140,6 +141,9 @@ export struct GuardianMedicationList {
       }
     }
     .accessibilityGroup(true)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
+    .accessibilityText(`${medication.name}. ${medication.doseText}. Open medication details.`)
     .stateStyles({
       normal: {
         .backgroundColor(Color.Transparent)
@@ -171,10 +175,10 @@ export struct GuardianMedicationList {
         .textAlign(TextAlign.Center)
       if (showRetry) {
         Button('Try again')
-          .height(48)
+          .height(56)
           .padding({ left: 28, right: 28 })
           .fontSize(17)
-          .backgroundColor($r('app.color.guardian_accent'))
+          .attributeModifier(new CareButtonStyle())
           .onClick(() => this.reload())
       }
     }
@@ -199,7 +203,7 @@ export struct GuardianMedicationList {
     .height(56)
     .enabled(isGuardianPaired())
     .opacity(isGuardianPaired() ? 1 : 0.5)
-    .backgroundColor($r('app.color.guardian_accent'))
+    .attributeModifier(new CareButtonStyle())
     .accessibilityText('Add medication: scan the package barcode or type the details')
     .onClick(() => this.openAdd())
   }
@@ -247,7 +251,7 @@ export struct GuardianMedicationList {
         }
 
         Text('You set the medicines and dose times. The senior phone shows them as its daily list.')
-          .fontSize(13)
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)
@@ -542,7 +546,7 @@ export struct GuardianMedicationDetail {
           .height(56)
           .enabled(!this.removed && !this.deleting && isGuardianPaired())
           .opacity(!this.removed && isGuardianPaired() ? 1 : 0.5)
-          .backgroundColor($r('app.color.guardian_accent'))
+          .attributeModifier(new CareButtonStyle())
           .onClick(() => this.navStack.pushPathByName(MEDICATION_FORM_ROUTE, new MedicationFormParams(this.current)))
 
           Button() {
@@ -560,7 +564,7 @@ export struct GuardianMedicationDetail {
           .height(56)
           .enabled(!this.removed && !this.deleting && isGuardianPaired())
           .opacity(!this.removed && isGuardianPaired() ? 1 : 0.5)
-          .backgroundColor($r('app.color.sos_tint'))
+          .attributeModifier(new CareButtonStyle('danger-secondary'))
           .onClick(() => this.confirmDelete())
         }
         .width('100%')

@@ -4,7 +4,7 @@ import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
-import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
+import { bpm, eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent, isUrgent, pushToSenior, resolveAlerts } from "../services/alerts.js";
 import { checkBattery } from "../services/battery.js";
 import { seniorStatus } from "../services/status.js";
@@ -25,20 +25,43 @@ const eventBody = z
       "trip_started",
       "trip_arrived",
       "trip_deviation",
+      "heart_rate_out_of_range",
+      "heart_rate_in_range",
     ]),
     occurredAt: isoDate,
     cancelsEventId: uuid.optional(),
     tripId: uuid.optional(),
     location: geoPoint.optional(),
-    // Optional, except for falls: a fall must say whether it came from a sensor or a demo trigger.
+    // Optional, except for falls and heart-rate events: they must say whether a sensor or a demo produced them.
     source: eventSource.unwrap().optional(),
+    // The watch evaluates its own readings; the server only stores what it reports.
+    heartRate: z
+      .object({
+        bpm,
+        direction: z.enum(["high", "low"]),
+        lowBpm: bpm,
+        highBpm: bpm,
+        sustainedSeconds: z.number().int().min(30).max(3600),
+      })
+      .refine((h) => h.lowBpm < h.highBpm, { path: ["highBpm"], message: "lowBpm must be below highBpm" })
+      .optional(),
   })
   .superRefine((e, ctx) => {
     if ((e.type === "sos_cancel" || e.type === "cancel") && !e.cancelsEventId) {
       ctx.addIssue({ code: "custom", path: ["cancelsEventId"], message: `Required for ${e.type}` });
     }
-    if (e.type === "fall_detected" && !e.source) {
-      ctx.addIssue({ code: "custom", path: ["source"], message: "Required for fall_detected" });
+    if (
+      (e.type === "fall_detected" || e.type === "heart_rate_out_of_range" || e.type === "heart_rate_in_range") &&
+      !e.source
+    ) {
+      ctx.addIssue({ code: "custom", path: ["source"], message: `Required for ${e.type}` });
+    }
+    if (e.type === "heart_rate_out_of_range" && !e.heartRate) {
+      ctx.addIssue({ code: "custom", path: ["heartRate"], message: "Required for heart_rate_out_of_range" });
+    }
+    // Health data is never accepted and then silently dropped.
+    if (e.type !== "heart_rate_out_of_range" && e.heartRate) {
+      ctx.addIssue({ code: "custom", path: ["heartRate"], message: "Only allowed for heart_rate_out_of_range" });
     }
     if ((e.type === "trip_started" || e.type === "trip_arrived" || e.type === "trip_deviation") && !e.tripId) {
       ctx.addIssue({ code: "custom", path: ["tripId"], message: "Required for trip events" });
@@ -99,7 +122,11 @@ export function safetyRoutes(deps: Deps) {
       if (!trip) throw new ApiError(404, "not_found", "Trip not found");
     }
 
-    const result = await ingestEvent(deps, auth, seniorId, { ...body, source: body.source ?? "device" });
+    const result = await ingestEvent(deps, auth, seniorId, {
+      ...body,
+      source: body.source ?? "device",
+      details: body.heartRate,
+    });
     if (result.created && body.type === "trip_started" && body.tripId) {
       // Only a planned trip becomes active; a missed or completed trip is never revived.
       await db

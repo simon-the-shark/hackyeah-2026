@@ -2,6 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { DoseOccurrence, DoseRecord, DoseStatus } from '../models/Medication';
 import { timeKey } from '../services/MedicationSchedule';
 import { medicationService } from '../services/MedicationService';
+import { CareButtonStyle } from './DesignSystem';
 
 // Taken / Skip answer for one dose. The backend keeps the first answer, so each one is confirmed first.
 @Component
@@ -63,7 +64,7 @@ export struct DoseAction {
 
       if (!record.synced) {
         Text('Saved on this phone. It will be sent to your guardian when you are online.')
-          .fontSize(14)
+          .fontSize(19)
           .fontColor($r('app.color.text_secondary'))
       }
     }
@@ -73,7 +74,8 @@ export struct DoseAction {
     .alignItems(HorizontalAlign.Start)
     .justifyContent(FlexAlign.Center)
     .borderRadius(16)
-    .backgroundColor(record.status === DoseStatus.Taken ? $r('app.color.success_tint') : $r('app.color.divider'))
+    .backgroundColor(record.status === DoseStatus.Taken ? $r('app.color.success_tint') : $r('app.color.surface'))
+    .border({ width: 1, color: $r('app.color.divider') })
     .accessibilityGroup(true)
   }
 
@@ -94,15 +96,15 @@ export struct DoseAction {
                 .fontSize(24)
                 .fontColor([Color.White])
             }
-            Text('Taken')
-              .fontSize(18)
+            Text(this.saving ? 'Saving…' : 'Taken')
+              .fontSize(19)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
           }
         }
         .layoutWeight(1)
         .height(56)
-        .backgroundColor($r('app.color.senior_accent'))
+        .attributeModifier(new CareButtonStyle())
         .enabled(!this.saving)
         .accessibilityText(`Mark ${this.dose.medication.name} at ${this.dose.time} as taken`)
         .onClick(() => this.confirm(DoseStatus.Taken))
@@ -112,7 +114,7 @@ export struct DoseAction {
           .padding({ left: 20, right: 20 })
           .fontSize(18)
           .fontColor($r('app.color.text_primary'))
-          .backgroundColor($r('app.color.page_background'))
+          .attributeModifier(new CareButtonStyle('secondary'))
           .enabled(!this.saving)
           .accessibilityText(`Skip ${this.dose.medication.name} at ${this.dose.time}`)
           .onClick(() => this.confirm(DoseStatus.Skipped))

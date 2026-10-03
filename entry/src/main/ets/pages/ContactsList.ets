@@ -1,4 +1,5 @@
 import { common } from '@kit.AbilityKit';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { Contact } from '../models/Contact';
 import { DialResult, openDialer } from '../platform/PhoneDialer';
@@ -70,16 +71,17 @@ struct ContactCard {
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)
 
-      Row() {
+      Column({ space: 2 }) {
         SymbolGlyph($r('sys.symbol.phone_fill'))
-          .fontSize(28)
+          .fontSize(24)
           .fontColor([Color.White])
+        Text('Call').fontSize(17).fontWeight(FontWeight.Medium).fontColor(Color.White)
       }
       .width(64)
       .height(64)
       .borderRadius(32)
       .justifyContent(FlexAlign.Center)
-      .backgroundColor($r('app.color.success'))
+      .backgroundColor($r('app.color.action_primary'))
     }
     .width('100%')
     .padding(16)
@@ -87,6 +89,8 @@ struct ContactCard {
     .backgroundColor($r('app.color.surface'))
     .accessibilityGroup(true)
     .accessibilityText(`Call ${this.contact.name}, ${this.contact.phone}`)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
     .stateStyles({
       normal: {
         .backgroundColor($r('app.color.surface'))
@@ -191,7 +195,7 @@ export struct ContactsList {
               .fontSize(28)
               .fontWeight(FontWeight.Bold)
               .fontColor($r('app.color.text_primary'))
-            Text('Tap a person to call them')
+            Text('Tap a person to open the phone app. Confirm the call there.')
               .fontSize(17)
               .fontColor($r('app.color.text_secondary'))
           }
@@ -203,6 +207,15 @@ export struct ContactsList {
           } else if (this.refreshFailed) {
             this.notice(`Showing the last loaded list. ${this.errorMessage}`)
           }
+
+          Button(this.refreshing ? 'Refreshing contacts…' : 'Refresh contacts')
+            .width('100%')
+            .attributeModifier(new CareButtonStyle('secondary'))
+            .enabled(!this.refreshing)
+            .onClick(() => {
+              this.refreshing = true;
+              this.load();
+            })
 
           if (this.contacts.length === 0) {
             Text('You have no contacts yet. Your guardian can add them in the Carely app.')

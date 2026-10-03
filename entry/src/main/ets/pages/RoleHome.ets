@@ -7,6 +7,10 @@ import { MedicationToday } from './MedicationToday';
 import { AlertsList } from './AlertsPage';
 import { GuardianMedicationList } from './GuardianMedication';
 import { GuardianContactsList } from './GuardianContacts';
+import { GuardianLocationView } from './GuardianLocationPage';
+import { SosBanner } from '../components/SosBanner';
+import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
+import { CareFocusStyle } from '../components/DesignSystem';
 import { WellbeingCompanion } from './WellbeingCompanion';
 
 @Component
@@ -37,6 +41,8 @@ export struct RoleHome {
       this.navStack.pushPathByName('safe-area-setup', null);
     } else if (feature.id === 'settings') {
       this.navStack.pushPathByName('settings', null);
+    } else if (feature.id === 'watch-vitals') {
+      this.navStack.pushPathByName(GUARDIAN_WATCH_ROUTE, null);
     } else if (feature.id === 'wellbeing-reports') {
       this.navStack.pushPathByName('wellbeing-reports', null);
     } else {
@@ -65,7 +71,7 @@ export struct RoleHome {
 
       Row({ space: 8 }) {
         Text(this.profile.hero.summary)
-          .fontSize(17)
+          .fontSize(19)
           .fontColor(Color.White)
           .opacity(0.92)
           .layoutWeight(1)
@@ -82,6 +88,9 @@ export struct RoleHome {
     .backgroundColor(this.profile.heroColor)
     .shadow({ radius: 24, color: $r('app.color.card_shadow'), offsetY: 8 })
     .accessibilityGroup(true)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityText(`${this.profile.hero.title}. ${this.profile.hero.summary}`)
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
     .onClick(() => this.open(this.profile.hero))
   }
 
@@ -106,7 +115,7 @@ export struct RoleHome {
             .fontWeight(FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
           Text(feature.summary)
-            .fontSize(15)
+            .fontSize(17)
             .fontColor($r('app.color.text_secondary'))
         }
         .layoutWeight(1)
@@ -127,6 +136,9 @@ export struct RoleHome {
       }
     }
     .accessibilityGroup(true)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityText(`${feature.title}. ${feature.summary}`)
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
     .stateStyles({
       normal: {
         .backgroundColor(Color.Transparent)
@@ -142,7 +154,7 @@ export struct RoleHome {
   section(section: FeatureSection) {
     Column({ space: 8 }) {
       Text(section.title)
-        .fontSize(15)
+        .fontSize(19)
         .fontWeight(FontWeight.Medium)
         .fontColor($r('app.color.text_secondary'))
         .padding({ left: 4 })
@@ -169,6 +181,10 @@ export struct RoleHome {
           .fontSize(28)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
+
+        if (this.profile.route === 'guardian') {
+          SosBanner()
+        }
 
         this.hero()
 
@@ -199,6 +215,11 @@ export struct RoleHome {
       ContactsList()
     } else if (feature.id === 'trusted-contacts') {
       GuardianContactsList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'location') {
+      GuardianLocationView({
+        refreshKey: this.tabRefresh,
+        visible: this.selectedTab > 0 && this.profile.tabs[this.selectedTab - 1].id === 'location'
+      })
     } else if (feature.id === 'wellbeing') {
       WellbeingCompanion()
     } else {
@@ -220,7 +241,13 @@ export struct RoleHome {
     .width('100%')
     .height('100%')
     .justifyContent(FlexAlign.Center)
+    .padding({ top: 8, bottom: 8 })
+    .borderRadius(16)
+    .backgroundColor(this.selectedTab === index ? this.profile.tint : Color.Transparent)
+    .border({ width: this.selectedTab === index ? 2 : 0, color: this.profile.accent })
     .accessibilityGroup(true)
+    .accessibilityText(label)
+    .accessibilitySelected(this.selectedTab === index)
   }
 
   build() {
@@ -240,7 +267,7 @@ export struct RoleHome {
           }, (feature: Feature) => feature.id)
         }
         .scrollable(false)
-        .barHeight(76)
+        .barHeight(88)
         .barBackgroundColor($r('app.color.surface'))
         .divider({ strokeWidth: 1, color: $r('app.color.divider') })
         .onChange((index: number) => {

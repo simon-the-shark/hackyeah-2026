@@ -9,7 +9,10 @@ export function describeBackendError(err: Object, fallback: string): string {
     if (err.status === 401 || err.status === 403) {
       return 'This phone is not connected to a care plan. Ask your guardian to pair it again.';
     }
-    return err.message;
+    if (err.status >= 500) {
+      return 'The care service is temporarily unavailable. Your information has not been loaded. Please try again shortly.';
+    }
+    return fallback + ' Please try again.';
   }
   return fallback;
 }

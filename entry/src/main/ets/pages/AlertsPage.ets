@@ -1,4 +1,14 @@
+import { common } from '@kit.AbilityKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
+import {
+  accuracyLabel,
+  AlertLocation,
+  alertLocationFrom,
+  fixTimeLabel,
+  formatCoordinates,
+  RemoteGeoPoint,
+  sourceLabel
+} from '../models/AlertLocation';
 import {
   AlertType,
   CareAlert,
@@ -7,7 +17,10 @@ import {
   remoteAlertCopy,
 } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
+import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession, careApi } from '../services/CareApi';
+import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 
 interface RemoteAlert {
   id: string;
@@ -15,11 +28,20 @@ interface RemoteAlert {
   createdAt: string;
   // The care service sends null, not an absent field, for an unacknowledged alert.
   acknowledgedAt?: string | null;
-  event?: RemoteEvent;
+  // Null for server-raised alerts such as a missed dose.
+  event?: RemoteEvent | null;
 }
 
 interface RemoteEvent {
   type: string;
+  occurredAt: string;
+  location?: RemoteGeoPoint | null;
+}
+
+enum LocationLoad {
+  Loading,
+  Loaded,
+  Failed
 }
 
 interface RemoteAlertList {
@@ -38,6 +60,9 @@ function alertIcon(alert: CareAlert): Resource {
   }
   if (alert.type === AlertType.TripDeviation || alert.type === AlertType.TripNotCompleted) {
     return $r('sys.symbol.figure_walk');
+  }
+  if (alert.type === AlertType.HeartRate) {
+    return $r('sys.symbol.heart_fill');
   }
   return $r('sys.symbol.house_shield_fill');
 }
@@ -63,6 +88,9 @@ export struct AlertsList {
   @State private alerts: CareAlert[] = [];
   @State private pendingCount: number = 0;
   @State private loadError: string = '';
+  @State private loading: boolean = true;
+  @State private refreshing: boolean = false;
+  private requestSeq: number = 0;
 
   aboutToAppear(): void {
     this.reload();
@@ -73,19 +101,30 @@ export struct AlertsList {
   }
 
   private async reload(): Promise<void> {
+    const seq = ++this.requestSeq;
+    this.loading = this.alerts.length === 0;
     if (!apiSession.configured() || apiSession.role !== 'guardian') {
       this.alerts = [];
       this.loadError = 'This phone is not paired as a guardian.';
+      this.loading = false;
+      this.refreshing = false;
       return;
     }
     try {
       const response = await careApi.request('/alerts?limit=50', http.RequestMethod.GET) as RemoteAlertList;
+      if (seq !== this.requestSeq) return;
       this.alerts = response.items.map((item: RemoteAlert) => this.fromRemote(item));
       this.pendingCount = this.alerts.filter((alert: CareAlert) => !alert.acknowledged).length;
       this.loadError = '';
     } catch (error) {
-      this.alerts = [];
-      this.loadError = 'Could not load alerts from the care service.';
+      if (seq !== this.requestSeq) return;
+      this.loadError = this.alerts.length > 0 ? 'Could not refresh alerts. Showing the last loaded list. Try again.' :
+        'Could not load alerts from the care service. Check your connection and try again.';
+    } finally {
+      if (seq === this.requestSeq) {
+        this.loading = false;
+        this.refreshing = false;
+      }
     }
   }
 
@@ -106,7 +145,7 @@ export struct AlertsList {
       .fontColor(alert.acknowledged ? $r('app.color.text_secondary') : Color.White)
       .padding({ left: 10, right: 10, top: 4, bottom: 4 })
       .borderRadius(12)
-      .backgroundColor(alert.acknowledged ? $r('app.color.page_background') : $r('app.color.sos'))
+      .backgroundColor(alert.acknowledged ? $r('app.color.page_background') : $r('app.color.action_danger'))
   }
 
   @Builder
@@ -141,6 +180,8 @@ export struct AlertsList {
       }
     }
     .accessibilityGroup(true)
+    .attributeModifier(new CareFocusStyle())
+    .accessibilityRole(AccessibilityRoleType.BUTTON)
     .stateStyles({
       normal: {
         .backgroundColor(Color.Transparent)
@@ -175,11 +216,23 @@ export struct AlertsList {
   }
 
   build() {
+    Refresh({ refreshing: $$this.refreshing }) {
     Scroll() {
       Column({ space: 16 }) {
-        if (this.alerts.length === 0) {
+        if (this.loading) {
+          Text('Loading alerts…').fontSize(19).fontColor($r('app.color.text_secondary'))
+        } else if (this.loadError !== '' && this.alerts.length === 0) {
+          NoticeBanner({ text: this.loadError })
+          Button('Retry loading alerts')
+            .width('100%')
+            .attributeModifier(new CareButtonStyle())
+            .onClick(() => this.reload())
+        } else if (this.alerts.length === 0) {
           this.emptyState()
         } else {
+          if (this.loadError !== '') {
+            NoticeBanner({ text: this.loadError })
+          }
           if (this.pendingCount > 0) {
             NoticeBanner({
               icon: $r('sys.symbol.exclamationmark_circle_fill'),
@@ -201,11 +254,17 @@ export struct AlertsList {
           .backgroundColor($r('app.color.surface'))
         }
 
-        if (this.loadError !== '') {
-          NoticeBanner({ text: this.loadError })
-        }
-        Text('Alerts are shown from the care service.')
-          .fontSize(13)
+        Button(this.refreshing || this.loading ? 'Refreshing alerts…' : 'Refresh alerts')
+          .width('100%')
+          .attributeModifier(new CareButtonStyle('secondary'))
+          .enabled(!this.refreshing && !this.loading)
+          .onClick(() => {
+            this.refreshing = true;
+            this.reload();
+          })
+
+        Text('Pull down or use Refresh alerts to check again. Carely also checks for new alerts about every 20 seconds while it is open; there is no remote push yet.')
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)
@@ -218,6 +277,14 @@ export struct AlertsList {
     .height('100%')
     .align(Alignment.Top)
     .scrollBar(BarState.Off)
+    .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
+    }
+    .width('100%')
+    .height('100%')
+    .onRefreshing(() => {
+      this.refreshing = true;
+      this.reload();
+    })
   }
 }
 
@@ -239,9 +306,126 @@ export struct AlertsPage {
 export struct AlertDetailPage {
   alert: CareAlert = new CareAlert('', AlertType.Sos, '', '', '');
   @State private acknowledged: boolean = false;
+  @State private acknowledging: boolean = false;
+  @State private acknowledgementError: string = '';
+  @State private location: AlertLocation | undefined = undefined;
+  @State private locationLoad: LocationLoad = LocationLoad.Loading;
+  /** When the senior's device raised the event, on its own clock; 0 when unknown. */
+  private occurredAt: number = 0;
 
   aboutToAppear(): void {
     this.acknowledged = this.alert.acknowledged;
+    this.loadLocation();
+  }
+
+  /** Every entry point (inbox, SOS banner, notification) passes only the alert id, so read the event here. */
+  private async loadLocation(): Promise<void> {
+    if (!this.alert.remote || !apiSession.configured() || apiSession.role !== 'guardian') {
+      this.locationLoad = LocationLoad.Loaded;
+      return;
+    }
+    try {
+      const item = await careApi.request(`/alerts/${encodeURIComponent(this.alert.id)}`,
+        http.RequestMethod.GET) as RemoteAlert;
+      const event = item.event;
+      if (event !== undefined && event !== null) {
+        const occurredAt = Date.parse(event.occurredAt);
+        this.occurredAt = isFinite(occurredAt) ? occurredAt : 0;
+        this.location = alertLocationFrom(event.location);
+      }
+      this.locationLoad = LocationLoad.Loaded;
+    } catch (error) {
+      this.locationLoad = LocationLoad.Failed;
+    }
+  }
+
+  private async openMap(location: AlertLocation): Promise<void> {
+    const handOff = await openInMaps(this.getUIContext().getHostContext() as common.UIAbilityContext,
+      location.lat, location.lng, this.alert.title);
+    if (handOff === MapsHandOff.None) {
+      try {
+        this.getUIContext().getPromptAction().showToast({ message: 'No maps app or browser could open this location' });
+      } catch (toastError) {
+        console.error('[AlertDetail] toast failed');
+      }
+    }
+  }
+
+  /** For SOS and falls the guardian needs to know a location is missing, not just see nothing. */
+  private locationStatusText(): string {
+    if (this.locationLoad === LocationLoad.Loading) {
+      return 'Loading the location…';
+    }
+    if (this.locationLoad === LocationLoad.Failed) {
+      return 'Could not load the location from the care service.';
+    }
+    return 'No location was shared with this alert. Check the Location tab or call the senior.';
+  }
+
+  @Builder
+  locationCard() {
+    Column({ space: 14 }) {
+      Row({ space: 14 }) {
+        IconBadge({
+          icon: $r('sys.symbol.map_badge_local'),
+          accent: $r('app.color.guardian_accent'),
+          tint: $r('app.color.guardian_tint')
+        })
+        Column({ space: 3 }) {
+          Text('Last known location')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+          if (this.location !== undefined) {
+            Text(`${sourceLabel(this.location)} · ${fixTimeLabel(this.location, this.occurredAt)}`)
+              .fontSize(14)
+              .fontColor($r('app.color.text_secondary'))
+          }
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+      }
+      .width('100%')
+      .accessibilityGroup(true)
+
+      if (this.location !== undefined) {
+        Text(`${formatCoordinates(this.location.lat, this.location.lng)} · ${accuracyLabel(this.location)}`)
+          .fontSize(16)
+          .fontColor($r('app.color.text_primary'))
+          .copyOption(CopyOptions.LocalDevice)
+          .width('100%')
+
+        Button() {
+          Row({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.map'))
+              .fontSize(20)
+              .fontColor([$r('app.color.guardian_accent')])
+            Text('Open in Maps')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.guardian_accent'))
+          }
+        }
+        .width('100%')
+        .height(56)
+        .attributeModifier(new CareButtonStyle('secondary'))
+        .accessibilityText('Open the last known location in Maps')
+        .onClick(() => {
+          if (this.location !== undefined) {
+            this.openMap(this.location);
+          }
+        })
+      } else {
+        Text(this.locationStatusText())
+          .fontSize(16)
+          .fontColor($r('app.color.text_secondary'))
+          .width('100%')
+      }
+    }
+    .width('100%')
+    .padding(16)
+    .borderRadius(20)
+    .backgroundColor($r('app.color.surface'))
   }
 
   @Builder
@@ -296,6 +480,10 @@ export struct AlertDetailPage {
           .borderRadius(28)
           .backgroundColor(alertTint(this.alert))
 
+          if (this.location !== undefined || isUrgent(this.alert)) {
+            this.locationCard()
+          }
+
           Column() {
             this.infoRow('Time', formatAlertTime(this.alert.createdAt), true)
             this.infoRow('Source', this.alert.source, true)
@@ -326,7 +514,7 @@ export struct AlertDetailPage {
                   .fontSize(20)
                   .fontColor([$r('app.color.guardian_accent')])
               }
-              Text(this.acknowledged ? 'Marked as seen' : 'Mark as seen')
+              Text(this.acknowledged ? 'Marked as seen' : this.acknowledging ? 'Saving…' : 'Mark as seen')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(this.acknowledged ? $r('app.color.guardian_accent') : Color.White)
@@ -334,11 +522,15 @@ export struct AlertDetailPage {
           }
           .width('100%')
           .height(56)
-          .enabled(!this.acknowledged)
-          .backgroundColor(this.acknowledged ? $r('app.color.guardian_tint') : $r('app.color.guardian_accent'))
+          .enabled(!this.acknowledged && !this.acknowledging)
+          .attributeModifier(new CareButtonStyle(this.acknowledged ? 'secondary' : 'primary'))
           .onClick(() => {
             this.acknowledge();
           })
+
+          if (this.acknowledgementError !== '') {
+            NoticeBanner({ text: this.acknowledgementError })
+          }
 
           Column({ space: 8 }) {
             Button('Call senior')
@@ -348,6 +540,7 @@ export struct AlertDetailPage {
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
               .backgroundColor($r('app.color.surface'))
+              .attributeModifier(new CareButtonStyle('secondary'))
               .enabled(false)
               .opacity(0.5)
             Text('Calling is not set up yet.')
@@ -369,13 +562,19 @@ export struct AlertDetailPage {
   }
 
   private async acknowledge(): Promise<void> {
+    if (this.acknowledging) return;
+    this.acknowledging = true;
+    this.acknowledgementError = '';
     try {
       if (this.alert.remote && apiSession.configured() && apiSession.role === 'guardian') {
         await careApi.request(`/alerts/${this.alert.id}/ack`, http.RequestMethod.POST);
+        guardianAlertWatcher.onAcknowledged(this.alert.id);
       }
       this.acknowledged = true;
     } catch (error) {
-      // Keep the server state unchanged if acknowledgement cannot be sent.
+      this.acknowledgementError = 'Could not mark this alert as seen. Check your connection and try again.';
+    } finally {
+      this.acknowledging = false;
     }
   }
 }

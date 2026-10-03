@@ -1,19 +1,28 @@
 import { LengthMetrics } from '@kit.ArkUI';
+import { AreaPickerMap } from '../components/AreaPickerMap';
 import { IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
 import { apiSession, careApi } from '../services/CareApi';
 import { http } from '@kit.NetworkKit';
+import { CareButtonStyle, CareInputStyle } from '../components/DesignSystem';
 
 const RADIUS_OPTIONS: number[] = [100, 200, 300, 500, 1000];
+/** Six decimals is about 10 cm, finer than any phone fix. */
+const COORDINATE_DECIMALS: number = 6;
 
 @Component
 export struct SafeAreaSetupPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private latitude: string = `${safetyStore.homeLatitude}`;
   @State private longitude: string = `${safetyStore.homeLongitude}`;
+  /** Last valid centre, shown on the map while a typed coordinate is incomplete. */
+  @State private mapLatitude: number = safetyStore.homeLatitude;
+  @State private mapLongitude: number = safetyStore.homeLongitude;
   @State private radius: number = safetyStore.homeRadiusMeters;
   @State private showErrors: boolean = false;
   @State private safeAreaVersion: number = 0;
+  @State private saving: boolean = false;
+  @State private saveError: string = '';
 
   aboutToAppear(): void {
     if (apiSession.configured() && apiSession.role === 'guardian') {
@@ -26,6 +35,8 @@ export struct SafeAreaSetupPage {
       const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.GET) as Record<string, Object>;
       this.latitude = `${result['lat'] as number}`;
       this.longitude = `${result['lng'] as number}`;
+      this.mapLatitude = result['lat'] as number;
+      this.mapLongitude = result['lng'] as number;
       this.radius = result['radiusM'] as number;
       this.safeAreaVersion = result['version'] as number;
     } catch (error) {
@@ -44,22 +55,29 @@ export struct SafeAreaSetupPage {
     return this.longitude.trim() !== '' && isFinite(value) && value >= -180 && value <= 180;
   }
 
+  private pickOnMap(lat: number, lng: number): void {
+    this.mapLatitude = lat;
+    this.mapLongitude = lng;
+    this.latitude = lat.toFixed(COORDINATE_DECIMALS);
+    this.longitude = lng.toFixed(COORDINATE_DECIMALS);
+  }
+
   private async save(): Promise<void> {
+    if (this.saving) return;
     if (!this.latitudeValid() || !this.longitudeValid()) {
       this.showErrors = true;
       return;
     }
     if (apiSession.configured() && apiSession.role === 'guardian') {
+      this.saving = true;
+      this.saveError = '';
       try {
         const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.PUT,
           new SafeAreaRequest(Number(this.latitude), Number(this.longitude), this.radius, this.safeAreaVersion)) as Record<string, Object>;
         this.safeAreaVersion = result['version'] as number;
       } catch (error) {
-        try {
-          this.getUIContext().getPromptAction().showToast({ message: 'Could not save safe area' });
-        } catch (toastError) {
-          console.error(`Safe area toast failed: ${JSON.stringify(toastError)}`);
-        }
+        this.saveError = 'Could not save the safe area. Check your connection and try again. If it changed on another device, go back and reopen this screen.';
+        this.saving = false;
         return;
       }
       safetyStore.configureHomeCircle(Number(this.latitude), Number(this.longitude), this.radius);
@@ -69,6 +87,7 @@ export struct SafeAreaSetupPage {
         console.error(`Safe area toast failed: ${JSON.stringify(error)}`);
       }
       this.navStack.pop();
+      this.saving = false;
     }
   }
 
@@ -94,11 +113,21 @@ export struct SafeAreaSetupPage {
           width: this.showErrors && !(isLatitude ? this.latitudeValid() : this.longitudeValid()) ? 2 : 0,
           color: $r('app.color.sos')
         })
+        .attributeModifier(new CareInputStyle(isLatitude ? 'Latitude' : 'Longitude',
+          this.showErrors && !(isLatitude ? this.latitudeValid() : this.longitudeValid()) ?
+            isLatitude ? 'Enter a number between -90 and 90.' : 'Enter a number between -180 and 180.' : ''))
+        .enabled(!this.saving)
         .onChange((value: string) => {
           if (isLatitude) {
             this.latitude = value;
+            if (this.latitudeValid()) {
+              this.mapLatitude = Number(value);
+            }
           } else {
             this.longitude = value;
+            if (this.longitudeValid()) {
+              this.mapLongitude = Number(value);
+            }
           }
         })
       if (this.showErrors && !(isLatitude ? this.latitudeValid() : this.longitudeValid())) {
@@ -107,20 +136,21 @@ export struct SafeAreaSetupPage {
           .fontColor($r('app.color.sos'))
       }
     }
-    .width('100%')
+    .layoutWeight(1)
     .alignItems(HorizontalAlign.Start)
   }
 
   @Builder
   radiusChip(meters: number) {
-    Text(this.radiusLabel(meters))
+    Button((this.radius === meters ? '✓ ' : '') + this.radiusLabel(meters))
       .fontSize(17)
       .fontWeight(this.radius === meters ? FontWeight.Bold : FontWeight.Medium)
       .fontColor(this.radius === meters ? Color.White : $r('app.color.text_primary'))
-      .height(48)
+      .height(56)
       .padding({ left: 18, right: 18 })
       .borderRadius(24)
-      .backgroundColor(this.radius === meters ? $r('app.color.guardian_accent') : $r('app.color.page_background'))
+      .attributeModifier(new CareButtonStyle(this.radius === meters ? 'primary' : 'secondary'))
+      .enabled(!this.saving)
       .accessibilityText(`Radius ${this.radiusLabel(meters)}`)
       .accessibilitySelected(this.radius === meters)
       .onClick(() => {
@@ -148,9 +178,23 @@ export struct SafeAreaSetupPage {
 
           Column({ space: 8 }) {
             sectionTitle('Home location')
-            Column({ space: 16 }) {
-              this.coordinateField(true)
-              this.coordinateField(false)
+            Column({ space: 12 }) {
+              AreaPickerMap({
+                lat: this.mapLatitude,
+                lng: this.mapLongitude,
+                radiusM: this.radius,
+                onPick: (lat: number, lng: number) => this.pickOnMap(lat, lng)
+              })
+              Text('Drag the map or tap a spot to put home under the pin.')
+                .fontSize(15)
+                .fontColor($r('app.color.text_secondary'))
+                .width('100%')
+              Row({ space: 12 }) {
+                this.coordinateField(true)
+                this.coordinateField(false)
+              }
+              .width('100%')
+              .alignItems(VerticalAlign.Top)
             }
             .width('100%')
             .padding(16)
@@ -177,12 +221,16 @@ export struct SafeAreaSetupPage {
 
           NoticeBanner({ text: 'Saved on the care service. The senior phone still needs location sharing while the app is open.' })
 
-          Button('Save safe area')
+          if (this.saveError !== '') {
+            NoticeBanner({ text: this.saveError })
+          }
+          Button(this.saving ? 'Saving safe area…' : 'Save safe area')
             .width('100%')
             .height(56)
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
-            .backgroundColor($r('app.color.guardian_accent'))
+            .attributeModifier(new CareButtonStyle())
+            .enabled(!this.saving)
             .onClick(() => this.save())
         }
         .width('100%')

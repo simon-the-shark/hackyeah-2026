@@ -33,4 +33,13 @@ describe("rate limits on unauthenticated endpoints", () => {
     const code = (await t.call("POST", "/v1/pairing/codes", senior.token)).body.pairingCode;
     expect((await guess(code)).status).toBe(201);
   });
+
+  it("counts guardian and watch claim guesses against one budget", async () => {
+    t.time.now = new Date("2026-10-03T14:00:00Z");
+    const senior = (await t.call("POST", "/v1/seniors", undefined, { displayName: "S" })).body;
+    const watchCode = (await t.call("POST", "/v1/pairing/watch-codes", senior.token)).body.pairingCode;
+    expect((await t.call("POST", "/v1/pairing/claim", undefined, { code: "000001", displayName: "G" })).status).toBe(410);
+    expect((await t.call("POST", "/v1/pairing/watch-claim", undefined, { code: "000002" })).status).toBe(410);
+    expect((await t.call("POST", "/v1/pairing/watch-claim", undefined, { code: watchCode })).status).toBe(429);
+  });
 });

@@ -1,7 +1,9 @@
 import { Feature, GUARDIAN_PROFILE, SENIOR_PROFILE } from '../models/Features';
+import { CareButtonStyle } from '../components/DesignSystem';
 import { DoseRecord, Medication } from '../models/Medication';
 import { CareAlert } from '../models/Safety';
 import { apiSession } from '../services/CareApi';
+import { AlertDeepLink } from '../components/AlertDeepLink';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
@@ -14,6 +16,7 @@ import {
 import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { MedicationFormPage, MedicationFormParams } from './MedicationFormPage';
 import { ContactEditorPage, ContactEditorTarget } from './GuardianContacts';
+import { GUARDIAN_WATCH_ROUTE, GuardianWatchPage } from './GuardianWatchPage';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
@@ -79,6 +82,8 @@ struct Index {
       AlertDetailPage({ alert: param as CareAlert })
     } else if (name === 'watch-safety') {
       WatchSafetyPage()
+    } else if (name === GUARDIAN_WATCH_ROUTE) {
+      GuardianWatchPage()
     } else if (name === 'safe-area-setup') {
       SafeAreaSetupPage()
     } else if (name === 'settings') {
@@ -133,16 +138,18 @@ struct Index {
               .fontColor($r('app.color.text_secondary'))
               .width('100%')
               .textAlign(TextAlign.Center)
-            Button('Set up Care Companion')
+            Button('Set up Carely')
               .width('100%')
               .height(56)
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
+              .attributeModifier(new CareButtonStyle())
               .onClick(() => this.navStack.pushPathByName('connection', null))
           }
           .width('100%')
         }
 
+        AlertDeepLink()
         Blank()
       }
       .width('100%')

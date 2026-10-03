@@ -5,6 +5,7 @@ import { GeofenceStatus, safetyStore } from '../models/Safety';
 import { apiSession, careApi } from '../services/CareApi';
 import { locationSharing } from '../services/LocationSharing';
 import { pendingSafetyEvents } from '../services/PendingSafetyEvents';
+import { CareButtonStyle } from '../components/DesignSystem';
 
 @Component
 export struct SafetyPage {
@@ -181,7 +182,7 @@ export struct SafetyPage {
       .width('100%')
 
       Text('When on, your guardian is alerted if you leave the safe area. Active only while this app is open on screen.')
-        .fontSize(16)
+        .fontSize(19)
         .fontColor($r('app.color.text_secondary'))
 
       if (this.locationPermissionDenied) {
@@ -219,7 +220,7 @@ export struct SafetyPage {
         .fontWeight(FontWeight.Medium)
         .enabled(!this.starting)
         .fontColor(this.monitoringEnabled ? $r('app.color.text_primary') : Color.White)
-        .backgroundColor(this.monitoringEnabled ? $r('app.color.page_background') : $r('app.color.senior_accent'))
+        .attributeModifier(new CareButtonStyle(this.monitoringEnabled ? 'secondary' : 'primary'))
         .onClick(() => {
           if (this.monitoringEnabled) {
             this.stopLocationMonitoring();

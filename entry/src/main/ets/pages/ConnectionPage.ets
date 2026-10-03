@@ -2,6 +2,8 @@ import { http } from '@kit.NetworkKit';
 import common from '@ohos.app.ability.common';
 import { apiSession, BootstrapRequest, careApi } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
+import { CareButtonStyle, CareInputStyle } from '../components/DesignSystem';
+import { NoticeBanner } from '../components/Common';
 
 @Component
 export struct ConnectionPage {
@@ -11,64 +13,92 @@ export struct ConnectionPage {
   @State private code: string = '';
   @State private guardian: boolean = false;
   @State private message: string = '';
-  @State private connected: boolean = false;
-  @State private pairingCode: string = '';
+  @State private busy: boolean = false;
+  @State private nameError: string = '';
+  @State private codeError: string = '';
 
   private async connect(): Promise<void> {
+    if (this.busy) return;
+    this.nameError = this.name.trim() === '' ? 'Enter your name to continue.' : '';
+    this.codeError = this.guardian && !/^[0-9]{6}$/.test(this.code.trim()) ? 'Enter the six-digit code from your senior.' : '';
+    if (this.nameError !== '' || this.codeError !== '') return;
+    this.busy = true;
+    this.message = 'Connecting to the care service…';
     try {
-      const body = new BootstrapRequest(this.name);
-      if (this.guardian) body.code = this.code;
+      const body = new BootstrapRequest(this.name.trim());
+      if (this.guardian) body.code = this.code.trim();
       const path = this.guardian ? '/pairing/claim' : '/seniors';
       const result = await careApi.publicRequest(apiSession.baseUrl, path, http.RequestMethod.POST, body) as Record<string, string>;
       apiSession.token = result['token'];
       apiSession.seniorId = result['seniorId'];
       apiSession.role = this.guardian ? 'guardian' : 'senior';
       await apiSessionStore.save(this.getUIContext().getHostContext() as common.UIAbilityContext);
-      this.pairingCode = this.guardian ? '' : result['pairingCode'];
-      this.message = this.guardian ? 'You are paired with your senior.' : 'Share this code with your guardian.';
-      this.connected = true;
+      this.onConnected(apiSession.role);
     } catch (error) {
-      this.message = `Could not connect: ${JSON.stringify(error)}`;
+      this.message = this.guardian ? 'Could not pair this phone. Check the code and your internet connection, then try again.' :
+        'Could not set up this phone. Check your internet connection, then try again.';
+    } finally {
+      this.busy = false;
     }
   }
 
   build() {
     NavDestination() {
+      Scroll() {
       Column({ space: 16 }) {
-        if (this.connected) {
-          Text(this.guardian ? 'You are connected' : 'Pair your guardian')
-            .fontSize(28).fontWeight(FontWeight.Bold)
-          Text(this.message).fontSize(16).fontColor($r('app.color.text_secondary'))
-          if (!this.guardian) {
-            Text(this.pairingCode).fontSize(42).fontWeight(FontWeight.Bold).width('100%').textAlign(TextAlign.Center)
-            Text('Give this six-digit code to your guardian.').fontSize(16).width('100%').textAlign(TextAlign.Center)
-          }
-          Button('Continue').width('100%').onClick(() => this.onConnected(apiSession.role))
-        } else {
           Text(this.guardian ? 'Pair with your senior' : 'Set up this phone').fontSize(28).fontWeight(FontWeight.Bold)
-          Text(this.guardian ? 'Enter the pairing code from your senior.' : 'Create your senior account and get a pairing code.')
-            .fontSize(16).fontColor($r('app.color.text_secondary'))
-          TextInput({ text: this.name, placeholder: 'Your name' }).width('100%').onChange((v: string) => this.name = v)
-          Row({ space: 12 }) {
+          Text(this.guardian ? 'Enter the pairing code from your senior.' : 'Set up your account. Share your guardian code from Home → Settings → Pairing.')
+            .fontSize(19).fontColor($r('app.color.text_secondary'))
+          Text('Your name').fontSize(19).fontColor($r('app.color.text_primary'))
+          TextInput({ text: this.name, placeholder: 'Enter your name' })
+            .width('100%')
+            .attributeModifier(new CareInputStyle('Your name', this.nameError))
+            .enabled(!this.busy)
+            .onChange((v: string) => this.name = v)
+          if (this.nameError !== '') {
+            Text(this.nameError).fontSize(17).fontColor($r('app.color.sos'))
+          }
+          Text('Who uses this phone?').fontSize(19).fontColor($r('app.color.text_primary'))
+          Column({ space: 12 }) {
             Button('I am a senior')
-              .layoutWeight(1)
-              .fontColor(!this.guardian ? Color.White : $r('app.color.text_primary'))
-              .backgroundColor(!this.guardian ? $r('app.color.senior_accent') : $r('app.color.surface'))
+              .type(ButtonType.Capsule)
+              .width('100%')
+              .attributeModifier(new CareButtonStyle(!this.guardian ? 'primary' : 'secondary'))
+              .accessibilitySelected(!this.guardian)
+              .enabled(!this.busy)
               .onClick(() => this.guardian = false)
             Button('I am a guardian')
-              .layoutWeight(1)
-              .fontColor(this.guardian ? Color.White : $r('app.color.text_primary'))
-              .backgroundColor(this.guardian ? $r('app.color.guardian_accent') : $r('app.color.surface'))
+              .type(ButtonType.Capsule)
+              .width('100%')
+              .attributeModifier(new CareButtonStyle(this.guardian ? 'primary' : 'secondary'))
+              .accessibilitySelected(this.guardian)
+              .enabled(!this.busy)
               .onClick(() => this.guardian = true)
           }
           .width('100%')
           if (this.guardian) {
-            TextInput({ text: this.code, placeholder: '6-digit pairing code' }).width('100%').onChange((v: string) => this.code = v)
+            Text('Pairing code').fontSize(19).fontColor($r('app.color.text_primary'))
+            TextInput({ text: this.code, placeholder: '6 digits' })
+              .width('100%')
+              .attributeModifier(new CareInputStyle('Six-digit pairing code', this.codeError))
+              .type(InputType.Number)
+              .maxLength(6)
+              .enabled(!this.busy)
+              .onChange((v: string) => this.code = v)
+            if (this.codeError !== '') {
+              Text(this.codeError).fontSize(17).fontColor($r('app.color.sos'))
+            }
           }
-          Button('Connect').width('100%').onClick(() => this.connect())
-          Text(this.message).fontSize(14).width('100%')
-        }
-      }.width('100%').height('100%').alignItems(HorizontalAlign.Start).padding(20)
+          Button(this.busy ? 'Connecting…' : this.guardian ? 'Pair with senior' : 'Set up senior phone')
+            .width('100%')
+            .attributeModifier(new CareButtonStyle())
+            .enabled(!this.busy)
+            .onClick(() => this.connect())
+          if (this.message !== '') {
+            NoticeBanner({ text: this.message })
+          }
+      }.width('100%').alignItems(HorizontalAlign.Start).padding(20)
+      }.width('100%').height('100%')
     }.title('Connection').backgroundColor($r('app.color.page_background'))
   }
 }

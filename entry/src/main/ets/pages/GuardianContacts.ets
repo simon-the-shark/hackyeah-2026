@@ -1,4 +1,5 @@
 import { BusinessError } from '@kit.BasicServicesKit';
+import { CareButtonStyle, CareFocusStyle, CareInputStyle } from '../components/DesignSystem';
 import { IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { Contact } from '../models/Contact';
 import { contactPickerAvailable, PickedContact, pickPhoneContact } from '../platform/PhoneContactPicker';
@@ -144,16 +145,19 @@ export struct GuardianContactsList {
         .layoutWeight(1)
         .accessibilityGroup(true)
         .accessibilityText(`${contact.name}, ${contact.phone}. Edit contact`)
+        .attributeModifier(new CareFocusStyle())
+        .accessibilityRole(AccessibilityRoleType.BUTTON)
         .onClick(() => this.openEditor(contact))
 
-        Button({ type: ButtonType.Circle }) {
-          SymbolGlyph($r('sys.symbol.phone_fill'))
-            .fontSize(22)
-            .fontColor([$r('app.color.guardian_accent')])
+        Button() {
+          Row({ space: 6 }) {
+            SymbolGlyph($r('sys.symbol.phone_fill'))
+              .fontSize(22)
+              .fontColor([$r('app.color.guardian_accent')])
+            Text('Call').fontSize(19).fontColor($r('app.color.guardian_accent'))
+          }
         }
-        .width(48)
-        .height(48)
-        .backgroundColor($r('app.color.guardian_tint'))
+        .attributeModifier(new CareButtonStyle('secondary'))
         .accessibilityText(`Call ${contact.name}`)
         .onClick(() => {
           callContact(this.getUIContext(), contact);
@@ -217,7 +221,7 @@ export struct GuardianContactsList {
     }
     .width('100%')
     .height(56)
-    .backgroundColor($r('app.color.guardian_accent'))
+    .attributeModifier(new CareButtonStyle())
     .onClick(() => this.openEditor(undefined))
   }
 
@@ -245,7 +249,7 @@ export struct GuardianContactsList {
               .fontSize(18)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.guardian_accent'))
-              .backgroundColor($r('app.color.guardian_tint'))
+              .attributeModifier(new CareButtonStyle('secondary'))
               .onClick(() => {
                 this.phase = ListPhase.Loading;
                 this.reload();
@@ -280,7 +284,7 @@ export struct GuardianContactsList {
         }
 
         Text('Contacts are saved on the care service and appear on the senior\'s phone in this order.')
-          .fontSize(13)
+          .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
           .textAlign(TextAlign.Center)
@@ -459,6 +463,9 @@ export struct ContactEditorPage {
           color: $r('app.color.sos')
         })
         .accessibilityText(isName ? 'Contact name' : 'Contact phone number')
+        .attributeModifier(new CareInputStyle(isName ? 'Contact name' : 'Contact phone number',
+          this.showErrors ? this.fieldError(isName) : ''))
+        .enabled(!this.busy)
         .onChange((value: string) => {
           if (isName) {
             this.name = value;
@@ -515,7 +522,7 @@ export struct ContactEditorPage {
             }
             .width('100%')
             .height(56)
-            .backgroundColor($r('app.color.guardian_tint'))
+            .attributeModifier(new CareButtonStyle('secondary'))
             .enabled(!this.busy)
             .onClick(() => {
               this.chooseFromPhone();
@@ -551,7 +558,7 @@ export struct ContactEditorPage {
                   .height(24)
                   .color(Color.White)
               }
-              Text(this.isNew() ? 'Add contact' : 'Save changes')
+              Text(this.busy ? 'Saving…' : this.isNew() ? 'Add contact' : 'Save changes')
                 .fontSize(18)
                 .fontWeight(FontWeight.Medium)
                 .fontColor(Color.White)
@@ -559,7 +566,7 @@ export struct ContactEditorPage {
           }
           .width('100%')
           .height(56)
-          .backgroundColor($r('app.color.guardian_accent'))
+          .attributeModifier(new CareButtonStyle())
           .enabled(!this.busy && guardianSessionReady())
           .onClick(() => {
             this.save();
@@ -571,7 +578,7 @@ export struct ContactEditorPage {
             }
             .width('100%')
             .height(56)
-            .backgroundColor($r('app.color.surface'))
+            .attributeModifier(new CareButtonStyle('secondary'))
             .accessibilityText(`Call ${this.name}`)
             .onClick(() => {
               if (this.original !== undefined) {
@@ -584,7 +591,7 @@ export struct ContactEditorPage {
             }
             .width('100%')
             .height(56)
-            .backgroundColor($r('app.color.sos_tint'))
+            .attributeModifier(new CareButtonStyle('danger-secondary'))
             .enabled(!this.busy && guardianSessionReady())
             .onClick(() => this.confirmDelete())
           }
