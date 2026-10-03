@@ -106,8 +106,8 @@ Timestamps are ISO 8601 with offset.
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
 | `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins |
-| `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. No heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900) raises one `monitoring_lost` alert per gap, see the note below |
-| `GET /v1/seniors/:id/status` | linked | `{status, serverTime}`; `status` is null before the first heartbeat. Show age, never an unqualified "safe" |
+| `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. When **no** device of the senior has sent a heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900), one `monitoring_lost` alert is raised per gap, with each device's last `reportedAt` in `details.devices`. A heartbeat from any device ends the gap. See the note below |
+| `GET /v1/seniors/:id/status` | linked | `{status, devices, serverTime}`. Heartbeats are stored per device, so phone and watch never overwrite each other: `devices` lists the latest heartbeat of each device (newest first, with `deviceKind`), and `status` is the newest of them (null before the first heartbeat). Show age, never an unqualified "safe" |
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
 | `POST /v1/seniors/:id/reports`, `GET .../reports` | POST: senior, GET: guardian | The senior submits but cannot read reports back. Only user-approved content. `source` is `ai`, `structured` or `simulated` |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
@@ -169,6 +169,11 @@ device testing.
 
 Changes to request or response shapes, error codes or semantics are recorded
 here with a date so the mobile side can follow.
+
+- 2026-10-03: heartbeats are stored per device. `GET .../status` adds
+  `devices` (`status` keeps its meaning: the newest heartbeat). `monitoring_lost`
+  now fires only when every device of the senior is stale, so a working watch
+  covers a phone left at home.
 
 - 2026-10-03: `GET /v1/seniors/:id/reports` is now guardian-only (a senior gets
   403). Previously any linked user could read.

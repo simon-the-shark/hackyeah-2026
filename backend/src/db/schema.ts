@@ -223,19 +223,29 @@ export const alerts = pgTable(
   ],
 );
 
-export const statusHeartbeats = pgTable("status_heartbeats", {
-  seniorId: uuid("senior_id")
-    .primaryKey()
-    .references(() => users.id, { onDelete: "cascade" }),
-  deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
-  monitoringState: monitoringStateEnum("monitoring_state").notNull(),
-  location: jsonb("location").$type<GeoPoint>(),
-  battery: integer("battery"),
-  source: eventSourceEnum("source").notNull().default("device"),
-  reportedAt: timestamp("reported_at", { withTimezone: true }).notNull(),
-  /** Set when a monitoring_lost alert was raised for the current gap; cleared by a fresh heartbeat. */
-  staleAlertedAt: timestamp("stale_alerted_at", { withTimezone: true }),
-});
+/** Latest heartbeat per device, so a phone and a watch never overwrite each other. */
+export const statusHeartbeats = pgTable(
+  "status_heartbeats",
+  {
+    deviceId: uuid("device_id")
+      .primaryKey()
+      .references(() => devices.id, { onDelete: "cascade" }),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    monitoringState: monitoringStateEnum("monitoring_state").notNull(),
+    location: jsonb("location").$type<GeoPoint>(),
+    battery: integer("battery"),
+    source: eventSourceEnum("source").notNull().default("device"),
+    reportedAt: timestamp("reported_at", { withTimezone: true }).notNull(),
+    /**
+     * Set on all of a senior's rows when a monitoring_lost alert was raised for the current gap
+     * (every device stale); a fresh heartbeat from any device clears it on all rows.
+     */
+    staleAlertedAt: timestamp("stale_alerted_at", { withTimezone: true }),
+  },
+  (t) => [index("status_heartbeats_senior_idx").on(t.seniorId)],
+);
 
 export const reports = pgTable(
   "reports",

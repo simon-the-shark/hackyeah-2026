@@ -1,4 +1,4 @@
-import { and, inArray, isNull, lt, ne } from "drizzle-orm";
+import { and, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { statusHeartbeats, trips } from "../db/schema.js";
 import type { Deps } from "../types.js";
 import { raiseServerAlert } from "./alerts.js";
@@ -10,14 +10,32 @@ export async function runWatchdogOnce(deps: Deps) {
   const cutoff = new Date(now.getTime() - deps.staleSeconds * 1000);
   let raised = 0;
 
-  // The UPDATE claims each gap atomically, so concurrent passes cannot double-alert.
+  // Monitoring is lost only when every device of a senior is stale. The UPDATE claims each gap
+  // atomically (all of the senior's rows at once), so concurrent passes cannot double-alert.
   const stale = await deps.db
     .update(statusHeartbeats)
     .set({ staleAlertedAt: now })
-    .where(and(lt(statusHeartbeats.reportedAt, cutoff), isNull(statusHeartbeats.staleAlertedAt)))
+    .where(
+      and(
+        isNull(statusHeartbeats.staleAlertedAt),
+        inArray(
+          statusHeartbeats.seniorId,
+          deps.db
+            .select({ seniorId: statusHeartbeats.seniorId })
+            .from(statusHeartbeats)
+            .groupBy(statusHeartbeats.seniorId)
+            .having(sql`max(${statusHeartbeats.reportedAt}) < ${cutoff.toISOString()}`),
+        ),
+      ),
+    )
     .returning();
-  for (const hb of stale) {
-    const alert = await raiseServerAlert(deps, hb.seniorId, "monitoring_lost", `monitoring_lost:${hb.seniorId}:${hb.reportedAt.getTime()}`);
+  const gaps = new Map<string, (typeof stale)[number][]>();
+  for (const hb of stale) gaps.set(hb.seniorId, [...(gaps.get(hb.seniorId) ?? []), hb]);
+  for (const [seniorId, rows] of gaps) {
+    const lastSeen = Math.max(...rows.map((r) => r.reportedAt.getTime()));
+    const alert = await raiseServerAlert(deps, seniorId, "monitoring_lost", `monitoring_lost:${seniorId}:${lastSeen}`, {
+      devices: rows.map((r) => ({ deviceId: r.deviceId, reportedAt: r.reportedAt.toISOString() })),
+    });
     if (alert) raised++;
   }
 

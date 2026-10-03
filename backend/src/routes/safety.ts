@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db/schema.js";
+import { alerts, careLinks, devices, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent } from "../services/alerts.js";
@@ -197,28 +197,36 @@ export function safetyRoutes(deps: Deps) {
     await assertLinked(db, auth, seniorId);
     const body = c.req.valid("json");
     const values = {
-      deviceId: auth.deviceId,
+      seniorId,
       monitoringState: body.monitoringState,
       location: body.location ?? null,
       battery: body.battery ?? null,
       source: body.source,
       // Server receipt time, so a skewed device clock cannot hide a stale gap.
       reportedAt: deps.clock(),
-      staleAlertedAt: null,
     };
     const [row] = await db
       .insert(statusHeartbeats)
-      .values({ seniorId, ...values })
-      .onConflictDoUpdate({ target: statusHeartbeats.seniorId, set: values })
+      .values({ deviceId: auth.deviceId, ...values })
+      .onConflictDoUpdate({ target: statusHeartbeats.deviceId, set: values })
       .returning();
-    return c.json(row);
+    // Any live device ends the senior's monitoring gap and re-arms monitoring_lost.
+    await db.update(statusHeartbeats).set({ staleAlertedAt: null }).where(eq(statusHeartbeats.seniorId, seniorId));
+    return c.json({ ...row!, staleAlertedAt: null });
   });
 
   app.get("/seniors/:seniorId/status", validate("param", seniorParam), async (c) => {
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, c.get("auth"), seniorId);
-    const [row] = await db.select().from(statusHeartbeats).where(eq(statusHeartbeats.seniorId, seniorId));
-    return c.json({ status: row ?? null, serverTime: deps.clock() });
+    const rows = await db
+      .select({ hb: statusHeartbeats, kind: devices.kind })
+      .from(statusHeartbeats)
+      .innerJoin(devices, eq(devices.id, statusHeartbeats.deviceId))
+      .where(eq(statusHeartbeats.seniorId, seniorId))
+      .orderBy(desc(statusHeartbeats.reportedAt));
+    const items = rows.map((r) => ({ ...r.hb, deviceKind: r.kind }));
+    // `status` is the newest heartbeat from any device; `devices` keeps phone and watch apart.
+    return c.json({ status: items[0] ?? null, devices: items, serverTime: deps.clock() });
   });
 
   return app;
