@@ -261,15 +261,6 @@ export struct AlertsList {
           .clip(true)
           .backgroundColor($r('app.color.surface'))
         }
-
-        Button(this.refreshing || this.loading ? 'Refreshing alerts…' : 'Refresh alerts')
-          .width('100%')
-          .attributeModifier(new CareButtonStyle('secondary'))
-          .enabled(!this.refreshing && !this.loading)
-          .onClick(() => {
-            this.refreshing = true;
-            this.reload();
-          })
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 8, bottom: 32 })

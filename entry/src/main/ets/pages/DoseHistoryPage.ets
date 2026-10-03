@@ -1,5 +1,4 @@
 import { sectionTitle } from '../components/Common';
-import { CareButtonStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import {
   DoseDay,
@@ -227,14 +226,6 @@ export struct DoseHistoryPage {
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .padding({ left: 4 })
-          Button(this.refreshing ? 'Refreshing…' : 'Refresh')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle('secondary'))
-            .enabled(!this.refreshing)
-            .onClick(() => {
-              this.refreshing = true;
-              this.load();
-            })
         }
         .width('100%')
         .alignItems(HorizontalAlign.Start)
@@ -244,6 +235,7 @@ export struct DoseHistoryPage {
       .height('100%')
       .align(Alignment.Top)
       .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')

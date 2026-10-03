@@ -50,6 +50,7 @@ export struct GuardianMedicationList {
   @State private errorMessage: string = '';
   // A refresh failed while an older list is still shown.
   @State private refreshFailed: boolean = false;
+  @State private refreshing: boolean = false;
   private loadId: number = 0;
 
   aboutToAppear(): void {
@@ -66,6 +67,7 @@ export struct GuardianMedicationList {
       this.medications = [];
       this.errorMessage = NOT_GUARDIAN_MESSAGE;
       this.phase = LoadPhase.Failed;
+      this.refreshing = false;
       return;
     }
     if (this.phase !== LoadPhase.Ready) {
@@ -88,6 +90,10 @@ export struct GuardianMedicationList {
         this.refreshFailed = true;
       } else {
         this.phase = LoadPhase.Failed;
+      }
+    } finally {
+      if (loadId === this.loadId) {
+        this.refreshing = false;
       }
     }
   }
@@ -209,54 +215,62 @@ export struct GuardianMedicationList {
   }
 
   build() {
-    Scroll() {
-      Column({ space: 16 }) {
-        if (this.phase === LoadPhase.Loading) {
-          Column({ space: 12 }) {
-            LoadingProgress()
-              .width(48)
-              .height(48)
-              .color($r('app.color.guardian_accent'))
-            Text('Loading medications…')
-              .fontSize(17)
-              .fontColor($r('app.color.text_secondary'))
-          }
-          .width('100%')
-          .padding({ top: 64, bottom: 32 })
-        } else if (this.phase === LoadPhase.Failed) {
-          this.centeredState('Medications not loaded', this.errorMessage, isGuardianPaired())
-        } else {
-          if (this.refreshFailed) {
-            NoticeBanner({ text: `Showing the last loaded list. ${this.errorMessage}` })
-          }
-          if (this.medications.length === 0) {
-            this.centeredState('No medications yet',
-              'Scan a medicine package or type its name to set dose times for your senior.', false)
-          } else {
-            Column() {
-              ForEach(this.medications, (medication: Medication, index: number) => {
-                this.medicationRow(medication, index < this.medications.length - 1)
-              }, (medication: Medication, index: number) =>
-                rowKey(medication, index === this.medications.length - 1))
+    Refresh({ refreshing: $$this.refreshing }) {
+      Scroll() {
+        Column({ space: 16 }) {
+          if (this.phase === LoadPhase.Loading) {
+            Column({ space: 12 }) {
+              LoadingProgress()
+                .width(48)
+                .height(48)
+                .color($r('app.color.guardian_accent'))
+              Text('Loading medications…')
+                .fontSize(17)
+                .fontColor($r('app.color.text_secondary'))
             }
             .width('100%')
-            .borderRadius(20)
-            .clip(true)
-            .backgroundColor($r('app.color.surface'))
+            .padding({ top: 64, bottom: 32 })
+          } else if (this.phase === LoadPhase.Failed) {
+            this.centeredState('Medications not loaded', this.errorMessage, isGuardianPaired())
+          } else {
+            if (this.refreshFailed) {
+              NoticeBanner({ text: `Showing the last loaded list. ${this.errorMessage}` })
+            }
+            if (this.medications.length === 0) {
+              this.centeredState('No medications yet',
+                'Scan a medicine package or type its name to set dose times for your senior.', false)
+            } else {
+              Column() {
+                ForEach(this.medications, (medication: Medication, index: number) => {
+                  this.medicationRow(medication, index < this.medications.length - 1)
+                }, (medication: Medication, index: number) =>
+                  rowKey(medication, index === this.medications.length - 1))
+              }
+              .width('100%')
+              .borderRadius(20)
+              .clip(true)
+              .backgroundColor($r('app.color.surface'))
+            }
+          }
+
+          if (this.phase !== LoadPhase.Loading) {
+            this.addButton()
           }
         }
-
-        if (this.phase !== LoadPhase.Loading) {
-          this.addButton()
-        }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
       }
       .width('100%')
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+      .height('100%')
+      .align(Alignment.Top)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
+    .onRefreshing(() => {
+      this.reload();
+    })
   }
 }
 

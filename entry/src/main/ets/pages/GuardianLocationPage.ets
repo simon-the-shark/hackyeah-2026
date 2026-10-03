@@ -43,6 +43,7 @@ export struct GuardianLocationView {
   @State private snapshot: SeniorSnapshot | undefined = undefined;
   @State private scene: MapScene = new MapScene();
   @State private loading: boolean = false;
+  @State private refreshing: boolean = false;
   @State private loadError: string = '';
   @State private now: number = Date.now();
   private pollTimer: number = -1;
@@ -102,6 +103,7 @@ export struct GuardianLocationView {
     if (!this.pairedAsGuardian()) {
       this.snapshot = undefined;
       this.loadError = 'This phone is not paired as a guardian.';
+      this.refreshing = false;
       return;
     }
     if (this.loading) {
@@ -120,6 +122,7 @@ export struct GuardianLocationView {
         : 'Could not refresh. Showing the last location loaded on this phone.';
     } finally {
       this.loading = false;
+      this.refreshing = false;
     }
   }
 
@@ -308,87 +311,61 @@ export struct GuardianLocationView {
     .padding({ top: 32, bottom: 16, left: 16, right: 16 })
   }
 
-  @Builder
-  actions() {
-    Column({ space: 12 }) {
-      Button() {
-        Row({ space: 8 }) {
-          if (this.loading) {
-            LoadingProgress()
-              .width(22)
-              .height(22)
-              .color(Color.White)
-          } else {
-            SymbolGlyph($r('sys.symbol.arrow_clockwise'))
-              .fontSize(20)
-              .fontColor([Color.White])
-          }
-          Text(this.loading ? 'Checking…' : 'Refresh')
-            .fontSize(18)
-            .fontWeight(FontWeight.Medium)
-            .fontColor(Color.White)
-        }
-      }
-      .width('100%')
-      .height(56)
-      .attributeModifier(new CareButtonStyle())
-      .enabled(!this.loading)
-      .onClick(() => this.reload())
-    }
-    .width('100%')
-  }
-
   build() {
-    Scroll() {
-      Column({ space: 16 }) {
-        if (this.loadError !== '') {
-          NoticeBanner({ text: this.loadError })
-        }
+    Refresh({ refreshing: $$this.refreshing }) {
+      Scroll() {
+        Column({ space: 16 }) {
+          if (this.loadError !== '') {
+            NoticeBanner({ text: this.loadError })
+          }
 
-        if (this.snapshot === undefined) {
-          if (this.loading) {
-            Column({ space: 12 }) {
-              LoadingProgress()
-                .width(40)
-                .height(40)
-                .color($r('app.color.guardian_accent'))
-              Text('Loading the last known location…')
-                .fontSize(16)
-                .fontColor($r('app.color.text_secondary'))
+          if (this.snapshot === undefined) {
+            if (this.loading) {
+              Column({ space: 12 }) {
+                LoadingProgress()
+                  .width(40)
+                  .height(40)
+                  .color($r('app.color.guardian_accent'))
+                Text('Loading the last known location…')
+                  .fontSize(16)
+                  .fontColor($r('app.color.text_secondary'))
+              }
+              .width('100%')
+              .padding({ top: 64, bottom: 32 })
             }
-            .width('100%')
-            .padding({ top: 64, bottom: 32 })
+          } else if (!this.snapshot.hasStatus) {
+            this.noReportYet()
+            if (this.snapshot.hasSafeArea) {
+              SeniorMap({ scene: this.scene })
+            }
+          } else {
+            this.hero()
+            if (!hasAnyLocation(this.snapshot)) {
+              NoticeBanner({
+                icon: $r('sys.symbol.questionmark_circle_fill'),
+                text: 'The last updates did not include a position.'
+              })
+            }
+            if (hasAnyLocation(this.snapshot) || this.snapshot.hasSafeArea) {
+              SeniorMap({ scene: this.scene })
+            }
+            this.details()
           }
-        } else if (!this.snapshot.hasStatus) {
-          this.noReportYet()
-          if (this.snapshot.hasSafeArea) {
-            SeniorMap({ scene: this.scene })
-          }
-        } else {
-          this.hero()
-          if (!hasAnyLocation(this.snapshot)) {
-            NoticeBanner({
-              icon: $r('sys.symbol.questionmark_circle_fill'),
-              text: 'The last updates did not include a position.'
-            })
-          }
-          if (hasAnyLocation(this.snapshot) || this.snapshot.hasSafeArea) {
-            SeniorMap({ scene: this.scene })
-          }
-          this.details()
         }
-
-        if (this.pairedAsGuardian()) {
-          this.actions()
-        }
+        .width('100%')
+        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
       }
       .width('100%')
-      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+      .height('100%')
+      .align(Alignment.Top)
+      .scrollBar(BarState.Off)
+      .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .width('100%')
     .height('100%')
-    .align(Alignment.Top)
-    .scrollBar(BarState.Off)
+    .onRefreshing(() => {
+      this.reload();
+    })
   }
 }
 
