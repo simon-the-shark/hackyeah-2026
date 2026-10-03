@@ -46,6 +46,7 @@ endpoints, or confidential prompts.
 | 2026-10-03 | Claude Code / Claude Sonnet 5.5 | Implement the backend | `backend/`: Hono API, Drizzle schema and migrations, pairing and device tokens, versioned guardian config, idempotent events, alerts with Push Kit and log providers, heartbeat/trip watchdog, doses, reports, synthetic catalog and seed data, README contract | `pnpm typecheck` clean; 19 integration tests passed against Postgres in Docker; curl smoke test on the running server. Push Kit request format taken from secondary sources because the official pages did not render; never sent live. |
 | 2026-10-03 | Claude Code / Claude Sonnet 5.5 | Address Prelint review on the backend PR | Guardian-only report reads, dose history kept after medication deletion, `trip_started` event, guardian-wide alert inbox, documented heartbeat threshold and late trip arrival | 28 integration tests passed; curl checks of each fix; PR squash-merged after the final review reported no code defects (the last doc-only commit was not re-reviewed). |
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | Switch project docs to HarmonyOS | `AGENTS.md`, `README.md`, `HACKATHON_BRIEF.md`, `docs/TECH_STACK.md`, `MOBILE_PLAN.md`, this file | Checked against `build-profile.json5`, which already sets `runtimeOS: "HarmonyOS"` and SDK `6.1.1(24)`. Documentation only; no build or emulator run. Challenge copies under `docs/challenge/` were left unchanged. |
+| 2026-10-03 | Claude Code / Claude Opus 5.5 | Detect missed doses on the server | Watchdog computes scheduled doses per medication time zone (DST-aware), raises one `dose_missed` alert after a grace period; canonical dose occurrence ids; alert `details`; migration `0002` | 38 integration tests passed, including DST conversion, snooze, dedup and lookback cases. Not run against an emulator. |
 
 ## Workflow
 
@@ -66,7 +67,7 @@ ArkTS project configuration before acceptance.
 Record builds, linting, tests, emulator runs, logs, screenshots, and manual
 checks here as they are completed.
 
-- Backend: `pnpm typecheck` and `pnpm test` (28 integration tests through
+- Backend: `pnpm typecheck` and `pnpm test` (38 integration tests through
   `app.request()` against a PostgreSQL test database with an injected fake push
   provider), plus curl checks against the running server with seed data.
 

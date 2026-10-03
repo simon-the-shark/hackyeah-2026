@@ -260,7 +260,7 @@ describe("review fixes", () => {
     const medPath = `/v1/seniors/${seniorId}/medications`;
     const med = (await t.call("POST", medPath, guardianToken, { name: "Demo", times: ["08:00"], timezone: "Europe/Warsaw" })).body;
     await t.call("POST", `/v1/seniors/${seniorId}/doses`, seniorToken, {
-      occurrenceId: `${med.id}@1`,
+      occurrenceId: `${med.id}@2026-10-03T08:00`,
       medicationId: med.id,
       status: "taken",
       recordedAt: "2026-10-03T08:01:00Z",

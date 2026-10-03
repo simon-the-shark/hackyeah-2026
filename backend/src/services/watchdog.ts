@@ -2,8 +2,9 @@ import { and, inArray, isNull, lt, ne } from "drizzle-orm";
 import { statusHeartbeats, trips } from "../db/schema.js";
 import type { Deps } from "../types.js";
 import { raiseServerAlert } from "./alerts.js";
+import { checkMissedDoses } from "./doses.js";
 
-/** One pass: stale heartbeats -> monitoring_lost; elapsed trip windows -> trip_not_completed. */
+/** One pass: stale heartbeats -> monitoring_lost; elapsed trip windows -> trip_not_completed; overdue doses -> dose_missed. */
 export async function runWatchdogOnce(deps: Deps) {
   const now = deps.clock();
   const cutoff = new Date(now.getTime() - deps.staleSeconds * 1000);
@@ -29,6 +30,8 @@ export async function runWatchdogOnce(deps: Deps) {
     const alert = await raiseServerAlert(deps, trip.seniorId, "trip_not_completed", `trip:${trip.id}`);
     if (alert) raised++;
   }
+
+  raised += await checkMissedDoses(deps);
   return raised;
 }
 

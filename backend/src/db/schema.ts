@@ -145,6 +145,8 @@ export const medications = pgTable(
     times: jsonb("times").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     timezone: text("timezone").notNull(),
     version: integer("version").notNull().default(1),
+    /** Set on create and every edit; only doses scheduled after it can be reported missed. */
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index("medications_senior_idx").on(t.seniorId)],
 );
@@ -201,8 +203,10 @@ export const alerts = pgTable(
     pushStatus: pushStatusEnum("push_status").notNull().default("none"),
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
     acknowledgedBy: uuid("acknowledged_by").references(() => users.id, { onDelete: "set null" }),
-    /** Dedup key for server-generated alerts (monitoring_lost, trip_not_completed). */
+    /** Dedup key for server-generated alerts (monitoring_lost, trip_not_completed, dose_missed). */
     dedupKey: text("dedup_key"),
+    /** Context for server-generated alerts that have no source event, e.g. the missed dose. */
+    details: jsonb("details").$type<Record<string, unknown>>(),
   },
   (t) => [
     index("alerts_senior_idx").on(t.seniorId, t.createdAt),

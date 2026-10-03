@@ -5,6 +5,7 @@ import { assertLinked, requireRole } from "../auth/middleware.js";
 import { doseRecords, medicationCatalog, medications, reports } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, seniorParam, uuid } from "../schemas.js";
+import { parseOccurrenceId } from "../services/doses.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -38,6 +39,9 @@ export function dailyCareRoutes(deps: Deps) {
       .from(medications)
       .where(and(eq(medications.id, body.medicationId), eq(medications.seniorId, seniorId)));
     if (!med) throw notFound("Medication");
+    if (!parseOccurrenceId(body.occurrenceId, body.medicationId)) {
+      throw new ApiError(400, "validation_error", "occurrenceId must be <medicationId>@<YYYY-MM-DD>T<HH:MM> in the medication's time zone");
+    }
 
     const values = {
       occurrenceId: body.occurrenceId,

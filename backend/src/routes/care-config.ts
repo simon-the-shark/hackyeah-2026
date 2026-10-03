@@ -162,7 +162,7 @@ export function careConfigRoutes(deps: Deps) {
       await assertLinked(db, auth, seniorId);
       const [row] = await db
         .insert(medications)
-        .values({ seniorId, ...c.req.valid("json") })
+        .values({ seniorId, ...c.req.valid("json"), updatedAt: deps.clock() })
         .returning();
       return c.json(row, 201);
     },
@@ -189,6 +189,7 @@ export function careConfigRoutes(deps: Deps) {
           times: fields.times,
           timezone: fields.timezone,
           version: sql`${medications.version} + 1`,
+          updatedAt: deps.clock(),
         })
         .where(and(eq(medications.id, id), eq(medications.seniorId, seniorId), eq(medications.version, v)))
         .returning();

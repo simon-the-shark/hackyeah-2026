@@ -8,6 +8,7 @@ const schema = z
     /** Path to the AppGallery Connect service-account key JSON (project_id, key_id, sub_account, private_key). */
     PUSH_KIT_KEY_FILE: z.string().optional(),
     HEARTBEAT_STALE_SECONDS: z.coerce.number().int().positive().default(900),
+    DOSE_MISSED_GRACE_MINUTES: z.coerce.number().int().positive().default(60),
   })
   .superRefine((env, ctx) => {
     if (env.PUSH_PROVIDER === "pushkit" && !env.PUSH_KIT_KEY_FILE) {

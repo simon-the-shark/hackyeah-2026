@@ -19,7 +19,6 @@ export type EventInput = {
 const ALERT_KIND_FOR_EVENT: Partial<Record<EventType, AlertKind>> = {
   sos: "sos",
   area_exit: "area_exit",
-  dose_missed: "dose_missed",
   trip_deviation: "trip_deviation",
 };
 
@@ -130,10 +129,16 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
 }
 
 /** Server-generated alerts (watchdog); one per dedupKey. Returns null if it already existed. */
-export async function raiseServerAlert(deps: Deps, seniorId: string, kind: AlertKind, dedupKey: string) {
+export async function raiseServerAlert(
+  deps: Deps,
+  seniorId: string,
+  kind: AlertKind,
+  dedupKey: string,
+  details?: Record<string, unknown>,
+) {
   const [alert] = await deps.db
     .insert(alerts)
-    .values({ seniorId, kind, dedupKey, createdAt: deps.clock() })
+    .values({ seniorId, kind, dedupKey, details: details ?? null, createdAt: deps.clock() })
     .onConflictDoNothing()
     .returning();
   if (!alert) return null;
