@@ -102,8 +102,6 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
   [
     new FeatureSection('Safety', [
       guardianFeature('watch-vitals', 'Watch & vitals', 'Heart rate and watch battery', $r('sys.symbol.watch_fill')),
-      guardianFeature('planned-trips', 'Planned Trips', 'Destinations and expected arrival times',
-        $r('sys.symbol.figure_walk')),
       guardianFeature('safe-area-setup', 'Safe Area', 'Set the home area and its radius', $r('sys.symbol.map'))
     ]),
     new FeatureSection('Insights', [
@@ -113,7 +111,7 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
         $r('sys.symbol.doc_text_fill'))
     ]),
     new FeatureSection('Account', [
-      guardianFeature('settings', 'Settings', 'Pairing and developer tools', $r('sys.symbol.gearshape_fill')),
+      guardianFeature('settings', 'Settings', 'Pairing and preferences', $r('sys.symbol.gearshape_fill')),
       new Feature('sign-out', 'Sign out', 'Return this device to setup', $r('sys.symbol.arrow_right'),
         $r('app.color.sos'), $r('app.color.sos_tint'))
     ])

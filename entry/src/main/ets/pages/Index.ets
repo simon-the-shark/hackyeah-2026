@@ -6,7 +6,6 @@ import { apiSession } from '../services/CareApi';
 import { AlertDeepLink } from '../components/AlertDeepLink';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
-import { DeveloperToolsPage } from './DeveloperToolsPage';
 import { DOSE_HISTORY_ROUTE, DoseHistoryPage } from './DoseHistoryPage';
 import { FeaturePage } from './FeaturePage';
 import {
@@ -24,7 +23,6 @@ import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
 import { SettingsPage } from './SettingsPage';
 import { SosPage } from './SosPage';
-import { WatchSafetyPage } from './WatchSafetyPage';
 
 @Entry
 @Component
@@ -81,8 +79,6 @@ struct Index {
       AlertsPage()
     } else if (name === 'alert-detail') {
       AlertDetailPage({ alert: param as CareAlert })
-    } else if (name === 'watch-safety') {
-      WatchSafetyPage()
     } else if (name === GUARDIAN_WATCH_ROUTE) {
       GuardianWatchPage()
     } else if (name === GUARDIAN_OVERVIEW_ROUTE) {
@@ -95,8 +91,6 @@ struct Index {
       SettingsPage()
     } else if (name === 'contact-editor') {
       ContactEditorPage({ target: param as ContactEditorTarget })
-    } else if (name === 'developer-tools') {
-      DeveloperToolsPage()
     } else if (name === 'connection') {
       ConnectionPage({ onConnected: (_role: string) => {
         this.paired = true;

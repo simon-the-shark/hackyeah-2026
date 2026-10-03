@@ -8,8 +8,6 @@ export enum AlertType {
   Sos,
   SafeAreaExit,
   DoseMissed,
-  TripDeviation,
-  TripNotCompleted,
   MonitoringLost,
   Fall,
   LowBattery,
@@ -41,18 +39,6 @@ export function remoteAlertCopy(kind: string): RemoteAlertCopy {
         type: AlertType.DoseMissed,
         title: 'Medication missed',
         detail: 'A scheduled dose was not taken on time.'
-      };
-    case 'trip_deviation':
-      return {
-        type: AlertType.TripDeviation,
-        title: 'Trip deviation',
-        detail: 'The senior left the planned route.'
-      };
-    case 'trip_not_completed':
-      return {
-        type: AlertType.TripNotCompleted,
-        title: 'Trip not completed',
-        detail: 'A planned trip was not finished on time.'
       };
     case 'monitoring_lost':
       return {
@@ -143,7 +129,6 @@ export class SafetyStore {
   homeLatitude: number = 52.2297;
   homeLongitude: number = 21.0122;
   homeRadiusMeters: number = 300;
-  developerMode: boolean = false;
   alerts: CareAlert[] = [];
   geofenceStatus: GeofenceStatus = GeofenceStatus.Unknown;
   didLeaveSafeArea: boolean = false;
@@ -158,15 +143,6 @@ export class SafetyStore {
       'The senior requested help.', source);
     this.alerts.unshift(alert);
     return alert;
-  }
-
-  recordDemoLocation(status: GeofenceStatus): CareAlert | undefined {
-    const message = status === GeofenceStatus.Inside
-      ? 'Demo trace: inside the configured home circle'
-      : status === GeofenceStatus.Outside
-        ? 'Demo trace: outside the configured home circle'
-        : 'Demo trace: location is unavailable';
-    return this.recordGeofenceStatus(status, message);
   }
 
   private recordGeofenceStatus(status: GeofenceStatus, message: string, createLocalAlert: boolean = true): CareAlert | undefined {
