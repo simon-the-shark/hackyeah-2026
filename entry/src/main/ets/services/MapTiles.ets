@@ -30,6 +30,39 @@ export function worldY(lat: number, zoom: number): number {
   return (1 - Math.log(Math.tan(clamped) + 1 / Math.cos(clamped)) / Math.PI) / 2 * Math.pow(2, zoom) * TILE_SIZE_VP;
 }
 
+export function worldSize(zoom: number): number {
+  return Math.pow(2, zoom) * TILE_SIZE_VP;
+}
+
+/** Inverse of `worldX`, wrapped into [-180, 180). */
+export function lngFromWorldX(x: number, zoom: number): number {
+  const lng = x / worldSize(zoom) * 360 - 180;
+  return ((lng + 180) % 360 + 360) % 360 - 180;
+}
+
+/** Inverse of `worldY`. */
+export function latFromWorldY(y: number, zoom: number): number {
+  const n = Math.PI * (1 - 2 * y / worldSize(zoom));
+  return Math.atan((Math.exp(n) - Math.exp(-n)) / 2) * 180 / Math.PI;
+}
+
+/** The part of the world map on screen: top-left corner in world vp at `zoom`, and the view size in vp. */
+export class MapViewport {
+  zoom: number;
+  originX: number;
+  originY: number;
+  width: number;
+  height: number;
+
+  constructor(zoom: number, originX: number, originY: number, width: number, height: number) {
+    this.zoom = zoom;
+    this.originX = originX;
+    this.originY = originY;
+    this.width = width;
+    this.height = height;
+  }
+}
+
 export function metersPerVp(lat: number, zoom: number): number {
   return EARTH_CIRCUMFERENCE_M * Math.cos(lat * Math.PI / 180) / (Math.pow(2, zoom) * TILE_SIZE_VP);
 }
