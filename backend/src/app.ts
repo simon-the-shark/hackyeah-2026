@@ -7,6 +7,7 @@ import { dailyCareRoutes } from "./routes/daily-care.js";
 import { identityRoutes, publicIdentityRoutes } from "./routes/identity.js";
 import { overviewRoutes } from "./routes/overview.js";
 import { routineRoutes } from "./routes/routines.js";
+import { vitalsRoutes } from "./routes/vitals.js";
 import { safetyRoutes } from "./routes/safety.js";
 import { redactBody } from "./log-redaction.js";
 import type { AppEnv, Deps } from "./types.js";
@@ -69,6 +70,7 @@ export function createApp(deps: Deps) {
   v1.route("/", dailyCareRoutes(deps));
   v1.route("/", overviewRoutes(deps));
   v1.route("/", routineRoutes(deps));
+  v1.route("/", vitalsRoutes(deps));
   app.route("/v1", v1);
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "Route not found" } }, 404));

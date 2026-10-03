@@ -1,4 +1,5 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
+import { WatchPairingCard } from '../components/WatchPairingCard';
 import { safetyStore } from '../models/Safety';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
@@ -100,6 +101,8 @@ export struct SettingsPage {
             }
             .width('100%')
             .alignItems(HorizontalAlign.Start)
+
+            WatchPairingCard()
           }
 
           Button('Sign out')

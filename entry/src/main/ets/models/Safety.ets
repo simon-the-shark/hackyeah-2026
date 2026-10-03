@@ -12,7 +12,8 @@ export enum AlertType {
   TripNotCompleted,
   MonitoringLost,
   Fall,
-  LowBattery
+  LowBattery,
+  HeartRate
 }
 
 export interface RemoteAlertCopy {
@@ -70,6 +71,12 @@ export function remoteAlertCopy(kind: string): RemoteAlertCopy {
         type: AlertType.LowBattery,
         title: 'Low battery',
         detail: 'One of the senior\'s devices is running low on battery.'
+      };
+    case 'heart_rate':
+      return {
+        type: AlertType.HeartRate,
+        title: 'Heart rate outside the set range',
+        detail: 'The watch reported a heart rate outside the set range. This is not a medical assessment; consider calling to check in.'
       };
     default:
       return {

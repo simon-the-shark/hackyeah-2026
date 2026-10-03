@@ -101,6 +101,7 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
   $r('app.color.guardian_accent'),
   [
     new FeatureSection('Safety', [
+      guardianFeature('watch-vitals', 'Watch & vitals', 'Watch location and heart rate', $r('sys.symbol.watch_fill')),
       guardianFeature('planned-trips', 'Planned Trips', 'Destinations and expected arrival times',
         $r('sys.symbol.figure_walk')),
       guardianFeature('safe-area-setup', 'Safe Area', 'Set the home area and its radius', $r('sys.symbol.map'))

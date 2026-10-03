@@ -9,6 +9,7 @@ import { GuardianMedicationList } from './GuardianMedication';
 import { GuardianContactsList } from './GuardianContacts';
 import { GuardianLocationView } from './GuardianLocationPage';
 import { SosBanner } from '../components/SosBanner';
+import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
 
 @Component
 export struct RoleHome {
@@ -38,6 +39,8 @@ export struct RoleHome {
       this.navStack.pushPathByName('safe-area-setup', null);
     } else if (feature.id === 'settings') {
       this.navStack.pushPathByName('settings', null);
+    } else if (feature.id === 'watch-vitals') {
+      this.navStack.pushPathByName(GUARDIAN_WATCH_ROUTE, null);
     } else {
       this.navStack.pushPathByName('feature', feature);
     }

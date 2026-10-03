@@ -27,6 +27,7 @@ hackathon delivery. P2 contains the user's nice-to-haves.
 | P0 | Guardian alerts | Alert list/detail, timestamp, source, contact action | Confirm remote push support and integrate backend delivery |
 | P0 | Watch SOS and geofencing feasibility | Establish target, connectivity, and build path early | Watch is the primary intended SOS surface; unsupported hardware is a disclosed gap |
 | P1 | Watch implementation | Large SOS control, status feedback, safe-area monitoring | Compatible runtime/device; establish whether phone relay is required |
+| P1 | Watch heart rate for the guardian | Watch reads heart rate, shares a trend and one alert per sustained out-of-range episode; guardian screen with watch location | Wearable sensor and permission on target; informational only, never a medical assessment; emulator data labelled simulated |
 | P1 | Medication schedule | Add/edit medication and times; reminders; taken/skipped/snoozed | Verified local scheduling, persistence, and restart behavior |
 | P1 | Barcode entry | Scan known code, show candidate, confirm before saving | Camera/decoder support and catalog; manual entry for unknown codes |
 | P1 | Medication 3D reference | View/rotate a bundled model associated with a demo medication | Verified renderer, licensed asset; clearly identify generic models |
@@ -69,6 +70,9 @@ packages are not required until deployment or pairing needs justify them.
   freshness/accuracy when available, acknowledgement, and call action.
 - Care setup: home circle, trusted contacts, medication schedule.
 - Wellbeing report: user-entered facts and AI-generated summary distinguished.
+- Watch & vitals: the watch's own last location (with age, accuracy, distance
+  from home), its battery, the latest heart rate with its age, a 6-hour trend
+  and the latest heart-rate alert. Simulated data is labelled; no diagnosis.
 - P2 trip editor: intended route/destination, expected time, deviation state.
 
 ### Watch
@@ -79,6 +83,13 @@ packages are not required until deployment or pairing needs justify them.
   Never present phone-derived location as independently verified watch location.
 - If a watch target is unavailable, provide a labelled watch interaction
   simulation on the phone for the demo; do not count it as watch verification.
+- Implemented as a separate `watch` entry module (`deviceTypes: ["wearable"]`):
+  6-digit pairing, SOS, its **own** location heartbeat (`measuredBy: "watch"`),
+  and heart rate via Sensor Service Kit (`SensorId.HEART_RATE`,
+  `ohos.permission.READ_HEALTH_DATA`). The watch talks to the backend directly
+  (no phone relay), and only while the app is in the foreground. Health Service
+  Kit and Wear Engine were ruled out: they need a HUAWEI ID and service approval,
+  and do not run on the wearable emulator.
 
 ### Accessibility
 
@@ -182,7 +193,7 @@ other HarmonyOS Kits are not assumed until verified.
 | Location/geofencing | Location source, accuracy, background lifecycle and restart support? | Labelled trace replay plus separate real location check |
 | Remote alerts | What push transport works on this image, including app terminated? | Labelled local fixtures; foreground refresh is not push |
 | Local reminders | Scheduling while backgrounded/restarted and permission behavior? | In-app reminder explicitly labelled foreground-only |
-| Watch | Supported device profile, packaging, location, network or phone relay? | Labelled phone-hosted watch simulation |
+| Watch | Supported device profile, packaging, location, network or phone relay? | Labelled phone-hosted watch simulation. Docs/SDK check: full `wearable` Stage apps are supported (separate entry module, no overlapping device types); Location Kit and Sensor Service Kit are available on wearable, geofencing is not; the DevEco wearable emulator simulates GPS and heart rate. Runtime on the emulator: see `AI_WORKFLOW.md` |
 | Barcode | Public camera/decoder support and catalog availability? | Barcode fixture/manual entry, not a claimed live scan |
 | 3D | Public renderer, asset formats, memory and licensing? | Static reference marked as such |
 | Calling/voice | System dial handoff and optional speech availability? | Show contact number if calling unsupported |

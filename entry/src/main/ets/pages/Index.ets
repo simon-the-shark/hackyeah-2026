@@ -15,6 +15,7 @@ import {
 import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { MedicationFormPage, MedicationFormParams } from './MedicationFormPage';
 import { ContactEditorPage, ContactEditorTarget } from './GuardianContacts';
+import { GUARDIAN_WATCH_ROUTE, GuardianWatchPage } from './GuardianWatchPage';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
@@ -79,6 +80,8 @@ struct Index {
       AlertDetailPage({ alert: param as CareAlert })
     } else if (name === 'watch-safety') {
       WatchSafetyPage()
+    } else if (name === GUARDIAN_WATCH_ROUTE) {
+      GuardianWatchPage()
     } else if (name === 'safe-area-setup') {
       SafeAreaSetupPage()
     } else if (name === 'settings') {

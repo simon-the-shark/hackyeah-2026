@@ -51,7 +51,7 @@ Dockerfile health check enabled: it uses Node's built-in `fetch`, so no curl or
 wget package is required. Rebuild and redeploy after updating the Dockerfile.
 
 Detailed HTTP request/response diagnostics are enabled only outside production
-and redact credential-like JSON fields. Set `NODE_ENV=production` to disable
+and redact credential-like and heart-rate JSON fields. Set `NODE_ENV=production` to disable
 these per-request diagnostic logs.
 
 From a HarmonyOS emulator the host is not `localhost`; use the host's LAN IP
@@ -110,12 +110,14 @@ Timestamps are ISO 8601 with offset.
 | --- | --- | --- |
 | `GET /health` | none | |
 | `POST /v1/seniors` `{displayName, deviceKind?}` | none | Returns `seniorId, deviceId, token, pairingCode, pairingExpiresAt` (code lives 10 min) |
-| `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token` |
+| `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token`. Accepts only guardian codes: a watch code returns 410 and is not consumed |
 | `POST /v1/pairing/claim` with a guardian bearer token | guardian | Links the **existing** guardian to the code's senior (no new account or token; `displayName` is ignored). Returns `guardianId, seniorId, deviceId`. Invalid token: 401; senior token: 403 (the code is not consumed) |
-| `DELETE /v1/seniors/:id` `{confirm: "DELETE"}` | that senior | Deletes the senior's account and everything stored for them (devices, configuration, events, alerts, doses, reports, routines). Guardian accounts remain but lose the link. Irreversible (204) |
+| `POST /v1/pairing/watch-claim` `{code}` | none | The senior's watch claims a code from `POST /v1/pairing/watch-codes` and becomes another device **of the senior** (`kind: watch`). Returns `seniorId, deviceId, token`. Only watch codes are accepted (a guardian code returns 410 and is not consumed). Failed guesses share the `/pairing/claim` rate limit |
+| `DELETE /v1/seniors/:id` `{confirm: "DELETE"}` | that senior | Deletes the senior's account and everything stored for them (devices, configuration, events, alerts, doses, reports, routines, heart-rate samples). Guardian accounts remain but lose the link. Irreversible (204) |
 | `DELETE /v1/care-links/:seniorId/:guardianId` | that senior or guardian | Ends the relationship (204); the guardian immediately loses access. A guardian left with no seniors keeps their account and can link again by claiming a new code with their token |
-| `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
-| `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
+| `POST /v1/pairing/codes` | senior | Active guardian pairing code; creates one only when none is valid |
+| `POST /v1/pairing/watch-codes` | senior | Active **watch** pairing code (lives 5 min, because it yields a senior token); creates one only when none is valid. Never the same code as the guardian one. No body |
+| `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token. A watch that cannot receive a token this way uses the watch pairing code instead |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
 | `GET /v1/devices?seniorId=` | any | Own devices, or (guardian) a linked senior's devices: `id, kind, createdAt, lastSeenAt, hasPushToken, isCurrent`. Never returns tokens |
 | `DELETE /v1/devices/:id` | owner | Revokes one of your **other** devices (a device cannot revoke itself: 400). Its token stops working (401) and its push token and heartbeat are removed; its events and alerts are kept. Monitoring then counts only the remaining devices: if they are all stale, the next watchdog pass raises `monitoring_lost`, which is intended, because nobody is being monitored |
@@ -129,7 +131,7 @@ Timestamps are ISO 8601 with offset.
 | `GET /v1/seniors/:id/routine-suggestions?status=` | linked | Newest first; `status` is `pending`, `accepted` or `rejected` |
 | `POST .../routine-suggestions/:sid/accept`, `.../reject` | guardian | Decides a pending suggestion once (409 with `details.current` after that). Accept returns `{suggestion, routine}` |
 | `GET/POST /v1/seniors/:id/routines`, `PUT/DELETE .../routines/:id` | read: linked, write: guardian | Recurring trips, same fields as a suggestion plus `corridorM?` and `active` (default true). PUT needs `version`. The watchdog creates one planned trip per matching day (today and tomorrow, local dates) before its window starts; those trips carry `routineId` and `localDate` and follow the normal trip lifecycle. Trips exist only for today and tomorrow, so a trip list shows a weekly routine's later days only once they come within that window; show the routine itself for the week view. `route`/`corridorM` follow the trip PUT rules. Editing a routine rebuilds its upcoming trips; deleting it removes them and keeps past ones |
-| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `fall_detected`, `cancel` / `sos_cancel` (needs `cancelsEventId` of an `sos` or `fall_detected` event; `sos_cancel` is kept as an alias), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `fall_detected` (alert kind `fall`), `area_exit` and `trip_deviation` create an alert. `fall_detected` **must** send `source` explicitly (400 otherwise), so a synthetic trigger can never pass as sensor data. SOS and fall alerts are "urgent": they can be cancelled, get reminders and tell the senior when acknowledged. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
+| `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `fall_detected`, `cancel` / `sos_cancel` (needs `cancelsEventId` of an `sos` or `fall_detected` event; `sos_cancel` is kept as an alias), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`), `heart_rate_out_of_range`, `heart_rate_in_range` (see Heart rate below; both **must** send `source`, and `heart_rate_out_of_range` needs `heartRate`, which no other type may carry). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `fall_detected` (alert kind `fall`), `area_exit` and `trip_deviation` create an alert. `fall_detected` **must** send `source` explicitly (400 otherwise), so a synthetic trigger can never pass as sensor data. SOS and fall alerts are "urgent": they can be cancelled, get reminders and tell the senior when acknowledged. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
 | `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
@@ -143,6 +145,8 @@ Timestamps are ISO 8601 with offset.
 | `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report (id from the POST response); guardians no longer see it and are not told (204). Seniors still cannot read reports back; the app keeps its own record of what it shared |
 | `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
+| `POST /v1/seniors/:id/vitals` `{source, heartRate: [{bpm, measuredAt}]}` | senior | Heart-rate readings from the watch, 1 to 500 per batch. `source` is required (`device`, `trace_replay` or `simulated`). `bpm` is an integer from 20 to 250. A reading more than 5 minutes ahead of server time or older than 7 days rejects the **whole** batch (400 with the offending `heartRate.<i>.measuredAt` paths). Idempotent per device and `measuredAt`: returns `{stored, duplicates, serverTime}`, 201 when anything was stored, 200 for a pure retry |
+| `GET /v1/seniors/:id/vitals/heart-rate?from=&to=&limit=` | linked | `{latest, items, truncated, serverTime}`. `items` are readings with `from < measuredAt <= to` (default: the 24 h up to now, at most 7 days), oldest first, each `{bpm, measuredAt, source, deviceId}`. `limit` (1 to 2000, default 1500) keeps the newest readings; `truncated` says some were left out. `latest` is the newest reading regardless of the window (null if none) |
 
 ### Low battery
 
@@ -177,14 +181,45 @@ sends one push to guardians:
 | `monitoring_lost` | the next heartbeat from any device | "Monitoring restored for …" |
 | `low_battery` | a heartbeat from that device with battery at least `LOW_BATTERY_PERCENT` + 10 | "…'s device is charged again" |
 | `dose_missed` | a late `taken` or `skipped` record for that occurrence | "… took/skipped the missed dose of …" |
+| `heart_rate` | a `heart_rate_in_range` event (`resolvedByEventId` set) | "…'s watch: heart rate back in the set range" |
 
 Alerts expose `resolvedAt` and `resolvedByEventId` (null when not resolved, or
 resolved by a heartbeat or dose record). `sos` is ended by cancellation
 (`cancelledAt`), not resolution.
 
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
-`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`. Alert `pushStatus`: `none` (no guardian
+`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`, `heart_rate`. Alert `pushStatus`: `none` (no guardian
 device had a push token), `sent`, `failed`, `simulated`.
+
+### Heart rate (watch)
+
+The watch measures heart rate and decides itself when a reading is out of
+range; the server never evaluates health data, it stores and relays what the
+watch reports. Readings are informational and **not a medical assessment**.
+
+- The watch uploads readings with `POST .../vitals` (at most one per 30 s is
+  enough for the guardian's trend view) and drops readings of 0 bpm (watch not
+  worn) or with unreliable sensor accuracy, because one invalid reading rejects
+  the whole batch. It retries 5xx and network errors with the same batch and
+  drops a batch that got a 4xx.
+- When a reading stays above `highBpm` or below `lowBpm` for `sustainedSeconds`
+  (watch defaults: 120 and 45 bpm for 120 s, fixed in the app), the watch sends
+  one `heart_rate_out_of_range` event per episode with
+  `heartRate {bpm, direction: "high"|"low", lowBpm, highBpm, sustainedSeconds}`.
+  It becomes a `heart_rate` alert whose `details` hold that object. Once the
+  reading is back in range, `heart_rate_in_range` resolves it.
+- While a `heart_rate` alert younger than 60 minutes is still open, further
+  `heart_rate_out_of_range` events are stored but create no alert and no push,
+  so a flapping reading cannot page guardians repeatedly (`alert: null` in the
+  response).
+- `heart_rate` is not urgent: it cannot be cancelled, gets no reminders, and
+  acknowledging it sends nothing to the senior.
+- Push notifications never contain the reading: the title is "…'s watch: heart
+  rate outside the set range" and the body says it is a watch reading, not a
+  medical assessment. A non-`device` `source` (an emulator's virtual sensor
+  must send `simulated`) gets the `[Simulation]` prefix like other events.
+- Readings are kept for 7 days (pruned by the watchdog) and are redacted from
+  the development request log.
 
 ## Missed doses
 
@@ -239,6 +274,13 @@ device testing.
 - Push retries are limited: one retry for a failed non-SOS push, and at most
   three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.
+- A watch token is a full senior token (it could revoke devices or delete the
+  account); the watch app only uses the endpoints it needs. The 5-minute watch
+  code and the shared failed-claim limit are the only safeguards.
+- Heart-rate thresholds are fixed in the watch app, not part of the guardian
+  configuration, and have not been validated for any individual. There is no
+  per-guardian consent switch for heart-rate sharing yet, and no server-side
+  downsampling.
 
 ## Breaking changes
 
@@ -264,3 +306,9 @@ here with a date so the mobile side can follow.
   field, which is null except on server-generated `dose_missed` alerts.
 - 2026-10-03: dose records can have `medicationId: null` (medication deleted) and
   now include `medicationName`. Deleting a medication no longer deletes its doses.
+- 2026-10-03: pairing codes have a purpose. `POST /v1/pairing/claim` now
+  rejects (410, not consumed) codes from the new `POST /v1/pairing/watch-codes`;
+  `POST /v1/pairing/codes` and existing codes are guardian codes as before.
+  Event `type` gains `heart_rate_out_of_range` and `heart_rate_in_range`, and
+  alert `kind` gains `heart_rate` (exhaustive switches must handle it);
+  event-backed `heart_rate` alerts carry `details`.

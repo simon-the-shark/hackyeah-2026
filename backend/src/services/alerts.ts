@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, eq, gt, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { alerts, careLinks, devices, events, users } from "../db/schema.js";
 import type { GeoPoint } from "../db/schema.js";
 import { ApiError } from "../errors.js";
@@ -20,6 +20,8 @@ export type EventInput = {
   tripId?: string | undefined;
   location?: GeoPoint | undefined;
   source: EventSource;
+  /** Stored on the created alert, e.g. the watch's heart-rate reading and thresholds. */
+  details?: Record<string, unknown> | undefined;
 };
 
 const ALERT_KIND_FOR_EVENT: Partial<Record<EventType, AlertKind>> = {
@@ -27,7 +29,11 @@ const ALERT_KIND_FOR_EVENT: Partial<Record<EventType, AlertKind>> = {
   fall_detected: "fall",
   area_exit: "area_exit",
   trip_deviation: "trip_deviation",
+  heart_rate_out_of_range: "heart_rate",
 };
+
+/** While a heart-rate alert younger than this is still open, further episodes are stored without a new alert. */
+export const HEART_RATE_REALERT_MS = 60 * 60 * 1000;
 
 const TITLES: Record<AlertKind, (name: string) => string> = {
   sos: (n) => `SOS from ${n}`,
@@ -38,6 +44,13 @@ const TITLES: Record<AlertKind, (name: string) => string> = {
   monitoring_lost: (n) => `Monitoring lost for ${n}`,
   fall: (n) => `Possible fall detected for ${n}`,
   low_battery: (n) => `Low battery on ${n}'s device`,
+  // Never put the reading in a push: lock screens and the push transport should not carry health values.
+  heart_rate: (n) => `${n}'s watch: heart rate outside the set range`,
+};
+
+const DEFAULT_BODY = "Open the app for details.";
+const BODIES: Partial<Record<AlertKind, string>> = {
+  heart_rate: "Watch reading, not a medical assessment. Open the app for details.",
 };
 
 async function seniorName(deps: Deps, seniorId: string): Promise<string> {
@@ -46,7 +59,13 @@ async function seniorName(deps: Deps, seniorId: string): Promise<string> {
 }
 
 /** Sends one push to every device of the senior's guardians; "none" when no guardian device has a token. */
-async function pushToGuardians(deps: Deps, seniorId: string, title: string, data: Record<string, string>) {
+async function pushToGuardians(
+  deps: Deps,
+  seniorId: string,
+  title: string,
+  data: Record<string, string>,
+  body = DEFAULT_BODY,
+) {
   const rows = await deps.db
     .select({ token: devices.pushToken })
     .from(careLinks)
@@ -54,7 +73,7 @@ async function pushToGuardians(deps: Deps, seniorId: string, title: string, data
     .where(and(eq(careLinks.seniorId, seniorId), isNotNull(devices.pushToken)));
   const tokens = rows.map((r) => r.token).filter((t): t is string => !!t);
   if (tokens.length === 0) return "none" as const;
-  return deps.push.send(tokens, { title, body: "Open the app for details.", data });
+  return deps.push.send(tokens, { title, body, data });
 }
 
 /** Sends a push to every guardian device and records the provider result and attempt on the alert. */
@@ -69,11 +88,13 @@ export async function notifyGuardians(
   if (opts.reminder) title = `Reminder: ${title} (not yet acknowledged)`;
   // Guardians must never mistake a replayed trace or demo trigger for a real event.
   if (opts.source && opts.source !== "device") title = `[Simulation] ${title}`;
-  const status = await pushToGuardians(deps, alert.seniorId, title, {
-    alertId: alert.id,
-    seniorId: alert.seniorId,
-    kind: alert.kind,
-  });
+  const status = await pushToGuardians(
+    deps,
+    alert.seniorId,
+    title,
+    { alertId: alert.id, seniorId: alert.seniorId, kind: alert.kind },
+    BODIES[alert.kind],
+  );
   if (status !== "none") {
     await deps.db
       .update(alerts)
@@ -181,9 +202,33 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
 
     if (!alertKind) return { event: inserted, alert: null, created: true, cancelled: false };
 
+    if (alertKind === "heart_rate") {
+      // Flood guard: the watch sends one event per episode, but a flapping reading must not page guardians repeatedly.
+      const [open] = await tx
+        .select({ id: alerts.id })
+        .from(alerts)
+        .where(
+          and(
+            eq(alerts.seniorId, seniorId),
+            eq(alerts.kind, "heart_rate"),
+            isNull(alerts.resolvedAt),
+            isNull(alerts.cancelledAt),
+            gt(alerts.createdAt, new Date(deps.clock().getTime() - HEART_RATE_REALERT_MS)),
+          ),
+        )
+        .limit(1);
+      if (open) return { event: inserted, alert: null, created: true, cancelled: false };
+    }
+
     const [alert] = await tx
       .insert(alerts)
-      .values({ eventId: inserted.id, seniorId, kind: alertKind, createdAt: deps.clock() })
+      .values({
+        eventId: inserted.id,
+        seniorId,
+        kind: alertKind,
+        details: input.details ?? null,
+        createdAt: deps.clock(),
+      })
       .returning();
     return { event: inserted, alert: alert ?? null, created: true, cancelled: false };
   });
@@ -197,6 +242,13 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
   if (txResult.created && input.type === "area_enter") {
     await resolveAlerts(deps, seniorId, eq(alerts.kind, "area_exit"), {
       title: (n) => `${n} is back in the safe area`,
+      eventId: input.id,
+      source: input.source,
+    });
+  }
+  if (txResult.created && input.type === "heart_rate_in_range") {
+    await resolveAlerts(deps, seniorId, eq(alerts.kind, "heart_rate"), {
+      title: (n) => `${n}'s watch: heart rate back in the set range`,
       eventId: input.id,
       source: input.source,
     });

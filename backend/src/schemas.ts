@@ -20,6 +20,9 @@ export const geoPoint = z.object({
 /** `trace_replay` and `simulated` are shown to guardians as simulations. */
 export const eventSource = z.enum(["device", "trace_replay", "simulated"]).default("device");
 
+/** Heart rate in beats per minute. A watch reports 0 when it is not worn; such readings must be dropped on the watch. */
+export const bpm = z.number().int().min(20).max(250);
+
 export const phone = z.string().regex(/^\+?[0-9 ()-]{3,20}$/, "Invalid phone number");
 export const timeOfDay = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Expected HH:MM");
 export const timezone = z.string().refine((tz) => {

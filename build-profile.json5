@@ -38,6 +38,18 @@
           ]
         }
       ]
+    },
+    {
+      "name": "watch",
+      "srcPath": "./watch",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
     }
   ]
 }
