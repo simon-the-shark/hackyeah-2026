@@ -1,5 +1,6 @@
 import { ActionRow, IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
+import { pasteboard } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
 import common from '@ohos.app.ability.common';
 import { apiSession, careApi } from '../services/CareApi';
@@ -35,6 +36,18 @@ export struct SettingsPage {
     safetyStore.developerMode = enabled;
   }
 
+  private copyPairingCode(): void {
+    if (this.pairingCode === '') {
+      return;
+    }
+    const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, this.pairingCode);
+    pasteboard.getSystemPasteboard().setData(pasteData).then(() => {
+      this.pairingMessage = 'Pairing code copied. Share it with your guardian.';
+    }).catch(() => {
+      this.pairingMessage = 'Could not copy the pairing code. Please share it manually.';
+    });
+  }
+
   /** Clears pairing, then returns to setup. Signing out must always take effect. */
   private async signOut(): Promise<void> {
     await apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
@@ -65,11 +78,20 @@ export struct SettingsPage {
                   .fontColor($r('app.color.text_secondary'))
                   .width('100%')
                   .textAlign(TextAlign.Center)
-                Button('Refresh code')
-                  .width('100%')
-                  .fontColor($r('app.color.senior_accent'))
-                  .backgroundColor($r('app.color.senior_tint'))
-                  .onClick(() => this.loadPairingCode())
+                Row({ space: 12 }) {
+                  Button('Copy code')
+                    .layoutWeight(1)
+                    .fontColor(Color.White)
+                    .backgroundColor($r('app.color.senior_accent'))
+                    .enabled(this.pairingCode !== '')
+                    .onClick(() => this.copyPairingCode())
+                  Button('Refresh code')
+                    .layoutWeight(1)
+                    .fontColor($r('app.color.senior_accent'))
+                    .backgroundColor($r('app.color.senior_tint'))
+                    .onClick(() => this.loadPairingCode())
+                }
+                .width('100%')
               }
               .width('100%')
               .padding(16)
