@@ -1,5 +1,8 @@
 import { NoticeBanner } from '../components/Common';
-import { formatClockTime, safetyStore } from '../models/Safety';
+import { util } from '@kit.ArkTS';
+import { http } from '@kit.NetworkKit';
+import { formatClockTime } from '../models/Safety';
+import { apiSession, careApi, SafetyEventRequest } from '../services/CareApi';
 
 const COUNTDOWN_SECONDS: number = 5;
 
@@ -8,6 +11,8 @@ export struct SosPage {
   @Consume('navStack') navStack: NavPathStack;
   @State private secondsLeft: number = COUNTDOWN_SECONDS;
   @State private sentAt: number = 0;
+  @State private deliveryMessage: string = '';
+  @State private sendState: string = '';
   private timerId: number = -1;
 
   aboutToAppear(): void {
@@ -30,9 +35,27 @@ export struct SosPage {
     }
   }
 
-  private send(): void {
+  private async send(): Promise<void> {
     this.stopTimer();
-    this.sentAt = safetyStore.createSos('Senior phone').createdAt;
+    this.sentAt = Date.now();
+    this.sendState = 'sending';
+    this.deliveryMessage = 'Sending SOS to the care service...';
+    if (!apiSession.configured() || apiSession.role !== 'senior') {
+      this.deliveryMessage = 'This phone is not paired. SOS cannot be sent.';
+      this.sendState = 'failed';
+      return;
+    }
+    try {
+      const event = new SafetyEventRequest(util.generateRandomUUID(), 'sos');
+      const result = await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event) as Record<string, Object>;
+      this.deliveryMessage = result['alert'] === undefined
+        ? 'SOS accepted by the care service.'
+        : 'SOS accepted. Guardian notification delivery was requested.';
+      this.sendState = 'sent';
+    } catch (error) {
+      this.deliveryMessage = 'SOS could not reach the care service. Please try again.';
+      this.sendState = 'failed';
+    }
   }
 
   @Builder
@@ -98,7 +121,7 @@ export struct SosPage {
   sent() {
     Column({ space: 24 }) {
       Row() {
-        SymbolGlyph($r('sys.symbol.checkmark_circle_fill'))
+        SymbolGlyph(this.sendState === 'sent' ? $r('sys.symbol.checkmark_circle_fill') : $r('sys.symbol.exclamationmark_circle_fill'))
           .fontSize(72)
           .fontColor([$r('app.color.sos')])
       }
@@ -109,26 +132,32 @@ export struct SosPage {
       .backgroundColor($r('app.color.sos_tint'))
 
       Column({ space: 8 }) {
-        Text('Help requested')
+        Text(this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' : 'SOS not sent')
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
-        Text(`SOS sent at ${formatClockTime(this.sentAt)}`)
+        Text(this.sendState === 'sent' ? `SOS sent at ${formatClockTime(this.sentAt)}` : 'Your guardian has not been notified yet.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
       }
 
       NoticeBanner({
-        text: 'Demo: the alert is saved on this phone and shown in the Guardian view. Delivery to your guardian\'s phone is not connected yet.'
+        text: this.deliveryMessage
       })
 
-      Button('Done')
+      Button(this.sendState === 'failed' ? 'Try again' : 'Done')
         .width('100%')
         .height(64)
         .fontSize(22)
         .fontWeight(FontWeight.Bold)
         .backgroundColor($r('app.color.senior_accent'))
-        .onClick(() => this.navStack.pop())
+        .onClick(() => {
+          if (this.sendState === 'failed') {
+            this.send();
+          } else {
+            this.navStack.pop();
+          }
+        })
     }
     .width('100%')
   }

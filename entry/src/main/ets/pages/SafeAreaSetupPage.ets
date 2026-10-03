@@ -1,6 +1,8 @@
 import { LengthMetrics } from '@kit.ArkUI';
 import { IconBadge, NoticeBanner, sectionTitle } from '../components/Common';
 import { safetyStore } from '../models/Safety';
+import { apiSession, careApi } from '../services/CareApi';
+import { http } from '@kit.NetworkKit';
 
 const RADIUS_OPTIONS: number[] = [100, 200, 300, 500, 1000];
 
@@ -22,12 +24,24 @@ export struct SafeAreaSetupPage {
     return this.longitude.trim() !== '' && isFinite(value) && value >= -180 && value <= 180;
   }
 
-  private save(): void {
+  private async save(): Promise<void> {
     if (!this.latitudeValid() || !this.longitudeValid()) {
       this.showErrors = true;
       return;
     }
-    if (safetyStore.configureHomeCircle(Number(this.latitude), Number(this.longitude), this.radius)) {
+    if (apiSession.configured() && apiSession.role === 'guardian') {
+      try {
+        await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.PUT,
+          new SafeAreaRequest(Number(this.latitude), Number(this.longitude), this.radius));
+      } catch (error) {
+        try {
+          this.getUIContext().getPromptAction().showToast({ message: 'Could not save safe area' });
+        } catch (toastError) {
+          console.error(`Safe area toast failed: ${JSON.stringify(toastError)}`);
+        }
+        return;
+      }
+      safetyStore.configureHomeCircle(Number(this.latitude), Number(this.longitude), this.radius);
       try {
         this.getUIContext().getPromptAction().showToast({ message: 'Safe area saved' });
       } catch (error) {
@@ -160,5 +174,17 @@ export struct SafeAreaSetupPage {
     }
     .title('Safe Area')
     .backgroundColor($r('app.color.page_background'))
+  }
+}
+
+class SafeAreaRequest {
+  lat: number;
+  lng: number;
+  radiusM: number;
+
+  constructor(lat: number, lng: number, radiusM: number) {
+    this.lat = lat;
+    this.lng = lng;
+    this.radiusM = radiusM;
   }
 }

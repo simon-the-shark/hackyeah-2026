@@ -15,6 +15,9 @@ export struct SettingsPage {
     NavDestination() {
       Scroll() {
         Column({ space: 24 }) {
+          Button('Connect to care service')
+            .width('100%')
+            .onClick(() => this.navStack.pushPathByName('connection', null))
           Column({ space: 8 }) {
             sectionTitle('Advanced')
             Row({ space: 16 }) {

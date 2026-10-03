@@ -24,6 +24,7 @@ export class CareAlert {
   createdAt: number;
   deliveryState: DeliveryState;
   acknowledged: boolean = false;
+  remote: boolean = false;
 
   constructor(id: string, type: AlertType, title: string, detail: string, source: string) {
     this.id = id;
@@ -67,6 +68,7 @@ export class SafetyStore {
   developerMode: boolean = false;
   alerts: CareAlert[] = [];
   geofenceStatus: GeofenceStatus = GeofenceStatus.Unknown;
+  didLeaveSafeArea: boolean = false;
   lastLocationMessage: string = 'Location has not been checked yet.';
 
   unacknowledgedCount(): number {
@@ -89,12 +91,13 @@ export class SafetyStore {
     return this.recordGeofenceStatus(status, message);
   }
 
-  private recordGeofenceStatus(status: GeofenceStatus, message: string): CareAlert | undefined {
+  private recordGeofenceStatus(status: GeofenceStatus, message: string, createLocalAlert: boolean = true): CareAlert | undefined {
     const previousStatus = this.geofenceStatus;
     this.geofenceStatus = status;
     this.lastLocationMessage = message;
+    this.didLeaveSafeArea = status === GeofenceStatus.Outside && previousStatus !== GeofenceStatus.Outside;
 
-    if (status === GeofenceStatus.Outside && previousStatus !== GeofenceStatus.Outside) {
+    if (this.didLeaveSafeArea && createLocalAlert) {
       const alert = new CareAlert(`area-${this.nextId++}`, AlertType.SafeAreaExit, 'Safe area exit',
         'The senior moved outside the configured home circle.', 'Phone location');
       this.alerts.unshift(alert);
@@ -103,14 +106,14 @@ export class SafetyStore {
     return undefined;
   }
 
-  recordLiveLocation(latitude: number, longitude: number, accuracy: number): CareAlert | undefined {
+  recordLiveLocation(latitude: number, longitude: number, accuracy: number, createLocalAlert: boolean = true): CareAlert | undefined {
     if (accuracy > this.homeRadiusMeters) {
       return this.recordGeofenceStatus(GeofenceStatus.Unknown, 'Location is not precise enough yet.');
     }
 
     const distance = this.distanceMeters(this.homeLatitude, this.homeLongitude, latitude, longitude);
     const message = `About ${Math.round(distance)} m from home.`;
-    return this.recordGeofenceStatus(distance <= this.homeRadiusMeters ? GeofenceStatus.Inside : GeofenceStatus.Outside, message);
+    return this.recordGeofenceStatus(distance <= this.homeRadiusMeters ? GeofenceStatus.Inside : GeofenceStatus.Outside, message, createLocalAlert);
   }
 
   configureHomeCircle(latitude: number, longitude: number, radiusMeters: number): boolean {
