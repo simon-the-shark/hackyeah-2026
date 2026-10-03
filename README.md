@@ -10,8 +10,8 @@ primary intended SOS surface; a phone provides the full companion experience.
 
 - Core: safe-area exit alerts, SOS on phone/watch, medication reminders,
   barcode-assisted medication entry, 3D medication references, and easy calling.
-- Intelligence: a wellbeing check-in chat (speak or type) with OpenAI models
-  through the backend; when it ends, a summary goes to the guardian.
+- Intelligence: a hands-free spoken wellbeing check-in with the OpenAI Realtime
+  model through the backend; when it ends, a summary goes to the guardian.
 - Stretch: guardian-defined trips, learned routine deviations, voice interaction,
   and fall detection.
 
@@ -114,18 +114,21 @@ To try it on the DevEco Studio emulator (team images use API 23):
 
 ### Wellbeing Check-in
 
-The senior's Wellbeing tab is a short chat with an AI assistant about how they
-feel. They can type, or tap Speak and talk (the phone asks for the microphone).
-When the assistant says goodbye, or the senior presses Finish, the backend
-writes a summary and sends it to the guardian, who reads it under Home,
-Insights, Wellbeing Reports (or from the notification while Carely is open).
-The guardian sees the summary, not the conversation; the senior sees what was
-shared and can remove it.
+The senior's Wellbeing tab is a short spoken conversation with an AI assistant
+about how they feel. They tap Talk with Carely once (the phone asks for the
+microphone) and then just talk: the phone streams the microphone to the backend,
+which relays it to the OpenAI Realtime model and plays its spoken answers. The
+model notices when the senior has finished speaking, so nothing else is pressed.
+When Carely says goodbye, or the senior presses Finish, the backend writes a
+summary and sends it to the guardian, who reads it under Home, Insights,
+Wellbeing Reports (or from the notification while Carely is open). The guardian
+sees the summary, not the conversation; the senior sees what was shared and can
+remove it.
 
 The backend calls OpenAI and needs `OPENAI_API_KEY` in its runtime environment
-(never in the app or the repository). Without a key the assistant shows as
-unavailable; `ASSISTANT_PROVIDER=simulated` gives a scripted demo assistant
-that is labelled as such. See `backend/README.md` for the configuration.
+(never in the app or the repository). Without a key the check-in shows as
+unavailable. See `backend/README.md` for the configuration and the voice
+protocol.
 
 ## Project Documents
 

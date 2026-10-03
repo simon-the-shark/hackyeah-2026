@@ -1,6 +1,5 @@
 import { BusinessError } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
-import { util } from '@kit.ArkTS';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BackendConfig } from './BackendConfig';
 
@@ -50,21 +49,10 @@ export class ApiError extends Error {
 class RawResponse {
   readonly status: number;
   readonly text: string;
-  // Set instead of `text` when the request asked for bytes.
-  readonly bytes: ArrayBuffer | undefined;
 
-  constructor(status: number, text: string, bytes?: ArrayBuffer) {
+  constructor(status: number, text: string) {
     this.status = status;
     this.text = text;
-    this.bytes = bytes;
-  }
-}
-
-function bytesToText(bytes: ArrayBuffer): string {
-  try {
-    return util.TextDecoder.create('utf-8').decodeToString(new Uint8Array(bytes));
-  } catch (err) {
-    return '';
   }
 }
 
@@ -120,16 +108,6 @@ export class BackendClient {
     }
   }
 
-  // POST with a JSON body whose answer is binary, e.g. `audio/mpeg`. Errors still arrive as JSON.
-  async postForBytes(path: string, body: Object): Promise<ArrayBuffer> {
-    const response = await this.sendRaw(http.RequestMethod.POST, path, JSON.stringify(body),
-      this.config.deviceToken, true);
-    if (response.bytes === undefined || response.bytes.byteLength === 0) {
-      throw new ApiError(ApiErrorKind.InvalidResponse, response.status, '', 'The server sent an empty response.');
-    }
-    return response.bytes;
-  }
-
   private async send<T>(method: http.RequestMethod, path: string, body: string | undefined): Promise<T> {
     const response = await this.sendRaw(method, path, body);
     if (response.text.length === 0) {
@@ -144,11 +122,10 @@ export class BackendClient {
     }
   }
 
-  // Sends one request and returns the 2xx status and body (text, or bytes when `binary`); any other outcome
-  // becomes an ApiError.
+  // Sends one request and returns the 2xx status and body text; any other outcome becomes an ApiError.
   private async sendRaw(method: http.RequestMethod, path: string, body: string | undefined,
-    deviceToken: string = this.config.deviceToken, binary: boolean = false): Promise<RawResponse> {
-    const headers: Record<string, string> = { 'Accept': binary ? '*/*' : 'application/json' };
+    deviceToken: string = this.config.deviceToken): Promise<RawResponse> {
+    const headers: Record<string, string> = { 'Accept': 'application/json' };
     if (deviceToken !== '') {
       headers['Authorization'] = `Bearer ${deviceToken}`;
     }
@@ -159,7 +136,7 @@ export class BackendClient {
       method: method,
       header: headers,
       extraData: body,
-      expectDataType: binary ? http.HttpDataType.ARRAY_BUFFER : http.HttpDataType.STRING,
+      expectDataType: http.HttpDataType.STRING,
       usingCache: false,
       connectTimeout: CONNECT_TIMEOUT_MS,
       readTimeout: this.readTimeoutMs
@@ -178,13 +155,11 @@ export class BackendClient {
     }
 
     const status = response.responseCode as number;
-    const bytes = response.result instanceof ArrayBuffer ? response.result : undefined;
-    const text = typeof response.result === 'string' ? response.result :
-      bytes !== undefined && (status < 200 || status >= 300) ? bytesToText(bytes) : '';
+    const text = typeof response.result === 'string' ? response.result : '';
     if (status < 200 || status >= 300) {
       throw this.httpError(method, path, status, text);
     }
-    return new RawResponse(status, text, bytes);
+    return new RawResponse(status, text);
   }
 
   private httpError(method: http.RequestMethod, path: string, status: number, text: string): ApiError {

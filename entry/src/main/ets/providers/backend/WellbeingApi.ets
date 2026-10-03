@@ -1,14 +1,11 @@
 import {
-  chatMessageFrom,
   chatMessagesFrom,
   ChatMessage,
   ChatSession,
   chatSessionFrom,
   CheckInState,
   checkInStateFrom,
-  Exchange,
   RemoteCheckInState,
-  RemoteExchange,
   RemoteFinished,
   RemoteReport,
   RemoteReportList,
@@ -22,28 +19,13 @@ import { BackendClient, invalidResponse } from './BackendClient';
 class StartBody {
   language: string;
   timezone: string;
+  /** The check-in will be spoken: the live connection greets instead of a typed greeting. */
+  voice: boolean;
 
-  constructor(language: string, timezone: string) {
+  constructor(language: string, timezone: string, voice: boolean) {
     this.language = language;
     this.timezone = timezone;
-  }
-}
-
-class TextBody {
-  text: string;
-
-  constructor(text: string) {
-    this.text = text;
-  }
-}
-
-class AudioBody {
-  audio: string;
-  audioFormat: string;
-
-  constructor(audio: string, audioFormat: string) {
-    this.audio = audio;
-    this.audioFormat = audioFormat;
+    this.voice = voice;
   }
 }
 
@@ -84,9 +66,9 @@ export class WellbeingApi {
   }
 
   /** Starts a check-in, or returns the one still open with its messages. */
-  async start(seniorId: string, language: string, timezone: string): Promise<StartedSession> {
+  async start(seniorId: string, language: string, timezone: string, voice: boolean): Promise<StartedSession> {
     const dto = await this.client.post<RemoteStartedSession>(`${this.base(seniorId)}/wellbeing/sessions`,
-      new StartBody(language, timezone));
+      new StartBody(language, timezone, voice));
     const session = chatSessionFrom(dto.session);
     if (session === undefined) {
       throw invalidResponse('check-in');
@@ -94,25 +76,11 @@ export class WellbeingApi {
     return new StartedSession(session, chatMessagesFrom(dto.messages));
   }
 
-  async sendText(seniorId: string, sessionId: string, text: string): Promise<Exchange> {
-    return this.exchange(seniorId, sessionId, new TextBody(text));
-  }
-
-  /** `audio` is base64; `format` is the container, e.g. "m4a". */
-  async sendVoice(seniorId: string, sessionId: string, audio: string, format: string): Promise<Exchange> {
-    return this.exchange(seniorId, sessionId, new AudioBody(audio, format));
-  }
-
   /** The report that was shared, or undefined when there was nothing to report. */
   async finish(seniorId: string, sessionId: string, reason: FinishReason): Promise<WellbeingReport | undefined> {
     const dto = await this.client.post<RemoteFinished>(
       `${this.base(seniorId)}/wellbeing/sessions/${encodeURIComponent(sessionId)}/finish`, new FinishBody(reason));
     return wellbeingReportFrom(dto.report);
-  }
-
-  /** MP3 audio of `text` read aloud. */
-  async speech(seniorId: string, text: string): Promise<ArrayBuffer> {
-    return this.client.postForBytes(`${this.base(seniorId)}/wellbeing/speech`, new TextBody(text));
   }
 
   /** The senior withdraws a shared summary; guardians no longer see it. */
@@ -135,22 +103,6 @@ export class WellbeingApi {
       throw invalidResponse('report');
     }
     return report;
-  }
-
-  private async exchange(seniorId: string, sessionId: string, body: Object): Promise<Exchange> {
-    const dto = await this.client.post<RemoteExchange>(
-      `${this.base(seniorId)}/wellbeing/sessions/${encodeURIComponent(sessionId)}/messages`, body);
-    const message = chatMessageFrom(dto.message);
-    const reply = chatMessageFrom(dto.reply);
-    if (message === undefined || reply === undefined) {
-      throw invalidResponse('reply');
-    }
-    const exchange = new Exchange();
-    exchange.message = message;
-    exchange.reply = reply;
-    exchange.suggestFinish = dto.suggestFinish === true;
-    exchange.safetyConcern = dto.safetyConcern === true || reply.safetyConcern;
-    return exchange;
   }
 
   private base(seniorId: string): string {

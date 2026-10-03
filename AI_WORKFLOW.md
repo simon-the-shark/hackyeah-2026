@@ -116,6 +116,7 @@ preserve the recorded order within a date when no timestamps are available.
 | 2026-10-04 | Cursor Agent / Claude Opus 5.5 | Make phone setup step by step | Replaced the toggle-style role picker on `ConnectionPage` with two steps: step 1 asks "Who will use this phone?" with two large buttons (senior, guardian) that advance immediately; step 2 asks for the name, plus the six-digit pairing code for guardians, and submits. Back (title bar or system) returns from step 2 to step 1. | `./scripts/build-hap.sh` passed (unsigned HAP). No emulator check. |
 | 2026-10-04 | OpenCode / `openai/gpt-6-astra`, Context7 MCP, context7-mcp Agent Skill, HarmonyOS SDK declarations | Upgrade phone geofencing to background location | Added a public `LOCATION` continuous-task wrapper, manifest capability, cancellation handling, 30-second location/heartbeat requests, persisted sharing intent and cached safe-area configuration refreshed by the service. Added accuracy-aware confirmed exit/re-entry detection, serialized senior-scoped durable event retries, sign-out cleanup, permission/switch checks, and distinct guardian check-in/position timestamps. Updated sharing copy and added `docs/BACKGROUND_LOCATION.md` with runtime acceptance checks. | Official continuous-task and permission guides confirm that foreground location consent plus a location continuous task does not require `LOCATION_IN_BACKGROUND`; installed SDK declarations checked for API 20 compatibility. Final phone/watch `./scripts/build-hap.sh`, entry hvigor `test` (8 new model cases), and `git diff --check` passed; final build has no ArkTS warnings. Initial build warnings about propagated platform exceptions were removed by explicit handling. HDC found a phone emulator, but no signing configuration is present, so HAPs are unsigned and this change was not installed or runtime-verified. Screen-lock/background survival, cancellation, networking recovery, guardian rendering, and battery use remain target-device checks. Watch monitoring and guardian polling remain foreground-only. |
 | 2026-10-04 | Claude Code / Claude Opus 5.5 (backend implemented by a forked subagent from a fixed API contract), Context7 MCP, OpenAI docs, HarmonyOS SDK declarations | Wellbeing check-in chat with OpenAI and an automatic guardian report (user request) | Backend: `/wellbeing` session, message (text or base64 audio), finish and speech endpoints; OpenAI Responses API with strict JSON schemas and `store: false` (chat `gpt-6-luna`, reasoning low; summary reasoning medium), `gpt-transcribe` transcription and `gpt-4o-mini-tts` speech through `fetch` (no new dependency); a scripted `simulated` assistant labelled on every screen and report; one-time `wellbeing` alert on a possible emergency; summary report pushed to guardians; transcript deleted once the summary exists; idle finish in the watchdog with a 24 h fallback; per-senior hourly limit; redaction of conversation fields in dev logs; migration 0015; guardian `GET /reports/:id`; overview `latestReport`. Phone: senior Wellbeing tab (intro with sharing disclosure, chat bubbles, Media Kit `AVRecorder` voice answers with `MICROPHONE`, `AVPlayer` read-aloud, SOS banner, automatic finish after the goodbye, "what was shared" view with removal); guardian Wellbeing reports list/detail, Overview row, report notifications from the foreground poll with deep link, `wellbeing` alert copy and a link from the alert to its report; `BackendClient` read timeout per client and binary responses; chat switches the window to `KeyboardAvoidMode.RESIZE` while shown. Docs: brief, mobile plan, tech stack, README, backend README/PLAN. | Backend `tsc` clean and 135 vitest tests pass (29 new, against a throwaway PostgreSQL 17 container); app build passes (one new ArkTS warning: the linter flags `AVRecorder.prepare` as needing `MICROPHONE`, which is declared and requested); hypium 52/52 including 6 new `Wellbeing` tests. On a fresh API 23 phone emulator with a temporary build pointed at a local backend (`hdc rport`) and the simulated assistant: pairing, start, resume after restart, typed replies, the SOS banner and its alert, the automatic finish, the shared-report view, the guardian push in the server log, report and alert `reportId` in the API, and zero stored messages after finishing were all observed; the keyboard overlap and a stale guardian name seen there were fixed and rechecked. With a real key, one Polish greeting from `gpt-6-luna` was received (about 4 s). The emulator keyboard's first-run prompt was set to Basic mode to allow typing. **Not verified:** OpenAI transcription, speech and summaries, microphone recording and playback on a target, the guardian screens at runtime, and the deployed backend (endpoints not deployed). |
+| 2026-10-04 | Claude Code / Claude Opus 5.5 (backend relay implemented by a forked subagent from a fixed protocol), Context7 MCP, OpenAI docs, HarmonyOS SDK declarations | Hands-free spoken check-in through the OpenAI Realtime API, proxied by the backend; remove typing (user requests) | Backend: WebSocket route `/wellbeing/sessions/:id/live` (`ws` package; the existing `@hono/node-server` upgrade support) relaying 24 kHz PCM to `gpt-realtime-2.1` with semantic VAD (low eagerness), near-field noise reduction and input transcription; transcripts stored as session messages in conversation order; `report_safety_concern` and `end_check_in` tools (alert, then the backend finishes the check-in after the goodbye audio); one connection per check-in, 20-minute cap, shared hourly limit; `assistant.live`; `POST /sessions {voice: true}` without a typed greeting. Phone: senior Wellbeing is voice only: Audio Kit `AudioCapturer` (24 kHz, resampled from 48/16 kHz when needed) streams over a Network Kit WebSocket, `AudioRenderer` plays the reply on the loudspeaker, the microphone is muted while Carely speaks (half-duplex), large state text, "Let me talk", pause and "Continue talking"; typing, push-to-talk recording and read-aloud removed with their code. Docs updated. | Backend `tsc` clean, 148 vitest tests pass (13 new, including a local fake of the OpenAI socket); one live smoke test by the subagent: ready after about 2 s, first greeting audio after about 3 s, transcript stored. App build passes; hypium 57/57 including 5 new PCM tests. Installed on both test emulators against the local backend. **Not verified:** a real spoken conversation on a target (microphone capture on the emulator, VAD with slow speech, playback, the tools with the real model), and WebSocket upgrades behind the deployed proxy; the user is testing the app. |
 
 ## Workflow
 
@@ -210,13 +211,15 @@ handled:
   click-through data yet, and the backend has not been called from an emulator.
 - Backend pairing and demo bootstrap are unauthenticated, with only simple
   in-memory per-IP rate limits; they are meant for the hackathon demo only.
-- The wellbeing check-in needs `OPENAI_API_KEY` on the backend; without it the
-  assistant shows as unavailable, and `ASSISTANT_PROVIDER=simulated` gives a
-  scripted, labelled demo. Conversation text and recordings go to OpenAI (API
-  data, `store: false` for responses); the guardian gets the summary only. The
-  prompts, the attention rating and transcription quality for older voices have
-  not been evaluated on real conversations. Microphone recording and read-aloud
-  have not been verified on the emulator or a device. Report notifications on
+- The wellbeing check-in is voice only and needs `OPENAI_API_KEY` on the
+  backend; without it the check-in shows as unavailable. Audio and transcripts
+  go to OpenAI (API data, `store: false` for summaries); the guardian gets the
+  summary only. The microphone is muted while Carely speaks, so the senior cannot
+  talk over her except with "Let me talk". The prompts, voice-activity detection
+  for slow speech, the attention rating and transcription of older voices have
+  not been evaluated on real conversations, and microphone streaming has not been
+  verified on the emulator or a device. The live relay assumes one backend
+  process. Report notifications on
   the guardian phone need Carely in the foreground, like alerts.
 
 ## Lessons Learned
@@ -233,30 +236,33 @@ handled:
 - **Purpose:** A short daily check-in chat about mood, energy, sleep, pain and
   worries; when it ends, a summary goes to the guardian so they know how the
   senior feels. It supports wellbeing conversations; it is not a medical tool.
-- **Model/service:** OpenAI API called only by the backend. Chat replies and the
-  summary use the Responses API with strict JSON schemas (`OPENAI_CHAT_MODEL`,
-  default `gpt-6-luna`; reasoning effort low for replies, medium for the
-  summary). Spoken answers use `OPENAI_TRANSCRIBE_MODEL` (default
-  `gpt-transcribe`); read-aloud uses `OPENAI_TTS_MODEL` (default
-  `gpt-4o-mini-tts`, voice `marin`). The prompts are in
-  `backend/src/assistant/prompts.ts`.
-- **Inference flow:** The phone sends typed text or a recorded M4A answer to the
-  backend → transcription (voice) → chat reply with `suggestFinish` and
-  `safetyConcern` flags → validated with zod → stored in the open session. On
-  finish (assistant goodbye, Finish button, or 20 minutes idle) the transcript is
-  summarised into ratings, up to 5 concerns, an attention level and 2-4
-  sentences → report stored → push to guardians.
-- **Data/privacy:** The API key stays on the server. The senior is told before
+- **Model/service:** OpenAI API called only by the backend. The senior's
+  conversation is spoken through the Realtime API (`OPENAI_REALTIME_MODEL`,
+  default `gpt-realtime-2.1`, voice `marin`, input transcription with
+  `OPENAI_TRANSCRIBE_MODEL`). The guardian summary uses the Responses API with a
+  strict JSON schema (`OPENAI_CHAT_MODEL`, default `gpt-6-luna`, reasoning
+  medium). Text and push-to-talk endpoints remain in the backend but the app no
+  longer uses them. The prompts are in `backend/src/assistant/prompts.ts`.
+- **Inference flow:** The phone streams microphone PCM over a WebSocket to the
+  backend → the backend relays it to the Realtime model, whose voice-activity
+  detection ends each turn → spoken reply streamed back and played; both
+  transcripts stored in the open session; tools signal a possible emergency or
+  the end of the check-in. On finish (the model's goodbye, the Finish button, or
+  20 minutes idle) the transcript is summarised into ratings, up to 5 concerns,
+  an attention level and 2-4 sentences → report stored → push to guardians.
+- **Data/privacy:** The API key stays on the server; audio passes through the
+  backend to OpenAI and is not stored. The senior is told before
   starting that a summary goes to the guardian and that the guardian does not see
   the conversation. The transcript is deleted from the server once the summary
   exists; responses use `store: false`. Push notifications never contain the
   summary or health details. The senior sees exactly what was shared and can
   remove it. Account deletion removes sessions and reports.
-- **Failure behavior:** Any OpenAI failure returns `assistant_unavailable` and
-  nothing is stored for that turn; the senior can retry or type. A summary that
+- **Failure behavior:** Any OpenAI failure ends the voice connection with
+  `assistant_unavailable`; the check-in stays open and Continue talking
+  resumes it. A summary that
   cannot be written within 24 hours becomes a report marked "summary
-  unavailable". The scripted assistant is labelled as a simulation in the chat,
-  the report and the push. SOS never depends on the assistant: on a possible
+  unavailable". Without a key the check-in shows as unavailable (the scripted
+  test assistant has no voice). SOS never depends on the assistant: on a possible
   emergency the assistant tells the senior to press SOS or call 112, the app
   shows a large SOS button, and the guardian gets one informational `wellbeing`
   alert; the AI never sends an SOS itself.
@@ -266,6 +272,7 @@ handled:
   medical assessment.
 - **Evaluation:** Automated tests use a fake assistant (flow, limits, safety
   alert, finish, idle fallback) and a stubbed `fetch` for the OpenAI request and
-  response handling. One real greeting was received from `gpt-6-luna`. No
-  systematic evaluation of factuality, missing topics, emergency wording or
+  response handling, plus a fake Realtime socket for the relay. One real typed
+  greeting (`gpt-6-luna`) and one real spoken greeting (`gpt-realtime-2.1`) were
+  received. No systematic evaluation of factuality, missing topics, emergency wording or
   transcription of older voices has been run yet.

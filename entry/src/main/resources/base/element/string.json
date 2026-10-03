@@ -18,7 +18,7 @@
     },
     {
       "name": "microphone_permission_reason",
-      "value": "The microphone lets you answer the wellbeing check-in by speaking instead of typing."
+      "value": "The microphone lets you talk with Carely during the wellbeing check-in."
     }
   ]
 }

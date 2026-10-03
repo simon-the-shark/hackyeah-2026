@@ -63,7 +63,7 @@ describe("starting a check-in", () => {
     expect(state.status).toBe(200);
     expect(state.body.session.id).toBe(res.body.session.id);
     expect(state.body.messages).toHaveLength(1);
-    expect(state.body.assistant).toEqual({ available: true, simulated: false, voice: true });
+    expect(state.body.assistant).toEqual({ available: true, simulated: false, voice: true, live: false });
     expect(state.body.guardians).toEqual([expect.objectContaining({ displayName: "Marek" })]);
 
     const again = await start(ctx);
@@ -357,7 +357,7 @@ describe("simulated assistant", () => {
     expect(started.body.messages[0].text).toContain("Hello Halina");
     const sessionId = started.body.session.id;
     const state = await scripted.call("GET", `${base(ctx)}/session`, ctx.seniorToken);
-    expect(state.body.assistant).toEqual({ available: true, simulated: true, voice: false });
+    expect(state.body.assistant).toEqual({ available: true, simulated: true, voice: false, live: false });
 
     expect((await say(ctx, sessionId, { text: "I feel good" }, scripted)).body.reply.text).toContain("sleep");
     expect((await say(ctx, sessionId, { text: "Badly, I am tired" }, scripted)).body.reply.text).toContain("pain");

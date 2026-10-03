@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, gt, lt, sql } from "drizzle-orm";
 import { AssistantError, type Assistant, type Attention, type ChatContext, type ChatTurn, type WellbeingSummary } from "../assistant/provider.js";
 import { alerts, careLinks, reports, users, wellbeingMessages, wellbeingSessions } from "../db/schema.js";
+import { FixedWindow, tooManyRequests } from "../auth/rate-limit.js";
 import { ApiError } from "../errors.js";
 import type { Deps } from "../types.js";
 import { pushToGuardians, raiseServerAlert, seniorName, WELLBEING_BODY } from "./alerts.js";
@@ -46,7 +47,29 @@ export const assistantStatus = (deps: Deps) => ({
   available: deps.assistant !== null,
   simulated: deps.assistant?.simulated ?? false,
   voice: deps.assistant?.voice ?? false,
+  live: liveAvailable(deps),
 });
+
+/** Hands-free voice needs the live provider and a real assistant to write the summary. */
+export const liveAvailable = (deps: Deps) =>
+  deps.liveVoice !== null && deps.assistant !== null && !deps.assistant.simulated;
+
+const assistantLimiters = new WeakMap<Deps, FixedWindow>();
+
+/**
+ * Every paid assistant call counts against the senior's hourly budget: typed and recorded messages,
+ * starts, finishes, read-aloud, live connections and live turns all share it.
+ */
+export function spendAssistantCall(deps: Deps, userId: string) {
+  let limiter = assistantLimiters.get(deps);
+  if (!limiter) {
+    limiter = new FixedWindow(deps.rateLimits.assistantPerHour, 60 * 60_000, () => deps.clock().getTime());
+    assistantLimiters.set(deps, limiter);
+  }
+  const wait = limiter.blockedFor(userId);
+  if (wait > 0) throw tooManyRequests(wait);
+  limiter.hit(userId);
+}
 
 export function requireAssistant(deps: Deps): Assistant {
   if (!deps.assistant) throw new ApiError(503, "assistant_unavailable", "The wellbeing assistant is not configured");

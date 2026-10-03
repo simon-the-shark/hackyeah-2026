@@ -28,6 +28,7 @@ export interface RemoteAssistantInfo {
   available?: boolean;
   simulated?: boolean;
   voice?: boolean;
+  live?: boolean;
 }
 
 export interface RemoteGuardian {
@@ -47,14 +48,6 @@ export interface RemoteCheckInState {
 export interface RemoteStartedSession {
   session?: RemoteChatSession | null;
   messages?: RemoteChatMessage[];
-}
-
-/** `POST .../sessions/:id/messages`. */
-export interface RemoteExchange {
-  message?: RemoteChatMessage | null;
-  reply?: RemoteChatMessage | null;
-  suggestFinish?: boolean;
-  safetyConcern?: boolean;
 }
 
 /** `structured` of a chat report. Older or hand-written reports may lack any of these. */
@@ -119,6 +112,8 @@ export class AssistantInfo {
   simulated: boolean = false;
   /** Speech input and read-aloud work. */
   voice: boolean = false;
+  /** Hands-free spoken conversation (streamed through the backend) works. */
+  live: boolean = false;
 }
 
 export class CheckInState {
@@ -126,13 +121,6 @@ export class CheckInState {
   messages: ChatMessage[] = [];
   assistant: AssistantInfo = new AssistantInfo();
   guardianNames: string[] = [];
-}
-
-export class Exchange {
-  message: ChatMessage = new ChatMessage();
-  reply: ChatMessage = new ChatMessage();
-  suggestFinish: boolean = false;
-  safetyConcern: boolean = false;
 }
 
 export enum Attention {
@@ -251,6 +239,7 @@ export function checkInStateFrom(dto: RemoteCheckInState): CheckInState {
     state.assistant.available = assistant.available === true;
     state.assistant.simulated = assistant.simulated === true;
     state.assistant.voice = assistant.voice === true;
+    state.assistant.live = assistant.live === true;
   }
   (Array.isArray(dto.guardians) ? dto.guardians : []).forEach((guardian: RemoteGuardian) => {
     if (typeof guardian.displayName === 'string' && guardian.displayName.trim() !== '') {

@@ -1,7 +1,6 @@
 import { common } from '@kit.AbilityKit';
-import { KeyboardAvoidMode } from '@kit.ArkUI';
 import { IconBadge, NoticeBanner } from '../components/Common';
-import { CareButtonStyle, CareTextAreaStyle } from '../components/DesignSystem';
+import { CareButtonStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { WellbeingReportView } from '../components/WellbeingReportView';
 import {
@@ -10,23 +9,15 @@ import {
   attentionLabel,
   ChatMessage,
   ChatRole,
-  Exchange,
   guardianNamesText,
   WellbeingReport
 } from '../models/Wellbeing';
 import { formatClockTime } from '../models/Safety';
-import {
-  MicrophoneAccess,
-  openMicrophoneSettings,
-  requestMicrophone,
-  VOICE_FORMAT,
-  VoiceRecorder
-} from '../platform/VoiceRecorder';
-import { VoicePlayer } from '../platform/VoicePlayer';
-import { ApiError } from '../providers/backend/BackendClient';
+import { MicrophoneAccess, openMicrophoneSettings, requestMicrophone } from '../platform/Microphone';
 import { FinishReason } from '../providers/backend/WellbeingApi';
 import { describeBackendError, NOT_CONFIGURED_MESSAGE } from '../services/BackendErrors';
 import { apiSession } from '../services/CareApi';
+import { LiveState, LiveVoiceSession } from '../services/LiveVoiceSession';
 import { describeCheckInError, SharedSummary, wellbeingCheckIn } from '../services/WellbeingService';
 
 enum Phase {
@@ -35,19 +26,9 @@ enum Phase {
   NotConfigured,
   Intro,
   Starting,
-  Chat,
+  Talk,
   Done
 }
-
-enum Mic {
-  Idle,
-  Recording,
-  Sending
-}
-
-/** A spoken answer longer than this stops by itself, so a forgotten recording cannot run on. */
-const MAX_RECORDING_SECONDS = 60;
-const PENDING_ID = 'pending';
 
 function sharedDateLabel(timestamp: number): string {
   const date = new Date(timestamp);
@@ -59,59 +40,65 @@ function sharedDateLabel(timestamp: number): string {
     formatClockTime(timestamp);
 }
 
-function elapsedLabel(seconds: number): string {
-  return `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+/** Why the conversation stopped, in words. */
+function describeLiveEnd(code: string): string {
+  if (code === 'assistant_unavailable') {
+    return 'Talking with Carely is not available right now. Please try again in a few minutes.';
+  }
+  if (code === 'rate_limited') {
+    return 'Too many conversations in a short time. Please wait a little and try again.';
+  }
+  if (code === 'time_limit') {
+    return 'The conversation reached its time limit. Tap Continue talking to go on.';
+  }
+  if (code === 'session_full') {
+    return 'This check-in is already long. Please press Finish to send the summary.';
+  }
+  if (code === 'session_closed') {
+    return 'This check-in has already ended. You can start a new one.';
+  }
+  return 'The connection stopped. Check the internet connection, then tap Continue talking.';
 }
 
 /**
- * The senior's Wellbeing tab: a short daily check-in chat with the assistant, by voice or text.
- * When it ends, the backend writes a summary for the guardian; this screen shows exactly what was
- * shared and lets the senior remove it. SOS never depends on this screen or the assistant.
+ * The senior's Wellbeing tab: a short spoken check-in with Carely. The senior just talks; the
+ * backend relays the conversation to the voice model, notices when they have finished speaking, and
+ * writes a summary for the guardian when Carely says goodbye. This screen shows the transcript,
+ * exactly what was shared, and lets the senior remove it. SOS never depends on this screen.
  */
 @Component
 export struct WellbeingCheckIn {
   @Consume('navStack') navStack: NavPathStack;
   /** Bumped when the tab or page becomes visible again. */
   @Prop @Watch('onRefresh') refreshKey: number = 0;
-  /** False while another tab is shown: recording and reading aloud stop. */
+  /** False while another tab is shown: the conversation pauses. */
   @Prop @Watch('onVisibility') visible: boolean = true;
-  @State @Watch('applyKeyboardMode') private phase: Phase = Phase.Loading;
+  @State private phase: Phase = Phase.Loading;
   @State private loadError: string = '';
   @State private notice: string = '';
   @State private assistant: AssistantInfo = new AssistantInfo();
   @State private guardians: string = 'your guardian';
   @State private sessionId: string = '';
-  @State private simulated: boolean = false;
   @State private messages: ChatMessage[] = [];
-  @State private draft: string = '';
-  @State private thinking: boolean = false;
   @State private finishing: boolean = false;
-  @State private mic: Mic = Mic.Idle;
   @State private micDenied: boolean = false;
-  @State private recordSeconds: number = 0;
   @State private safetyConcern: boolean = false;
-  /** Read each new reply aloud; switched on once the senior speaks. */
-  @State private readAloud: boolean = false;
-  /** Id of the reply being read aloud, or fetched for reading. */
-  @State private speakingId: string = '';
+  /** The conversation is running: the microphone streams and Carely answers aloud. */
+  @State private live: boolean = false;
+  @State private liveState: LiveState = LiveState.Connecting;
   @State private report: WellbeingReport | undefined = undefined;
   @State private removed: boolean = false;
   @State private removing: boolean = false;
   @State private lastShared: SharedSummary | undefined = undefined;
-  private recorder: VoiceRecorder = new VoiceRecorder();
-  private player: VoicePlayer = new VoicePlayer();
+  private liveSession: LiveVoiceSession | undefined = undefined;
   private scroller: Scroller = new Scroller();
-  private recordTimer: number = -1;
-  /** The window's keyboard mode before the chat switched it to RESIZE; undefined while not switched. */
-  private savedKeyboardMode: KeyboardAvoidMode | undefined = undefined;
 
   aboutToAppear(): void {
     this.load();
   }
 
   aboutToDisappear(): void {
-    this.stopVoice();
-    this.restoreKeyboardMode();
+    this.stopLive();
   }
 
   private onRefresh(): void {
@@ -124,31 +111,12 @@ export struct WellbeingCheckIn {
 
   private onVisibility(): void {
     if (!this.visible) {
-      this.stopVoice();
-    }
-    this.applyKeyboardMode();
-  }
-
-  /**
-   * While the chat is on screen the keyboard shrinks the page (RESIZE) instead of pushing it up,
-   * so the newest messages and the input stay visible under the title. Other screens keep their mode.
-   */
-  private applyKeyboardMode(): void {
-    const ui = this.getUIContext();
-    const chatShown = this.visible && this.phase === Phase.Chat;
-    if (chatShown && this.savedKeyboardMode === undefined) {
-      this.savedKeyboardMode = ui.getKeyboardAvoidMode();
-      ui.setKeyboardAvoidMode(KeyboardAvoidMode.RESIZE);
-    } else if (!chatShown) {
-      this.restoreKeyboardMode();
+      this.stopLive();
     }
   }
 
-  private restoreKeyboardMode(): void {
-    if (this.savedKeyboardMode !== undefined) {
-      this.getUIContext().setKeyboardAvoidMode(this.savedKeyboardMode);
-      this.savedKeyboardMode = undefined;
-    }
+  private context(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
   }
 
   /** Guardian names and assistant availability can change while a check-in is open. */
@@ -160,19 +128,6 @@ export struct WellbeingCheckIn {
     } catch (error) {
       // Keep what is shown; the next refresh tries again.
     }
-  }
-
-  private context(): common.UIAbilityContext {
-    return this.getUIContext().getHostContext() as common.UIAbilityContext;
-  }
-
-  private stopVoice(): void {
-    this.stopTimer();
-    if (this.mic === Mic.Recording) {
-      this.mic = Mic.Idle;
-    }
-    this.recorder.cancel();
-    this.player.stop();
   }
 
   private async load(): Promise<void> {
@@ -189,11 +144,11 @@ export struct WellbeingCheckIn {
       this.guardians = guardianNamesText(state.guardianNames);
       this.lastShared = await wellbeingCheckIn.lastShared(this.context());
       if (state.session !== undefined) {
+        // An open check-in (e.g. after a restart) continues with one tap on Continue talking.
         this.sessionId = state.session.id;
-        this.simulated = state.session.simulated;
         this.messages = state.messages;
         this.safetyConcern = state.messages.some((message: ChatMessage) => message.safetyConcern);
-        this.phase = Phase.Chat;
+        this.phase = Phase.Talk;
         this.scrollToEnd();
       } else {
         this.phase = Phase.Intro;
@@ -208,18 +163,79 @@ export struct WellbeingCheckIn {
     this.phase = Phase.Starting;
     this.notice = '';
     try {
-      const started = await wellbeingCheckIn.start();
+      const started = await wellbeingCheckIn.start(true);
       this.sessionId = started.session.id;
-      this.simulated = started.session.simulated;
       this.messages = started.messages;
       this.safetyConcern = false;
       this.report = undefined;
       this.removed = false;
-      this.phase = Phase.Chat;
-      this.scrollToEnd();
+      this.phase = Phase.Talk;
+      this.startLive();
     } catch (error) {
       this.notice = describeCheckInError(error as Object, 'The check-in could not start. Please try again.');
       this.phase = Phase.Intro;
+    }
+  }
+
+  private async startLive(): Promise<void> {
+    if (this.live || this.sessionId === '' || this.finishing) {
+      return;
+    }
+    this.notice = '';
+    const access = await requestMicrophone(this.context());
+    if (access !== MicrophoneAccess.Granted) {
+      this.micDenied = access === MicrophoneAccess.Denied;
+      this.notice = 'Carely needs the microphone to hear you.';
+      return;
+    }
+    this.micDenied = false;
+    const session = new LiveVoiceSession({
+      onState: (state: LiveState) => {
+        this.liveState = state;
+        this.scrollToEnd();
+      },
+      onMessage: (message: ChatMessage) => {
+        if (!this.messages.some((known: ChatMessage) => known.id === message.id)) {
+          this.messages = this.messages.concat([message]);
+          this.scrollToEnd();
+        }
+      },
+      onSafetyConcern: () => {
+        this.safetyConcern = true;
+      },
+      onFinished: (report: WellbeingReport | undefined) => {
+        this.liveSession = undefined;
+        this.live = false;
+        this.completeWithReport(report);
+      },
+      onEnded: (code: string) => {
+        this.liveSession = undefined;
+        this.live = false;
+        this.notice = describeLiveEnd(code);
+        if (code === 'session_closed') {
+          this.load();
+        }
+      }
+    });
+    this.liveSession = session;
+    this.liveState = LiveState.Connecting;
+    this.live = true;
+    try {
+      await session.start(wellbeingCheckIn.currentSeniorId(), this.sessionId);
+    } catch (error) {
+      this.liveSession = undefined;
+      this.live = false;
+      this.notice = 'The microphone or speaker does not work on this phone right now.';
+    }
+  }
+
+  /** Pauses the conversation; the check-in stays open and Continue talking resumes it. */
+  private stopLive(): void {
+    const session = this.liveSession;
+    this.liveSession = undefined;
+    this.live = false;
+    if (session !== undefined) {
+      session.stop();
     }
   }
 
@@ -227,161 +243,6 @@ export struct WellbeingCheckIn {
     setTimeout(() => {
       this.scroller.scrollEdge(Edge.Bottom);
     }, 50);
-  }
-
-  private pendingMessage(text: string, voice: boolean): ChatMessage {
-    const message = new ChatMessage();
-    message.id = PENDING_ID;
-    message.role = ChatRole.Senior;
-    message.text = text;
-    message.voice = voice;
-    return message;
-  }
-
-  private withoutPending(): ChatMessage[] {
-    return this.messages.filter((message: ChatMessage) => message.id !== PENDING_ID);
-  }
-
-  private async sendText(): Promise<void> {
-    const text = this.draft.trim();
-    if (text === '' || this.thinking || this.finishing) {
-      return;
-    }
-    this.draft = '';
-    this.notice = '';
-    this.thinking = true;
-    this.messages = this.withoutPending().concat([this.pendingMessage(text, false)]);
-    this.scrollToEnd();
-    try {
-      this.applyExchange(await wellbeingCheckIn.sendText(this.sessionId, text));
-    } catch (error) {
-      this.messages = this.withoutPending();
-      this.draft = text;
-      this.handleSendError(error as Object);
-    } finally {
-      this.thinking = false;
-    }
-  }
-
-  private async toggleMic(): Promise<void> {
-    if (this.mic === Mic.Recording) {
-      await this.stopAndSendVoice();
-      return;
-    }
-    if (this.mic !== Mic.Idle || this.thinking || this.finishing) {
-      return;
-    }
-    this.notice = '';
-    await this.player.stop();
-    const access = await requestMicrophone(this.context());
-    if (access !== MicrophoneAccess.Granted) {
-      this.micDenied = access === MicrophoneAccess.Denied;
-      this.notice = 'Carely needs the microphone to hear you. You can type your answer instead.';
-      return;
-    }
-    this.micDenied = false;
-    try {
-      await this.recorder.start(this.context());
-    } catch (error) {
-      this.notice = 'Recording does not work on this phone right now. Please type your answer instead.';
-      return;
-    }
-    this.mic = Mic.Recording;
-    this.recordSeconds = 0;
-    this.recordTimer = setInterval(() => {
-      this.recordSeconds++;
-      if (this.recordSeconds >= MAX_RECORDING_SECONDS) {
-        this.stopAndSendVoice();
-      }
-    }, 1000);
-  }
-
-  private stopTimer(): void {
-    if (this.recordTimer >= 0) {
-      clearInterval(this.recordTimer);
-      this.recordTimer = -1;
-    }
-  }
-
-  private async cancelRecording(): Promise<void> {
-    this.stopTimer();
-    this.mic = Mic.Idle;
-    await this.recorder.cancel();
-  }
-
-  private async stopAndSendVoice(): Promise<void> {
-    if (this.mic !== Mic.Recording) {
-      return;
-    }
-    this.stopTimer();
-    this.mic = Mic.Sending;
-    const audio = await this.recorder.stop();
-    if (audio === undefined) {
-      this.mic = Mic.Idle;
-      this.notice = 'Nothing was recorded. Please try again, or type your answer.';
-      return;
-    }
-    this.thinking = true;
-    this.messages = this.withoutPending().concat([this.pendingMessage('Sending what you said…', true)]);
-    this.scrollToEnd();
-    try {
-      this.readAloud = this.assistant.voice;
-      this.applyExchange(await wellbeingCheckIn.sendVoice(this.sessionId, audio, VOICE_FORMAT));
-    } catch (error) {
-      this.messages = this.withoutPending();
-      this.handleSendError(error as Object);
-    } finally {
-      this.thinking = false;
-      this.mic = Mic.Idle;
-    }
-  }
-
-  private applyExchange(exchange: Exchange): void {
-    this.messages = this.withoutPending().concat([exchange.message, exchange.reply]);
-    this.safetyConcern = this.safetyConcern || exchange.safetyConcern;
-    this.scrollToEnd();
-    if (this.readAloud) {
-      this.speak(exchange.reply);
-    }
-    if (exchange.suggestFinish) {
-      // The assistant has said goodbye: the summary goes out now, as the senior was told at the start.
-      this.finish(FinishReason.Assistant);
-    }
-  }
-
-  private handleSendError(error: Object): void {
-    if (error instanceof ApiError && error.code === 'session_closed') {
-      this.phase = Phase.Intro;
-      this.load();
-    }
-    this.notice = describeCheckInError(error, 'Your message was not sent. Please try again.');
-  }
-
-  private async speak(message: ChatMessage): Promise<void> {
-    if (this.speakingId === message.id) {
-      // Also cancels a reply whose audio is still being fetched.
-      this.speakingId = '';
-      await this.player.stop();
-      return;
-    }
-    await this.player.stop();
-    this.speakingId = message.id;
-    try {
-      const audio = await wellbeingCheckIn.speech(message.text);
-      if (this.speakingId !== message.id) {
-        return;
-      }
-      await this.player.play(this.context(), audio, () => {
-        if (this.speakingId === message.id) {
-          this.speakingId = '';
-        }
-      });
-    } catch (error) {
-      if (this.speakingId === message.id) {
-        this.speakingId = '';
-      }
-      this.notice = 'Reading aloud is not available right now. The reply is shown as text.';
-    }
   }
 
   private confirmFinish(): void {
@@ -397,40 +258,44 @@ export struct WellbeingCheckIn {
       secondaryButton: {
         value: 'Finish and send',
         action: () => {
-          this.finish(FinishReason.Senior);
+          this.finish();
         }
       }
     });
   }
 
-  private async finish(reason: FinishReason): Promise<void> {
+  private async finish(): Promise<void> {
     if (this.finishing) {
       return;
     }
-    await this.cancelRecording();
+    this.stopLive();
     this.finishing = true;
     this.notice = '';
     try {
-      const report = await wellbeingCheckIn.finish(this.sessionId, reason);
-      this.sessionId = '';
-      this.messages = [];
-      if (report === undefined) {
-        this.notice = 'Nothing was sent, because there were no answers yet.';
-        this.phase = Phase.Intro;
-        return;
-      }
-      this.report = report;
-      this.removed = false;
-      await this.refreshDetails();
-      await wellbeingCheckIn.rememberShared(this.context(), report, this.guardians);
-      this.lastShared = await wellbeingCheckIn.lastShared(this.context());
-      this.phase = Phase.Done;
+      await this.completeWithReport(await wellbeingCheckIn.finish(this.sessionId, FinishReason.Senior));
     } catch (error) {
       this.notice = describeCheckInError(error as Object,
         'The summary could not be sent. Please press Finish again in a moment.');
     } finally {
       this.finishing = false;
     }
+  }
+
+  /** Shows what was shared, whether the senior pressed Finish or Carely ended the conversation. */
+  private async completeWithReport(report: WellbeingReport | undefined): Promise<void> {
+    this.sessionId = '';
+    this.messages = [];
+    if (report === undefined) {
+      this.notice = 'Nothing was sent, because there were no answers yet.';
+      this.phase = Phase.Intro;
+      return;
+    }
+    this.report = report;
+    this.removed = false;
+    await this.refreshDetails();
+    await wellbeingCheckIn.rememberShared(this.context(), report, this.guardians);
+    this.lastShared = await wellbeingCheckIn.lastShared(this.context());
+    this.phase = Phase.Done;
   }
 
   private confirmRemove(): void {
@@ -499,8 +364,7 @@ export struct WellbeingCheckIn {
             .fontSize(28)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
-          Text(this.assistant.voice ? 'Have a short chat with Carely about your day. You can speak or type.' :
-            'Have a short chat with Carely about your day by typing your answers.')
+          Text('Talk with Carely about your day. Just speak; there is nothing to press.')
             .fontSize(19)
             .fontColor($r('app.color.text_primary'))
             .opacity(0.85)
@@ -516,9 +380,8 @@ export struct WellbeingCheckIn {
             `When you finish, a short summary goes to ${this.guardians}.`)
           this.infoRow($r('sys.symbol.lock_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
             `${this.guardians} reads the summary, not the whole conversation.`)
-          this.infoRow($r('sys.symbol.message_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
-            this.assistant.simulated ? 'Demo mode: the replies are scripted, not written by AI.' :
-              'The replies come from an AI assistant (OpenAI). It cannot give medical advice.')
+          this.infoRow($r('sys.symbol.mic_fill'), $r('app.color.senior_accent'), $r('app.color.senior_tint'),
+            'Carely is an AI assistant (OpenAI) that listens and talks back. It cannot give medical advice.')
           this.infoRow($r('sys.symbol.exclamationmark_shield_fill'), $r('app.color.sos'), $r('app.color.sos_tint'),
             'If you need help now, use the red SOS button on the Home screen.')
         }
@@ -553,8 +416,8 @@ export struct WellbeingCheckIn {
           .accessibilityGroup(true)
         }
 
-        if (!this.assistant.available) {
-          NoticeBanner({ text: 'The assistant is not available right now. Please try again later.' })
+        if (!this.assistant.live) {
+          NoticeBanner({ text: 'Talking with Carely is not available right now. Please try again later.' })
         }
         if (this.notice !== '') {
           NoticeBanner({ text: this.notice })
@@ -568,11 +431,11 @@ export struct WellbeingCheckIn {
                 .height(24)
                 .color(Color.White)
             } else {
-              SymbolGlyph($r('sys.symbol.message_fill'))
+              SymbolGlyph($r('sys.symbol.mic_fill'))
                 .fontSize(22)
                 .fontColor([Color.White])
             }
-            Text(this.phase === Phase.Starting ? 'Starting…' : 'Start check-in')
+            Text(this.phase === Phase.Starting ? 'Starting…' : 'Talk with Carely')
               .fontSize(20)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
@@ -581,7 +444,7 @@ export struct WellbeingCheckIn {
         .width('100%')
         .height(64)
         .attributeModifier(new CareButtonStyle())
-        .enabled(this.assistant.available && this.phase !== Phase.Starting)
+        .enabled(this.assistant.live && this.phase !== Phase.Starting)
         .onClick(() => this.start())
       }
       .width('100%')
@@ -597,69 +460,18 @@ export struct WellbeingCheckIn {
   @Builder
   bubble(message: ChatMessage) {
     Row() {
-      Column({ space: 8 }) {
-        Text(message.text)
-          .fontSize(20)
-          .lineHeight(28)
-          .fontColor(message.id === PENDING_ID ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
-        if (message.role === ChatRole.Assistant && this.assistant.voice && message.id !== PENDING_ID) {
-          Row({ space: 6 }) {
-            SymbolGlyph(this.speakingId === message.id ? $r('sys.symbol.stop_circle_fill') :
-            $r('sys.symbol.speaker_wave_2_fill'))
-              .fontSize(20)
-              .fontColor([$r('app.color.senior_accent')])
-            Text(this.speakingId === message.id ? 'Stop reading' : 'Read aloud')
-              .fontSize(16)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.senior_accent'))
-          }
-          .constraintSize({ minHeight: 44 })
-          .padding({ right: 8 })
-          .accessibilityGroup(true)
-          .accessibilityRole(AccessibilityRoleType.BUTTON)
-          .accessibilityText(this.speakingId === message.id ? 'Stop reading aloud' : 'Read this reply aloud')
-          .onClick(() => this.speak(message))
-        }
-        if (message.role === ChatRole.Senior && message.voice && message.id !== PENDING_ID) {
-          Row({ space: 6 }) {
-            SymbolGlyph($r('sys.symbol.mic_fill'))
-              .fontSize(14)
-              .fontColor([$r('app.color.text_secondary')])
-            Text('Spoken')
-              .fontSize(14)
-              .fontColor($r('app.color.text_secondary'))
-          }
-        }
-      }
-      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-      .alignItems(HorizontalAlign.Start)
-      .constraintSize({ maxWidth: '86%' })
-      .borderRadius(20)
-      .backgroundColor(message.role === ChatRole.Senior ? $r('app.color.senior_tint') : $r('app.color.surface'))
-      .accessibilityGroup(message.role === ChatRole.Senior)
-      .accessibilityText(`${message.role === ChatRole.Senior ? 'You' : 'Carely'}: ${message.text}`)
+      Text(message.text)
+        .fontSize(20)
+        .lineHeight(28)
+        .fontColor($r('app.color.text_primary'))
+        .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+        .constraintSize({ maxWidth: '86%' })
+        .borderRadius(20)
+        .backgroundColor(message.role === ChatRole.Senior ? $r('app.color.senior_tint') : $r('app.color.surface'))
+        .accessibilityText(`${message.role === ChatRole.Senior ? 'You' : 'Carely'}: ${message.text}`)
     }
     .width('100%')
     .justifyContent(message.role === ChatRole.Senior ? FlexAlign.End : FlexAlign.Start)
-  }
-
-  @Builder
-  thinkingBubble() {
-    Row() {
-      Row({ space: 10 }) {
-        LoadingProgress()
-          .width(24)
-          .height(24)
-          .color($r('app.color.senior_accent'))
-        Text('Carely is thinking…')
-          .fontSize(18)
-          .fontColor($r('app.color.text_secondary'))
-      }
-      .padding({ left: 16, right: 16, top: 10, bottom: 10 })
-      .borderRadius(20)
-      .backgroundColor($r('app.color.surface'))
-    }
-    .width('100%')
   }
 
   @Builder
@@ -685,9 +497,70 @@ export struct WellbeingCheckIn {
     .backgroundColor($r('app.color.sos_tint'))
   }
 
+  private liveTitle(): string {
+    if (this.finishing || (this.live && this.liveState === LiveState.Finishing)) {
+      return `Sending the summary to ${this.guardians}…`;
+    }
+    if (!this.live) {
+      return 'Paused';
+    }
+    if (this.liveState === LiveState.Connecting) {
+      return 'Connecting…';
+    }
+    if (this.liveState === LiveState.SeniorSpeaking) {
+      return 'Listening…';
+    }
+    if (this.liveState === LiveState.Thinking) {
+      return 'Carely is thinking…';
+    }
+    if (this.liveState === LiveState.CarelySpeaking) {
+      return 'Carely is speaking';
+    }
+    return 'I am listening';
+  }
+
+  private liveHint(): string {
+    if (this.finishing) {
+      return '';
+    }
+    if (!this.live) {
+      return 'Tap Continue talking when you are ready.';
+    }
+    if (this.liveState === LiveState.Listening) {
+      return 'Just speak. There is no need to press anything.';
+    }
+    if (this.liveState === LiveState.SeniorSpeaking) {
+      return 'Take your time.';
+    }
+    if (this.liveState === LiveState.CarelySpeaking) {
+      return 'You can answer when she has finished.';
+    }
+    return '';
+  }
+
+  private liveAccent(): Resource {
+    if (!this.live) {
+      return $r('app.color.text_secondary');
+    }
+    if (this.liveState === LiveState.SeniorSpeaking || this.liveState === LiveState.Listening) {
+      return $r('app.color.senior_accent');
+    }
+    return this.liveState === LiveState.CarelySpeaking ? $r('app.color.success') : $r('app.color.text_secondary');
+  }
+
+  private busy(): boolean {
+    return this.finishing || (this.live && (this.liveState === LiveState.Connecting ||
+      this.liveState === LiveState.Thinking || this.liveState === LiveState.Finishing));
+  }
+
+  private listeningScale(): number {
+    return this.live && this.liveState === LiveState.SeniorSpeaking ? 1.12 : 1;
+  }
+
+  /** What is happening now, in large words, with the few controls the senior may need. */
   @Builder
-  composer() {
-    Column({ space: 10 }) {
+  livePanel() {
+    Column({ space: 12 }) {
       if (this.notice !== '') {
         NoticeBanner({ text: this.notice })
         if (this.micDenied) {
@@ -697,49 +570,59 @@ export struct WellbeingCheckIn {
             .onClick(async () => {
               if (await openMicrophoneSettings(this.context())) {
                 this.micDenied = false;
-                this.notice = '';
+                this.startLive();
               }
             })
         }
       }
 
-      if (this.finishing) {
-        Row({ space: 12 }) {
-          LoadingProgress()
-            .width(28)
-            .height(28)
-            .color($r('app.color.senior_accent'))
-          Text(`Sending the summary to ${this.guardians}…`)
-            .fontSize(18)
-            .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
+      Row({ space: 16 }) {
+        Row() {
+          if (this.busy()) {
+            LoadingProgress()
+              .width(40)
+              .height(40)
+              .color(Color.White)
+          } else {
+            SymbolGlyph(this.live && this.liveState === LiveState.CarelySpeaking ?
+            $r('sys.symbol.speaker_wave_2_fill') : $r('sys.symbol.mic_fill'))
+              .fontSize(36)
+              .fontColor([Color.White])
+          }
         }
-        .width('100%')
-        .padding(16)
-        .borderRadius(18)
-        .backgroundColor($r('app.color.surface'))
-      } else if (this.mic === Mic.Recording) {
-        Row({ space: 10 }) {
-          SymbolGlyph($r('sys.symbol.mic_fill'))
-            .fontSize(24)
-            .fontColor([$r('app.color.sos')])
-          Text(`Listening… ${elapsedLabel(this.recordSeconds)}`)
-            .fontSize(19)
-            .fontWeight(FontWeight.Medium)
+        .width(72)
+        .height(72)
+        .borderRadius(36)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor(this.liveAccent())
+        .scale({ x: this.listeningScale(), y: this.listeningScale() })
+        .animation({ duration: 250, curve: Curve.EaseOut })
+
+        Column({ space: 4 }) {
+          Text(this.liveTitle())
+            .fontSize(22)
+            .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
-            .layoutWeight(1)
-          Button('Cancel')
-            .attributeModifier(new CareButtonStyle('secondary'))
-            .onClick(() => this.cancelRecording())
+          if (this.liveHint() !== '') {
+            Text(this.liveHint())
+              .fontSize(17)
+              .fontColor($r('app.color.text_secondary'))
+          }
         }
-        .width('100%')
-        .accessibilityGroup(false)
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Start)
+      }
+      .width('100%')
+      .accessibilityGroup(true)
+      .accessibilityText(`${this.liveTitle()}. ${this.liveHint()}`)
+
+      if (!this.live && !this.finishing) {
         Button() {
           Row({ space: 10 }) {
-            SymbolGlyph($r('sys.symbol.stop_circle_fill'))
-              .fontSize(26)
+            SymbolGlyph($r('sys.symbol.mic_fill'))
+              .fontSize(24)
               .fontColor([Color.White])
-            Text('Done, send it')
+            Text('Continue talking')
               .fontSize(20)
               .fontWeight(FontWeight.Medium)
               .fontColor(Color.White)
@@ -748,70 +631,33 @@ export struct WellbeingCheckIn {
         .width('100%')
         .height(64)
         .attributeModifier(new CareButtonStyle())
-        .accessibilityText('Stop recording and send what you said')
-        .onClick(() => this.stopAndSendVoice())
-      } else {
-        if (this.assistant.voice) {
-          Button() {
-            Row({ space: 10 }) {
-              SymbolGlyph($r('sys.symbol.mic_fill'))
-                .fontSize(24)
-                .fontColor([Color.White])
-              Text(this.mic === Mic.Sending ? 'Sending…' : 'Speak')
-                .fontSize(20)
-                .fontWeight(FontWeight.Medium)
-                .fontColor(Color.White)
-            }
-          }
+        .enabled(this.assistant.live)
+        .onClick(() => this.startLive())
+      } else if (this.live && this.liveState === LiveState.CarelySpeaking) {
+        Button('Let me talk')
           .width('100%')
-          .height(64)
-          .attributeModifier(new CareButtonStyle())
-          .enabled(!this.thinking && this.mic === Mic.Idle)
-          .accessibilityText('Speak your answer. Tap again when you are done.')
-          .onClick(() => this.toggleMic())
-        }
-        Row({ space: 10 }) {
-          TextArea({ text: $$this.draft, placeholder: this.assistant.voice ? 'Or type here' : 'Type your answer' })
-            .layoutWeight(1)
-            .constraintSize({ minHeight: 56, maxHeight: 132 })
-            .attributeModifier(new CareTextAreaStyle())
-            .enterKeyType(EnterKeyType.Send)
-            .maxLength(1000)
-            .accessibilityText('Your answer')
-            .onSubmit(() => this.sendText())
-          Button() {
-            SymbolGlyph($r('sys.symbol.paperplane_fill'))
-              .fontSize(24)
-              .fontColor([Color.White])
-          }
-          .width(56)
-          .height(56)
-          .attributeModifier(new CareButtonStyle())
-          .padding(0)
-          .enabled(this.draft.trim() !== '' && !this.thinking && this.mic === Mic.Idle)
-          .accessibilityText('Send')
-          .onClick(() => this.sendText())
-        }
-        .width('100%')
-        .alignItems(VerticalAlign.Bottom)
+          .attributeModifier(new CareButtonStyle('secondary'))
+          .accessibilityText('Stop Carely and answer now')
+          .onClick(() => this.liveSession?.interrupt())
       }
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 10, bottom: 12 })
-    .backgroundColor($r('app.color.page_background'))
+    .padding(16)
+    .borderRadius(20)
+    .backgroundColor($r('app.color.surface'))
   }
 
   @Builder
-  chat() {
+  talk() {
     Column() {
       Row({ space: 12 }) {
-        Text(this.simulated ? 'Demo assistant · scripted replies' : 'Chatting with Carely')
+        Text('Talking with Carely')
           .fontSize(16)
           .fontColor($r('app.color.text_secondary'))
           .layoutWeight(1)
         Button('Finish')
           .attributeModifier(new CareButtonStyle('secondary'))
-          .enabled(!this.finishing && !this.thinking && this.mic !== Mic.Sending)
+          .enabled(!this.finishing && !(this.live && this.liveState === LiveState.Finishing))
           .accessibilityText(`Finish the check-in and send a summary to ${this.guardians}`)
           .onClick(() => this.confirmFinish())
       }
@@ -829,10 +675,7 @@ export struct WellbeingCheckIn {
         Column({ space: 12 }) {
           ForEach(this.messages, (message: ChatMessage) => {
             this.bubble(message)
-          }, (message: ChatMessage) => `${message.id}:${message.text.length}`)
-          if (this.thinking) {
-            this.thinkingBubble()
-          }
+          }, (message: ChatMessage) => message.id)
         }
         .width('100%')
         .padding({ left: 16, right: 16, top: 4, bottom: 16 })
@@ -843,7 +686,11 @@ export struct WellbeingCheckIn {
       .scrollBar(BarState.Off)
       .edgeEffect(EdgeEffect.Spring)
 
-      this.composer()
+      Column() {
+        this.livePanel()
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 8, bottom: 12 })
     }
     .width('100%')
     .height('100%')
@@ -946,8 +793,8 @@ export struct WellbeingCheckIn {
           title: 'Not connected yet',
           message: NOT_CONFIGURED_MESSAGE
         })
-      } else if (this.phase === Phase.Chat) {
-        this.chat()
+      } else if (this.phase === Phase.Talk) {
+        this.talk()
       } else if (this.phase === Phase.Done) {
         this.done()
       } else {

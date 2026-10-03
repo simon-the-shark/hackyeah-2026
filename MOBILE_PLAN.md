@@ -32,7 +32,7 @@ hackathon delivery. P2 contains the user's nice-to-haves.
 | P1 | Barcode entry | Scan known code, show candidate, confirm before saving | Camera/decoder support and catalog; manual entry for unknown codes |
 | P1 | Medication 3D reference | View/rotate a bundled model associated with a demo medication | Verified renderer, licensed asset; clearly identify generic models |
 | P1 | Easy contacts | Large predefined contact cards and system voice-call handoff | Calling support; emulator can verify handoff without proving a real call |
-| P1 | AI wellbeing chat and reporting | Voice or text check-in chat; summary sent to the guardian when it ends | OpenAI key on the backend; microphone and playback verified on the target; scripted assistant labelled as a simulation |
+| P1 | AI wellbeing chat and reporting | Hands-free spoken check-in; summary sent to the guardian when it ends | OpenAI key on the backend; microphone streaming and playback verified on the target |
 | P2 | Planned trips, v1 | Guardian defines destination/route and time window; deviation warning | Route definition and reliable location input |
 | P2 | Learned routines, v2 | Suggest frequent routes from consented history; guardian confirms | Sufficient history and evaluated false-alert behavior |
 | P2 | Voice interaction | Voice contact selection (the check-in chat already accepts speech) | Verify speech support; always retain touch controls |
@@ -163,12 +163,17 @@ Changed by user decision (2026-10-03): the assistant is a chat with OpenAI
 models called by the backend, not on-device inference. The API key lives only
 on the server; the app never talks to OpenAI directly.
 
-- The senior's Wellbeing tab opens a short check-in chat. The assistant asks
-  about mood, energy, sleep, pain and worries, one short question at a time,
-  in the senior's language. The senior can type or speak: speech is recorded
-  with Media Kit `AVRecorder` (`ohos.permission.MICROPHONE`), transcribed on the
-  backend, and replies can be read aloud (backend text-to-speech, played with
-  `AVPlayer`). Touch and text always remain available.
+- The senior's Wellbeing tab opens a short spoken check-in (user decision
+  2026-10-04: voice only, hands-free). The assistant asks about mood, energy,
+  sleep, pain and worries, one short question at a time, in the senior's
+  language. The phone streams 24 kHz PCM from Audio Kit `AudioCapturer`
+  (`ohos.permission.MICROPHONE`) over a WebSocket to the backend, which relays
+  it to the OpenAI Realtime model; replies come back as audio and play through
+  `AudioRenderer`. The model's voice-activity detection decides when the senior
+  has finished, so nothing is pressed while talking. The microphone is muted
+  while Carely speaks (half-duplex), so a loudspeaker without echo cancellation
+  cannot make her interrupt herself; "Let me talk" stops her. The transcript is
+  shown as text.
 - Before starting, the screen says that a summary goes to the guardian, that
   the guardian does not see the conversation, that replies come from an AI
   assistant that cannot give medical advice, and where SOS is.
@@ -182,9 +187,9 @@ on the server; the app never talks to OpenAI directly.
   describes an emergency it tells them to press SOS or call 112 and the app
   shows a large SOS button; it never sends an SOS itself. A possible emergency
   raises one informational `wellbeing` alert for the guardian.
-- Without an OpenAI key the assistant is shown as unavailable. A scripted demo
-  assistant (`ASSISTANT_PROVIDER=simulated`) is labelled as a simulation on
-  both phones and in the report.
+- Without an OpenAI key the voice check-in is shown as unavailable. The scripted
+  demo assistant (`ASSISTANT_PROVIDER=simulated`) has no voice, so the senior
+  screen cannot use it; it remains for backend tests and HTTP demos.
 - Guardian: Wellbeing reports list and detail (summary, ratings in words,
   attention, how the senior answered), a local notification for each new
   report while the app is open, and an Overview row. AI-written content is
@@ -211,7 +216,7 @@ other HarmonyOS Kits are not assumed until verified.
 | Barcode | Public camera/decoder support and catalog availability? | Barcode fixture/manual entry, not a claimed live scan |
 | 3D | Public renderer, asset formats, memory and licensing? | Static reference marked as such |
 | Calling/voice | System dial handoff and optional speech availability? | Show contact number if calling unsupported |
-| AI check-in | OpenAI key configured on the backend; microphone and audio playback on the target? | Scripted assistant labelled as a simulation; typing instead of speaking |
+| AI check-in | OpenAI key configured on the backend; microphone streaming and audio playback on the target? | Explicit gap: the check-in shows as unavailable |
 | Fall sensing | Sensors, sampling/background access, and reliable evaluation? | Defer; synthetic trigger is not fall detection |
 
 Fallbacks support development, but at least one real platform capability must
@@ -254,8 +259,8 @@ integration acceptance remains pending until both mobile roles run end to end.
    available. Exit: document exactly which real delivery/background paths pass.
 4. **Daily care:** schedule/persistence/reminders, barcode-assisted entry, bundled
    3D reference, contacts. Exit: demonstrate one complete medication flow.
-5. **Wellbeing:** voice/text check-in chat, automatic guardian report, guardian
-   report screens. Exit: a real model call on the target or an explicit gap.
+5. **Wellbeing:** hands-free spoken check-in, automatic guardian report, guardian
+   report screens. Exit: a real spoken conversation on the target or an explicit gap.
 6. **Stretch and handoff:** only after core paths work, add planned trips before
    learned routes; assess voice/falls. Record demo, verified installation/launch
    commands, architecture, AI disclosures, and outstanding limitations.
@@ -280,8 +285,8 @@ integration acceptance remains pending until both mobile roles run end to end.
 - Two phone instances/roles with real integration; watch standalone/relay and
   disconnect behavior if a supported watch is available.
 - Large fonts, screen reader, repeated SOS taps, unknown barcode, missing asset.
-- Check-in chat on the target: microphone permission, recording, read-aloud,
-  latency of replies and of the summary.
+- Spoken check-in on the target: microphone permission, streaming, playback,
+  end-of-speech detection for slow speakers, reply latency and the summary.
 
 ### Deterministic Demo Script
 
@@ -292,9 +297,8 @@ integration acceptance remains pending until both mobile roles run end to end.
    guardian contact action. Clearly label any local alert simulation.
 4. Show a real platform reminder, dose action, known barcode and 3D reference
    where implemented; disclose any fixtures/static fallbacks.
-5. Have a wellbeing chat (spoken if the microphone works on the target), show
-   the summary the guardian receives, and label the scripted assistant if no
-   key is configured. Show one failure path, such as an offline queued SOS.
+5. Have a spoken wellbeing conversation and show the summary the guardian
+   receives. Show one failure path, such as an offline queued SOS.
 
 Completion evidence: build output and `.hap` location, installation/launch steps,
 target/API details, test results, video, real-versus-simulated capability list,

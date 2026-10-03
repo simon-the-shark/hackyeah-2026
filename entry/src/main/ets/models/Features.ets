@@ -85,7 +85,7 @@ export const SENIOR_PROFILE: RoleProfile = new RoleProfile(
     seniorFeature('medication', 'Medication', 'Doses, reminders and medicine scanning',
       $r('sys.symbol.cross_case')),
     seniorFeature('contacts', 'Contacts', 'Call trusted people quickly', $r('sys.symbol.phone_fill')),
-    seniorFeature('wellbeing', 'Wellbeing', 'Talk or write about how you feel today', $r('sys.symbol.heart_fill'))
+    seniorFeature('wellbeing', 'Wellbeing', 'Talk with Carely about how you feel today', $r('sys.symbol.heart_fill'))
   ]
 );
 

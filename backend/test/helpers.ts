@@ -99,6 +99,7 @@ export function setup(overrides: Overrides = {}) {
     lowBatteryPercent: 15,
     assistant,
     wellbeingIdleMinutes: 20,
+    liveVoice: null,
     ...overrides,
     // Tests share one "unknown" client IP, so limits are off unless a test sets them.
     rateLimits: {

@@ -1,7 +1,6 @@
 import { common } from '@kit.AbilityKit';
-import { util } from '@kit.ArkTS';
 import { i18n } from '@kit.LocalizationKit';
-import { CheckInState, Exchange, WellbeingReport } from '../models/Wellbeing';
+import { CheckInState, WellbeingReport } from '../models/Wellbeing';
 import { deviceTimeZone } from '../platform/DeviceTimeZone';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
 import { BackendConfig } from '../providers/backend/BackendConfig';
@@ -11,7 +10,7 @@ import { apiSession } from './CareApi';
 import { guardianSessionReady, NOT_GUARDIAN_MESSAGE } from './GuardianContactsService';
 import { SafePreferences } from './SafePreferences';
 
-/** Model replies, transcription and summaries can take a while; the default 15 s is too short. */
+/** Writing the summary with a model can take a while; the default 15 s is too short. */
 const AI_TIMEOUT_MS = 60000;
 const STORE_NAME = 'carely_wellbeing';
 const REPORT_PAGE = 50;
@@ -52,25 +51,18 @@ export class WellbeingCheckIn {
     return this.api().state(this.seniorId());
   }
 
-  async start(): Promise<StartedSession> {
-    return this.api().start(this.seniorId(), deviceLanguage(), deviceTimeZone());
+  /** `voice`: the senior will talk hands-free, so the live connection says the greeting. */
+  async start(voice: boolean): Promise<StartedSession> {
+    return this.api().start(this.seniorId(), deviceLanguage(), deviceTimeZone(), voice);
   }
 
-  async sendText(sessionId: string, text: string): Promise<Exchange> {
-    return this.api().sendText(this.seniorId(), sessionId, text);
-  }
-
-  async sendVoice(sessionId: string, audio: ArrayBuffer, format: string): Promise<Exchange> {
-    const base64 = new util.Base64Helper().encodeToStringSync(new Uint8Array(audio));
-    return this.api().sendVoice(this.seniorId(), sessionId, base64, format);
+  /** The paired senior, for the live voice connection. */
+  currentSeniorId(): string {
+    return this.seniorId();
   }
 
   async finish(sessionId: string, reason: FinishReason): Promise<WellbeingReport | undefined> {
     return this.api().finish(this.seniorId(), sessionId, reason);
-  }
-
-  async speech(text: string): Promise<ArrayBuffer> {
-    return this.api().speech(this.seniorId(), text);
   }
 
   async withdraw(context: common.Context, reportId: string): Promise<void> {

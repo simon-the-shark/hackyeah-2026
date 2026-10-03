@@ -148,11 +148,12 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/seniors/:id/reports`, `GET .../reports?before=&limit=` | POST: senior, GET: guardian | Only user-approved content. `source` is `ai`, `structured` or `simulated`. The guardian list is newest first; page with `before` (an ISO time, exclusive) |
 | `GET /v1/seniors/:id/reports/:reportId` | guardian | One report (404 if unknown or withdrawn), e.g. from a `wellbeing` alert's `details.reportId` or a report push |
 | `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report (id from the POST response, or the wellbeing finish response); guardians no longer see it and are not told (204). Seniors still cannot read reports back; the app keeps its own record of what it shared |
-| `GET /v1/seniors/:id/wellbeing/session` | that senior | `{session, messages, assistant: {available, simulated, voice}, guardians: [{id, displayName}]}`. `session` is the open check-in (null if none) and `messages` its messages, oldest first. See [Wellbeing check-in](#wellbeing-check-in-openai) |
-| `POST /v1/seniors/:id/wellbeing/sessions` `{language?, timezone?}` | that senior | Starts a check-in: 201 `{session, messages}` with the assistant's greeting. `language` is a BCP 47 hint (max 35 characters), `timezone` an IANA zone. An open check-in is returned as is (200, no new greeting). 503 `assistant_unavailable`, with nothing stored, when no assistant is configured or it fails |
+| `GET /v1/seniors/:id/wellbeing/session` | that senior | `{session, messages, assistant: {available, simulated, voice, live}, guardians: [{id, displayName}]}`. `live` says hands-free voice is available (see [Live voice](#live-voice-hands-free)). `session` is the open check-in (null if none) and `messages` its messages, oldest first. See [Wellbeing check-in](#wellbeing-check-in-openai) |
+| `POST /v1/seniors/:id/wellbeing/sessions` `{language?, timezone?, voice?}` | that senior | Starts a check-in: 201 `{session, messages}` with the assistant's greeting. With `voice: true` and `assistant.live`, the check-in starts with `messages: []` and the live connection speaks the greeting. `language` is a BCP 47 hint (max 35 characters), `timezone` an IANA zone. An open check-in is returned as is (200, no new greeting). 503 `assistant_unavailable`, with nothing stored, when no assistant is configured or it fails |
 | `POST .../wellbeing/sessions/:sessionId/messages` `{text}` or `{audio, audioFormat}` | that senior | Exactly one of `text` (1 to 1000 characters) or `audio` (base64, 1 byte to 2 MB decoded) with `audioFormat` `m4a`, `mp3`, `wav`, `webm` or `ogg`. Audio is transcribed first (422 `no_speech` when nothing was recognised). 201 `{message, reply, suggestFinish, safetyConcern}`. Nothing is stored unless the reply succeeded (503 otherwise). 404 for an unknown or someone else's check-in, 409 `session_closed` after it finished, 409 `session_full` at 40 senior messages; `suggestFinish` is always true from the 30th |
 | `POST .../wellbeing/sessions/:sessionId/finish` `{reason?}` | that senior | Body optional; `reason` is `senior` (default) or `assistant` (the app finishes after a reply with `suggestFinish`). 200 `{session, report}`: the summary report is stored and pushed, the conversation deleted. Idempotent (`report` is null once withdrawn). A check-in without senior messages is deleted: `{session: null, report: null}`. 503 when the summary fails; the check-in stays open |
 | `POST /v1/seniors/:id/wellbeing/speech` `{text}` | that senior | Reads a reply aloud: 200 `audio/mpeg` (MP3, 1 to 1000 characters of text). 503 when voice is unavailable |
+| `GET .../wellbeing/sessions/:sessionId/live` (WebSocket) | that senior | Hands-free voice: upgrade with the normal bearer header, then JSON frames. See [Live voice](#live-voice-hands-free) |
 | `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 | `POST /v1/seniors/:id/vitals` `{source, heartRate: [{bpm, measuredAt}]}` | senior | Heart-rate readings from the watch, 1 to 500 per batch. `source` is required (`device`, `trace_replay` or `simulated`). `bpm` is an integer from 20 to 250. A reading more than 5 minutes ahead of server time or older than 7 days rejects the **whole** batch (400 with the offending `heartRate.<i>.measuredAt` paths). Idempotent per device and `measuredAt`: returns `{stored, duplicates, serverTime}`, 201 when anything was stored, 200 for a pure retry |
@@ -253,8 +254,9 @@ session `simulated: true`, reports `source: "simulated"` with a summary starting
 | `OPENAI_CHAT_MODEL` | `gpt-6-luna` | Replies (reasoning effort `low`) and the summary (`medium`), Responses API with strict JSON schemas |
 | `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Voice messages (`/v1/audio/transcriptions`) |
 | `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | `gpt-4o-mini-tts`, `marin` | Reading replies aloud (`/v1/audio/speech`, MP3, asked to speak slowly and clearly) |
+| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1`, `marin` | Hands-free voice (Realtime API over a WebSocket) |
 | `WELLBEING_IDLE_MINUTES` | 20 | Idle check-ins are finished by the watchdog |
-| `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (start, message, transcription, finish, speech) per senior; 429 above |
+| `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (start, message, transcription, finish, speech, each live connection and each spoken turn) per senior; 429 above |
 
 **Data flow.** Each reply sends OpenAI the system instructions (in
 `src/assistant/prompts.ts`), the senior's display name, the guardians' display
@@ -298,10 +300,77 @@ reportId, attention, reason}`). An alert raised during the conversation gains
 `details.reportId` when the report is made. Pushes never contain what the senior
 said. `wellbeing` is not an urgent kind: no reminders, no cancellation.
 
-**Unverified:** the OpenAI requests follow the current API reference but have
-not been run against the live API (no key was available); the contract is
-covered by tests with a stubbed `fetch` and a fake assistant. The prompts and
-the attention rating have not been evaluated on real conversations.
+**Unverified:** the OpenAI requests follow the current API reference; against
+the live API only a greeting has been received so far. The contract is covered
+by tests with a stubbed `fetch` and a fake assistant. Transcription, speech, the
+summary, the prompts and the attention rating have not been evaluated on real
+conversations.
+
+### Live voice (hands-free)
+
+The senior talks without pressing anything: the app streams the microphone to
+the backend over a WebSocket, the backend relays it to the OpenAI Realtime API
+(speech to speech), and the model's voice streams back. The model's semantic
+voice activity detection (eagerness `low`, so pauses are not cut off) decides
+when the senior has finished; the app holds no OpenAI logic or key. Available
+only with `ASSISTANT_PROVIDER=openai` and a key (`assistant.live`); the summary
+is still written by `OPENAI_CHAT_MODEL`.
+
+**Connecting.** `GET /v1/seniors/:id/wellbeing/sessions/:sessionId/live` with
+`Upgrade: websocket` and `Authorization: Bearer <device token>`. Only the senior,
+only an open check-in. A refused upgrade gets the usual status (401, 403, 404,
+409 `session_closed`/`session_full`, 429, 503 when live voice is not available,
+400 without the upgrade header); the WebSocket handshake carries no body, so only
+the status reaches the client. One live connection per check-in: a new one
+closes the older (1000). Start a voice check-in with `POST .../sessions
+{voice: true}` so the live connection greets; on a check-in that already has
+messages (for example after typing) the model continues the same conversation
+and waits for the senior.
+
+**Frames (JSON text).** Audio is base64 PCM16 little-endian mono at 24 kHz.
+
+| Direction | Frame | Meaning |
+| --- | --- | --- |
+| app → server | `{type: "audio", audio}` | About 100 ms of microphone audio. Dropped when malformed, over 256 KB, before `ready` or after the goodbye |
+| app → server | `{type: "interrupt"}` | Stop the current reply (the app also clears its own playback) |
+| server → app | `{type: "ready"}` | Upstream configured; start streaming. An empty check-in gets the spoken greeting right after |
+| server → app | `{type: "speech_started"}`, `{type: "speech_stopped"}` | Voice activity of the senior |
+| server → app | `{type: "audio", audio}` | Chunk of the assistant's voice, in order |
+| server → app | `{type: "audio_done"}` | The current reply's audio is complete |
+| server → app | `{type: "message", message}` | A stored message, same shape as the HTTP API: the senior's transcript (`inputMode: "voice"`) or the assistant's. Order is kept: an assistant transcript waits up to 3 s for the senior's transcript of that turn |
+| server → app | `{type: "safety_concern"}` | The model reported a possible emergency: the app should show SOS. The `wellbeing` alert is raised as for typed check-ins and the next assistant message has `safetyConcern: true` |
+| server → app | `{type: "finished", session, report}` | The model said goodbye and called `end_check_in`; after its audio, the check-in was finished exactly like `POST .../finish` with `reason: "assistant"`. Then the server closes (1000) |
+| server → app | `{type: "error", code, message}` | `assistant_unavailable` (upstream failed: close 1011; or the summary failed: close 1000 and the check-in stays open), `session_closed`, `session_full`, `rate_limited`, `time_limit`; then the server closes |
+
+Closing the socket only ends voice mode; the check-in stays open and can
+continue as text or with a new connection.
+
+**Model tools.** `report_safety_concern` (an emergency was described; the
+model keeps talking and tells the senior to press SOS or call 112; it never
+sends an SOS) and `end_check_in` (called after the goodbye). Instructions:
+`voiceInstructions` in `src/assistant/prompts.ts`.
+
+**Limits.** Each connection and each spoken turn count against
+`RATE_LIMIT_ASSISTANT_PER_HOUR`. At 40 senior messages the check-in is finished.
+A connection lasts at most 20 minutes (`time_limit`).
+
+**Privacy.** Audio passes through the backend to OpenAI and is never stored or
+logged; only the transcripts are stored, as messages of the open check-in, and
+finishing deletes them like typed ones. Each connection sends OpenAI the voice
+instructions, the senior's and guardians' display names, the language hint and
+local time, and the last 40 messages of the check-in.
+
+**Dependencies.** `ws` (with `@types/ws`): Node has no built-in WebSocket
+server, and the OpenAI connection needs an `Authorization` header, which the
+standard WebSocket client cannot send. `@hono/node-server` 2 handles the upgrade
+with `upgradeWebSocket` and a `ws` `WebSocketServer({ noServer: true })`; no
+extra Hono package is needed. Behind a reverse proxy (Coolify/Traefik), WebSocket
+upgrades must be allowed on the same host.
+
+**Verified:** one live connection against the real API: configured in about
+2 s, first greeting audio after about 3 s, the greeting stored as a message.
+Not verified: a full spoken conversation, the tools, and the safety and goodbye
+behaviour with real speech.
 
 ## Missed doses
 
@@ -363,9 +432,11 @@ device testing.
   configuration, and have not been validated for any individual. There is no
   per-guardian consent switch for heart-rate sharing yet, and no server-side
   downsampling.
-- The wellbeing assistant sends what the senior says to OpenAI (see above). Its
-  per-senior call limit is in memory like the other rate limits, and there is no
-  spending cap beyond it.
+- The wellbeing assistant sends what the senior says to OpenAI (see above),
+  including the live audio stream in hands-free voice. Its per-senior call limit
+  is in memory like the other rate limits, and there is no spending cap beyond
+  it. The live relay and its one-connection-per-check-in rule assume a single
+  backend process.
 
 ## Breaking changes
 
@@ -403,3 +474,7 @@ here with a date so the mobile side can follow.
   unchanged). New error codes `session_closed`, `session_full` (409), `no_speech`
   (422) and `assistant_unavailable` (503) come only from the new wellbeing
   endpoints.
+- 2026-10-04: `GET .../wellbeing/session` adds `assistant.live`, and
+  `POST .../wellbeing/sessions` accepts `voice` (a voice check-in starts without
+  a typed greeting when live voice is available). New WebSocket route
+  `GET .../wellbeing/sessions/:sessionId/live` (hands-free voice).

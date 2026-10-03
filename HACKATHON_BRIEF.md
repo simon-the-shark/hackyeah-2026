@@ -45,9 +45,10 @@ At least one real platform integration must be verified in the final demo.
    and let the guardian open the alert and call the senior.
 5. Show a medication reminder, its reference model, and a taken/skipped action;
    demonstrate barcode-assisted entry with a known sample medication.
-6. Have a short wellbeing chat with the assistant by speaking or typing. When it
-   ends, the backend writes a summary that is sent to the guardian; the senior
-   sees exactly what was shared and can remove it.
+6. Have a short spoken wellbeing conversation with the assistant (hands-free:
+   no buttons while talking). When it ends, the backend writes a summary that
+   is sent to the guardian; the senior sees exactly what was shared and can
+   remove it.
 
 ## Acceptance Checks
 
@@ -74,6 +75,11 @@ At least one real platform integration must be verified in the final demo.
   can write or speak (speech is transcribed by OpenAI and replies can be read
   aloud). When the chat ends, a summary report goes to the guardian
   automatically; the guardian sees the summary, not the conversation.
+- Changed by user decision (2026-10-04): the check-in is voice only and hands-free.
+  The phone streams the microphone to the backend, which relays it to the OpenAI
+  Realtime model (`gpt-realtime-2.1`); the model's voice-activity detection
+  decides when the senior has finished speaking, so nothing has to be pressed.
+  Typing and push-to-talk were removed from the senior screen.
 - Added by user decision (2026-10-03): the guardian sees the watch's own
   location and the senior's heart rate from the watch, with an alert when it
   stays outside a set range. Informational only, never a diagnosis.
