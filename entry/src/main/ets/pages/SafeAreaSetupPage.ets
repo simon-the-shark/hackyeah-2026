@@ -13,6 +13,26 @@ export struct SafeAreaSetupPage {
   @State private longitude: string = `${safetyStore.homeLongitude}`;
   @State private radius: number = safetyStore.homeRadiusMeters;
   @State private showErrors: boolean = false;
+  @State private safeAreaVersion: number = 0;
+
+  aboutToAppear(): void {
+    if (apiSession.configured() && apiSession.role === 'guardian') {
+      this.loadExistingSafeArea();
+    }
+  }
+
+  private async loadExistingSafeArea(): Promise<void> {
+    try {
+      const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.GET) as Record<string, Object>;
+      this.latitude = `${result['lat'] as number}`;
+      this.longitude = `${result['lng'] as number}`;
+      this.radius = result['radiusM'] as number;
+      this.safeAreaVersion = result['version'] as number;
+    } catch (error) {
+      // A 404 means the guardian is configuring the safe area for the first time.
+      this.safeAreaVersion = 0;
+    }
+  }
 
   private latitudeValid(): boolean {
     const value = Number(this.latitude);
@@ -31,8 +51,9 @@ export struct SafeAreaSetupPage {
     }
     if (apiSession.configured() && apiSession.role === 'guardian') {
       try {
-        await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.PUT,
-          new SafeAreaRequest(Number(this.latitude), Number(this.longitude), this.radius));
+        const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.PUT,
+          new SafeAreaRequest(Number(this.latitude), Number(this.longitude), this.radius, this.safeAreaVersion)) as Record<string, Object>;
+        this.safeAreaVersion = result['version'] as number;
       } catch (error) {
         try {
           this.getUIContext().getPromptAction().showToast({ message: 'Could not save safe area' });
@@ -181,10 +202,12 @@ class SafeAreaRequest {
   lat: number;
   lng: number;
   radiusM: number;
+  version?: number;
 
-  constructor(lat: number, lng: number, radiusM: number) {
+  constructor(lat: number, lng: number, radiusM: number, version: number) {
     this.lat = lat;
     this.lng = lng;
     this.radiusM = radiusM;
+    if (version > 0) this.version = version;
   }
 }

@@ -9,6 +9,7 @@ import { safetyRoutes } from "./routes/safety.js";
 import type { AppEnv, Deps } from "./types.js";
 
 const SENSITIVE_HEADERS = new Set(["authorization", "cookie", "proxy-authorization", "set-cookie"]);
+const SENSITIVE_BODY_FIELDS = /token|pairing.?code|authorization|password|secret|credential|api.?key/i;
 
 function headersForLog(headers: Headers): Record<string, string> {
   const result: Record<string, string> = {};
@@ -20,13 +21,32 @@ function headersForLog(headers: Headers): Record<string, string> {
 
 async function bodyForLog(message: Request | Response): Promise<string | undefined> {
   const body = await message.clone().text();
-  return body === "" ? undefined : body;
+  if (body === "") return undefined;
+  try {
+    return JSON.stringify(redactBody(JSON.parse(body)));
+  } catch {
+    return body;
+  }
+}
+
+function redactBody(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactBody);
+  if (value !== null && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nested]) => [key, SENSITIVE_BODY_FIELDS.test(key) ? "[REDACTED]" : redactBody(nested)]),
+    );
+  }
+  return value;
 }
 
 export function createApp(deps: Deps) {
   const app = new Hono<AppEnv>();
 
   app.use("*", async (c, next) => {
+    if (process.env.NODE_ENV === "production") {
+      await next();
+      return;
+    }
     const startedAt = performance.now();
     const requestBody = await bodyForLog(c.req.raw);
     await next();

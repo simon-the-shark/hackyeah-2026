@@ -24,6 +24,10 @@ pnpm dev                      # http://localhost:8787
 Scripts: `pnpm test` (needs the compose DB), `pnpm typecheck`,
 `pnpm db:generate` (after editing `src/db/schema.ts`; commit the generated SQL).
 
+Detailed HTTP request/response diagnostics are enabled only outside production
+and redact credential-like JSON fields. Set `NODE_ENV=production` to disable
+these per-request diagnostic logs.
+
 From a HarmonyOS emulator the host is not `localhost`; use the host's LAN IP
 (or an HDC port-forward) as the API base URL. Not yet verified on an emulator.
 
