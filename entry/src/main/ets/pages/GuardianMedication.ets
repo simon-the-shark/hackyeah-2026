@@ -471,10 +471,6 @@ export struct GuardianMedicationDetail {
               tint: $r('app.color.surface'),
               badgeSize: 64
             })
-            Text(this.current.name)
-              .fontSize(28)
-              .fontWeight(FontWeight.Bold)
-              .fontColor($r('app.color.text_primary'))
             Text(this.current.doseText === '' ? 'No dose entered' : this.current.doseText)
               .fontSize(18)
               .fontColor($r('app.color.text_primary'))
@@ -575,7 +571,7 @@ export struct GuardianMedicationDetail {
       .align(Alignment.Top)
       .scrollBar(BarState.Off)
     }
-    .title('Medication')
+    .title(this.current.name)
     .backgroundColor($r('app.color.page_background'))
     .onShown(() => this.refresh())
   }

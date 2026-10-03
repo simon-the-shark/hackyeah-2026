@@ -267,27 +267,10 @@ export struct MedicationToday {
   }
 
   @Builder
-  header() {
-    Column({ space: 4 }) {
-      Text('My medicines')
-        .fontSize(28)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.text_primary'))
-      Text(this.now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }))
-        .fontSize(17)
-        .fontColor($r('app.color.text_secondary'))
-    }
-    .width('100%')
-    .alignItems(HorizontalAlign.Start)
-  }
-
-  @Builder
   medicationList() {
     Refresh({ refreshing: $$this.refreshing }) {
       Scroll() {
         Column({ space: 16 }) {
-          this.header()
-
           if (this.refreshFailed) {
             Row({ space: 10 }) {
               SymbolGlyph($r('sys.symbol.wifi_slash'))

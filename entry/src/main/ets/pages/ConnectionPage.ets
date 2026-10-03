@@ -46,7 +46,6 @@ export struct ConnectionPage {
     NavDestination() {
       Scroll() {
       Column({ space: 16 }) {
-          Text(this.guardian ? 'Pair with your senior' : 'Set up this phone').fontSize(28).fontWeight(FontWeight.Bold)
           Text(this.guardian ? 'Enter the pairing code from your senior.' : 'Set up your account. Share your guardian code from Home → Settings → Pairing.')
             .fontSize(19).fontColor($r('app.color.text_secondary'))
           Text('Your name').fontSize(19).fontColor($r('app.color.text_primary'))
@@ -99,6 +98,6 @@ export struct ConnectionPage {
           }
       }.width('100%').alignItems(HorizontalAlign.Start).padding(20)
       }.width('100%').height('100%')
-    }.title('Connection').backgroundColor($r('app.color.page_background'))
+    }.title(this.guardian ? 'Pair with your senior' : 'Set up this phone').backgroundColor($r('app.color.page_background'))
   }
 }

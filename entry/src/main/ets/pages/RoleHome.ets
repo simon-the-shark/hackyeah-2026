@@ -170,15 +170,29 @@ export struct RoleHome {
     .alignItems(HorizontalAlign.Start)
   }
 
+  /** The visible screen's own heading, shown once in the title bar instead of repeated in the content. */
+  private screenTitle(): string | NavDestinationCommonTitle {
+    if (this.selectedTab === 0) {
+      return this.profile.headline;
+    }
+    const feature = this.profile.tabs[this.selectedTab - 1];
+    if (feature.id === 'medication') {
+      const title: NavDestinationCommonTitle = {
+        main: 'My medicines',
+        sub: new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })
+      };
+      return title;
+    }
+    if (feature.id === 'contacts') {
+      return 'My contacts';
+    }
+    return feature.title;
+  }
+
   @Builder
   homeContent() {
     Scroll() {
       Column({ space: 24 }) {
-        Text(this.profile.headline)
-          .fontSize(28)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
-
         if (this.profile.route === 'guardian') {
           SosBanner()
         }
@@ -273,7 +287,7 @@ export struct RoleHome {
         this.homeContent()
       }
     }
-    .title(this.selectedTab === 0 ? this.profile.label : this.profile.tabs[this.selectedTab - 1].title)
+    .title(this.screenTitle())
     .backgroundColor($r('app.color.page_background'))
     .hideBackButton(true)
     .onShown(() => this.tabRefresh++)

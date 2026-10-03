@@ -61,14 +61,17 @@ export struct SosPage {
     }
   }
 
+  private screenTitle(): string {
+    if (this.sentAt === 0) {
+      return 'Requesting help';
+    }
+    return this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' : 'SOS not sent';
+  }
+
   @Builder
   countdown() {
     Column({ space: 32 }) {
       Column({ space: 8 }) {
-        Text('Requesting help')
-          .fontSize(30)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
         Text('We will send an SOS with your last known location, if available, to the care service when the countdown ends. This does not call emergency services.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
@@ -139,10 +142,6 @@ export struct SosPage {
       .backgroundColor($r('app.color.sos_tint'))
 
       Column({ space: 8 }) {
-        Text(this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' : 'SOS not sent')
-          .fontSize(30)
-          .fontWeight(FontWeight.Bold)
-          .fontColor($r('app.color.text_primary'))
         Text(this.sendState === 'sent' ? `Care service accepted your SOS at ${formatClockTime(this.sentAt)}. This does not confirm that your guardian has seen it.` :
           this.sendState === 'sending' ? 'Please wait while we contact the care service.' : 'Could not send your SOS. Check your connection and try again.')
           .fontSize(18)
@@ -190,7 +189,7 @@ export struct SosPage {
       .padding({ left: 24, right: 24, top: 12, bottom: 32 })
       }.width('100%').height('100%')
     }
-    .title('SOS')
+    .title(this.screenTitle())
     .backgroundColor($r('app.color.page_background'))
   }
 }
