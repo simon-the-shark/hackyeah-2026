@@ -15,19 +15,23 @@ type PairingPurpose = (typeof pairingCodes.$inferSelect)["purpose"];
 /** A watch code yields a senior-role token, so it lives shorter than a guardian code. */
 const PAIRING_TTL_MS: Record<PairingPurpose, number> = { guardian: 10 * 60 * 1000, watch: 5 * 60 * 1000 };
 
-async function issueCode(deps: Deps, seniorId: string, purpose: PairingPurpose = "guardian") {
+/** Reuses the live code of this purpose; `rotate` instead expires it and always issues a new one. */
+async function issueCode(deps: Deps, seniorId: string, purpose: PairingPurpose = "guardian", rotate = false) {
   const now = deps.clock();
+  const live = and(
+    eq(pairingCodes.seniorId, seniorId),
+    eq(pairingCodes.purpose, purpose),
+    isNull(pairingCodes.usedAt),
+    gt(pairingCodes.expiresAt, now),
+  );
+  if (rotate) {
+    // A shared or leaked code must stop working the moment the senior asks for a new one.
+    await deps.db.update(pairingCodes).set({ expiresAt: now }).where(live);
+  }
   const [activeCode] = await deps.db
     .select({ code: pairingCodes.code, expiresAt: pairingCodes.expiresAt })
     .from(pairingCodes)
-    .where(
-      and(
-        eq(pairingCodes.seniorId, seniorId),
-        eq(pairingCodes.purpose, purpose),
-        isNull(pairingCodes.usedAt),
-        gt(pairingCodes.expiresAt, now),
-      ),
-    )
+    .where(live)
     .orderBy(desc(pairingCodes.expiresAt))
     .limit(1);
   if (activeCode) return { pairingCode: activeCode.code, pairingExpiresAt: activeCode.expiresAt };
@@ -279,17 +283,22 @@ export function identityRoutes(deps: Deps) {
     },
   );
 
-  app.post("/pairing/codes", async (c) => {
+  // `?rotate=true` replaces the live code (e.g. "New code" in Settings) instead of returning it again.
+  const rotateQuery = z.object({ rotate: z.enum(["true", "false"]).optional() });
+
+  app.post("/pairing/codes", validate("query", rotateQuery), async (c) => {
     const auth = c.get("auth");
     requireRole(auth, "senior");
-    return c.json(await issueCode(deps, auth.userId), 201);
+    const rotate = c.req.valid("query").rotate === "true";
+    return c.json(await issueCode(deps, auth.userId, "guardian", rotate), 201);
   });
 
   /** A short-lived code for the senior's watch; never accepted by `/pairing/claim`. No body. */
-  app.post("/pairing/watch-codes", async (c) => {
+  app.post("/pairing/watch-codes", validate("query", rotateQuery), async (c) => {
     const auth = c.get("auth");
     requireRole(auth, "senior");
-    return c.json(await issueCode(deps, auth.userId, "watch"), 201);
+    const rotate = c.req.valid("query").rotate === "true";
+    return c.json(await issueCode(deps, auth.userId, "watch", rotate), 201);
   });
 
   return app;

@@ -105,8 +105,10 @@ export class WatchVitalsApi {
       alert.kind === 'heart_rate' && alert.seniorId === seniorId);
   }
 
-  async watchCode(): Promise<RemoteWatchCode> {
-    return this.client.post<RemoteWatchCode>('/v1/pairing/watch-codes', new EmptyBody());
+  /** `rotate` expires the live code and always returns a new one. */
+  async watchCode(rotate: boolean = false): Promise<RemoteWatchCode> {
+    const path = rotate ? '/v1/pairing/watch-codes?rotate=true' : '/v1/pairing/watch-codes';
+    return this.client.post<RemoteWatchCode>(path, new EmptyBody());
   }
 
   async watches(): Promise<RemoteDevice[]> {

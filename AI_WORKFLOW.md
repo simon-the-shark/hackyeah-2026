@@ -20,6 +20,7 @@ endpoints, or confidential prompts.
 | Context7 MCP | Context7 | Current third-party library documentation when required |
 | TypeUI MCP | Hosted MCP | Design-system setup guidance consulted during the consistency audit; no package installed |
 | Cursor Agent | Composer 2.5 | SOS UX polish, pairing-aware navigation, and AI workflow logging |
+| `hmos-arkui-develop-skill` Agent Skill | Local `hackathon-skills/` | ArkUI coding rules consulted for the pairing-code fix |
 
 ## Important Prompts And Instructions
 
@@ -222,3 +223,4 @@ handled:
 - **Evaluation:** Synthetic check-ins covering factuality, missing data,
   unsupported advice and malformed outputs; verify offline inference and record
   latency/memory on the actual target. No product AI evaluation has run yet.
+| 2026-10-03 | Claude Code / Claude Opus 5.5, `hmos-arkui-develop-skill` Agent Skill | Fix "Refresh code" and generate a new pairing code | The senior's **Refresh code** (guardian code) and the watch card's **New code** returned the same code, because both endpoints reuse a live code. `POST /pairing/codes` and `POST /pairing/watch-codes` now accept `?rotate=true`, which expires the live unused code of that purpose and issues a new one; without it they behave as before. Settings loads the live code on open and its button, renamed **New code**, rotates it (the message says the old code no longer works); the watch card rotates only once a code is shown. | Backend `pnpm typecheck`; 106/106 vitest tests on the compose database, including a new test that a rotated guardian or watch code differs, becomes the live code, and that the old codes are rejected (410) by both claim endpoints. `./scripts/build-hap.sh` passed. On the API 23 phone emulator, a locally signed test build pointed at a local backend (through `hdc rport`; the URL change was reverted and not committed) was set up as a new senior. In Settings, **New code** changed the guardian code (196052 → 308314) and showed "The old code no longer works". The watch card's **New code** changed the watch code (237151 → 173743). Claiming each old code with curl returned 410 `pairing_expired`, and each new code paired. The emulator's original build and session were restored afterwards. **The deployed backend needs a redeploy:** until then it ignores `rotate` and keeps returning the old code. |
