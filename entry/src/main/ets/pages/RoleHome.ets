@@ -8,7 +8,19 @@ export struct RoleHome {
   @State selectedTab: number = 0;
 
   private open(feature: Feature): void {
-    this.navStack.pushPathByName('feature', feature);
+    if (feature.id === 'sos') {
+      this.navStack.pushPathByName('sos', null);
+    } else if (feature.id === 'safe-area') {
+      this.navStack.pushPathByName('safety', null);
+    } else if (feature.id === 'alerts') {
+      this.navStack.pushPathByName('alerts', null);
+    } else if (feature.id === 'safe-area-setup') {
+      this.navStack.pushPathByName('safe-area-setup', null);
+    } else if (feature.id === 'settings') {
+      this.navStack.pushPathByName('settings', null);
+    } else {
+      this.navStack.pushPathByName('feature', feature);
+    }
   }
 
   @Builder

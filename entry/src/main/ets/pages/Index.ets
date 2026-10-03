@@ -1,6 +1,14 @@
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { CareAlert } from '../models/Safety';
+import { AlertDetailPage, AlertsPage } from './AlertsPage';
+import { DeveloperToolsPage } from './DeveloperToolsPage';
 import { FeaturePage } from './FeaturePage';
 import { RoleHome } from './RoleHome';
+import { SafeAreaSetupPage } from './SafeAreaSetupPage';
+import { SafetyPage } from './SafetyPage';
+import { SettingsPage } from './SettingsPage';
+import { SosPage } from './SosPage';
+import { WatchSafetyPage } from './WatchSafetyPage';
 
 @Entry
 @Component
@@ -15,6 +23,22 @@ struct Index {
       RoleHome({ profile: GUARDIAN_PROFILE })
     } else if (name === 'feature') {
       FeaturePage({ feature: param as Feature })
+    } else if (name === 'sos') {
+      SosPage()
+    } else if (name === 'safety') {
+      SafetyPage()
+    } else if (name === 'alerts') {
+      AlertsPage()
+    } else if (name === 'alert-detail') {
+      AlertDetailPage({ alert: param as CareAlert })
+    } else if (name === 'watch-safety') {
+      WatchSafetyPage()
+    } else if (name === 'safe-area-setup') {
+      SafeAreaSetupPage()
+    } else if (name === 'settings') {
+      SettingsPage()
+    } else if (name === 'developer-tools') {
+      DeveloperToolsPage()
     }
   }
 
@@ -95,7 +119,7 @@ struct Index {
 
         Blank()
 
-        Text('Early preview. Features are not available yet.')
+        Text('Early preview. Simulated features are clearly marked.')
           .fontSize(14)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')

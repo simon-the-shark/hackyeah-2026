@@ -11,6 +11,10 @@
     {
       "name": "EntryAbility_label",
       "value": "Carely"
+    },
+    {
+      "name": "location_permission_reason",
+      "value": "Location is used to check the configured safe area while the app is open."
     }
   ]
 }
