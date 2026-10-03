@@ -15,11 +15,21 @@ export class FakePush implements PushProvider {
   }
 }
 
-export function setup() {
+export function setup(overrides: Partial<Deps> = {}) {
   const { db, close } = createDb(process.env.DATABASE_URL!);
   const push = new FakePush();
   const time = { now: new Date("2026-10-03T12:00:00Z") };
-  const deps: Deps = { db, push, clock: () => time.now, staleSeconds: 900, doseGraceMinutes: 60, sosRepushSeconds: 120 };
+  const deps: Deps = {
+    db,
+    push,
+    clock: () => time.now,
+    staleSeconds: 900,
+    doseGraceMinutes: 60,
+    sosRepushSeconds: 120,
+    // Tests share one "unknown" client IP, so limits are off unless a test sets them.
+    rateLimits: { bootstrapPerMinute: 1_000_000, claimFailuresPer15Min: 1_000_000 },
+    ...overrides,
+  };
   const app = createApp(deps);
 
   const call = async (method: string, path: string, token?: string, body?: unknown) => {

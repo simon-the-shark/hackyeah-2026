@@ -3,6 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { generatePairingCode, generateToken, hashToken } from "../auth/tokens.js";
 import { assertLinked, bearerToken, findAuth, requireRole } from "../auth/middleware.js";
+import { clientIp, FixedWindow, limitByIp, tooManyRequests } from "../auth/rate-limit.js";
 import { careLinks, devices, pairingCodes, statusHeartbeats, users } from "../db/schema.js";
 import { ApiError } from "../errors.js";
 import { deviceKind, uuid } from "../schemas.js";
@@ -46,9 +47,15 @@ async function createDevice(deps: Deps, userId: string, kind: "phone" | "watch")
 /** Unauthenticated bootstrap: create a senior, or claim a pairing code as a guardian. */
 export function publicIdentityRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
+  const nowMs = () => deps.clock().getTime();
+  const bootstrapLimit = new FixedWindow(deps.rateLimits.bootstrapPerMinute, 60_000, nowMs);
+  // Only failed claims count, so a family pairing several devices is never locked out, while guessing
+  // 6-digit codes is capped at a handful of tries per window.
+  const claimFailures = new FixedWindow(deps.rateLimits.claimFailuresPer15Min, 15 * 60_000, nowMs);
 
   app.post(
     "/seniors",
+    limitByIp(bootstrapLimit),
     validate("json", z.object({ displayName: z.string().min(1).max(80), deviceKind: deviceKind.default("phone") })),
     async (c) => {
       const body = c.req.valid("json");
@@ -74,6 +81,9 @@ export function publicIdentityRoutes(deps: Deps) {
     ),
     async (c) => {
       const body = c.req.valid("json");
+      const ip = clientIp(c);
+      const wait = claimFailures.blockedFor(ip);
+      if (wait > 0) throw tooManyRequests(wait);
       const now = deps.clock();
       // An already-paired guardian sends their token to link another senior to the same account.
       const token = bearerToken(c.req.header("authorization"));
@@ -86,7 +96,10 @@ export function publicIdentityRoutes(deps: Deps) {
         .set({ usedAt: now })
         .where(and(eq(pairingCodes.code, body.code), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
         .returning();
-      if (!claimed) throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+      if (!claimed) {
+        claimFailures.hit(ip);
+        throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+      }
       if (existing) {
         await deps.db
           .insert(careLinks)

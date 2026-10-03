@@ -19,6 +19,10 @@ const deps = {
   staleSeconds: config.HEARTBEAT_STALE_SECONDS,
   doseGraceMinutes: config.DOSE_MISSED_GRACE_MINUTES,
   sosRepushSeconds: config.SOS_REPUSH_SECONDS,
+  rateLimits: {
+    bootstrapPerMinute: config.RATE_LIMIT_BOOTSTRAP_PER_MINUTE,
+    claimFailuresPer15Min: config.RATE_LIMIT_CLAIM_FAILURES_PER_15MIN,
+  },
 };
 startWatchdog(deps);
 

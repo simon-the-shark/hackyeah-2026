@@ -85,7 +85,8 @@ bootstrap/pairing and stored only as a SHA-256 hash. Errors always look like
 `{"error":{"code","message","details?"}}` with codes `validation_error` (400),
 `unauthorized` (401), `forbidden` (403), `not_found` (404),
 `version_conflict` (409, `details.current` holds the stored entity),
-`pairing_expired` (410, also for unknown or used codes), `internal_error` (500).
+`pairing_expired` (410, also for unknown or used codes), `rate_limited` (429,
+`details.retryAfterSeconds`), `internal_error` (500).
 Timestamps are ISO 8601 with offset.
 
 | Method and path | Who | Notes |
@@ -200,8 +201,14 @@ device testing.
 ## Limitations
 
 - Pairing and the demo bootstrap are unauthenticated and meant for the hackathon
-  demo, not production: no rate limiting or token rotation. A lost device can be
-  revoked from another device of the same user.
+  demo, not production: no token rotation. A lost device can be revoked from
+  another device of the same user.
+- Rate limits are per client IP and in memory (one process, reset on restart):
+  `POST /v1/seniors` allows `RATE_LIMIT_BOOTSTRAP_PER_MINUTE` (default 10)
+  requests a minute, and `POST /v1/pairing/claim` blocks an IP for the rest of a
+  15-minute window after `RATE_LIMIT_CLAIM_FAILURES_PER_15MIN` (default 10)
+  failed claims. Successful claims never count. Forwarded headers are not
+  trusted, so behind a reverse proxy every client shares the proxy's limit.
 - Push retries are limited: one retry for a failed non-SOS push, and at most
   three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.
