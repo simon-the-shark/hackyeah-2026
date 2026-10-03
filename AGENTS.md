@@ -1,6 +1,9 @@
 # Fixed Technical Scope
 
-The product concept has not been selected yet, but the core development stack is fixed.
+The selected product is an elderly-care companion with senior phone/watch
+experiences and a guardian experience. See `HACKATHON_BRIEF.md` for scope and
+`MOBILE_PLAN.md` for implementation priorities. Backend implementation is a
+separate workstream. The core development stack is fixed.
 
 ## Hackathon Submission
 

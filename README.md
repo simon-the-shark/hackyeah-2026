@@ -1,7 +1,23 @@
 # HackYeah 2026
 
-An OpenHarmony / Oniro hackathon application built with ArkTS, ArkUI, and the
-Stage model. The product concept is not selected yet.
+An elderly-care companion for OpenHarmony / Oniro, built with ArkTS, ArkUI,
+and the Stage model. It helps an older person stay within a designated safe
+area, ask for help, follow a medication schedule, and contact trusted people.
+A guardian receives alerts and wellbeing updates. The smartwatch is the
+primary intended SOS surface; a phone provides the full companion experience.
+
+## Product Scope And Status
+
+- Core: safe-area exit alerts, SOS on phone/watch, medication reminders,
+  barcode-assisted medication entry, 3D medication references, and easy calling.
+- Planned intelligence: an on-device wellbeing assistant and guardian summaries.
+- Stretch: guardian-defined trips, learned routine deviations, voice interaction,
+  and fall detection.
+
+The repository currently contains the starter application and a verified API 24
+build, not these product features. Watch support, background monitoring, remote
+push delivery, and local LLM execution require feasibility verification.
+Backend implementation is owned by a separate parallel workstream.
 
 ## Requirements
 
@@ -43,6 +59,9 @@ and changes to `Welcome` when tapped.
 ## Project Documents
 
 - `HACKATHON_BRIEF.md` records the agreed product scope and demo path.
+- `MOBILE_PLAN.md` defines mobile priorities, screens, architecture, feasibility
+  gates, integration needs, and acceptance tests.
+- `docs/TECH_STACK.md` records platform choices and unresolved capabilities.
 - `AI_WORKFLOW.md` records AI-assisted development and validation.
 - `hackathon-resources/` contains challenge-provided emulator and DevEco CLI
   guidance.
