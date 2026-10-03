@@ -25,8 +25,9 @@ Push Kit** (the DevEco Studio emulator supports push, per
 | Medication (P1) | Schedule CRUD (guardian-edited, versioned). Dose records (taken/skipped/snoozed, idempotent by occurrence ID). Optional "dose missed" event → alert. Small **synthetic** barcode catalog (`barcode → name, form, modelAssetKey`) | Local reminders, barcode scanning (camera), 3D rendering of bundled models |
 | Easy contacts (P1) | Contacts CRUD (guardian-managed, synced) | Dialing, voice call handoff, speech |
 | AI assistant (P1) | Stores **user-approved** reports only (structured fields plus summary, with `source: ai\|structured\|simulated`). Guardian reads them | All inference (on-device LLM), raw check-ins, prompts, history |
-| Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event | Route tracking, deviation detection |
-| Learned routines v2, fall detection (P2) | Out of scope for now | Out of scope / feasibility spike |
+| Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event. Stores an optional route and corridor | Route tracking, deviation detection |
+| Learned routines v2 (P2) | Stores device-computed routine suggestions (summary only, never raw history). Guardian accepts or rejects them into versioned routines. The watchdog turns each routine into daily planned trips | Learning routines from consented history on the device, suggesting them |
+| Fall detection (P2) | Accepts `fall_detected` events, which must declare their `source`. Raises an urgent `fall` alert, which can be cancelled | Sensor feasibility spike, detection, false-positive evaluation |
 
 Principle: the backend never evaluates raw location or health data. It stores configuration,
 relays events and delivers alerts, which keeps private data on the device as the mobile plan requires.
@@ -172,7 +173,7 @@ The gaps against `MOBILE_PLAN.md` were tracked as tiers A to C, one commit each,
 - An existing guardian can claim further seniors; care links can be deleted; devices can be listed and revoked (soft, events kept).
 - Dose schedule view with statuses; per-medication `missedGraceMinutes` and `maxSnoozes`.
 - Guardian overview, emergency contacts, and a config bundle with an ETag.
-- Report sharing controls (`GET /me/reports`, withdraw), catalog name search, and senior account deletion.
+- Report withdrawal by the senior (seniors still cannot read reports back), catalog name search, and senior account deletion.
 - Fall alerts (explicit `source` required) and a generic `cancel` event.
 - Trip routes and corridor; learned routines (device suggestions, guardian-confirmed, materialized into daily trips by the watchdog).
 - Per-IP rate limits on bootstrap and failed pairing claims; low-battery alerts per device; `pnpm demo`.

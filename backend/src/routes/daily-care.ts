@@ -153,7 +153,7 @@ export function dailyCareRoutes(deps: Deps) {
     return c.json(row, 201);
   });
 
-  // Guardian list. The senior reads their own shared reports through /me/reports instead.
+  // Guardian-only: the senior submits reports but does not read them back.
   app.get(
     "/seniors/:seniorId/reports",
     validate("param", seniorParam),
@@ -174,20 +174,10 @@ export function dailyCareRoutes(deps: Deps) {
     },
   );
 
-  /** Sharing controls: the senior can see exactly what was shared with guardians. */
-  app.get("/me/reports", async (c) => {
-    const auth = c.get("auth");
-    requireRole(auth, "senior");
-    const items = await db
-      .select()
-      .from(reports)
-      .where(eq(reports.seniorId, auth.userId))
-      .orderBy(desc(reports.createdAt))
-      .limit(100);
-    return c.json({ items });
-  });
-
-  /** ...and withdraw a report; it disappears for guardians too. */
+  /**
+   * Sharing control: the senior withdraws a report they shared (its id comes from the POST response);
+   * it disappears for guardians too. The senior's app keeps its own record of what it shared.
+   */
   app.delete(
     "/seniors/:seniorId/reports/:id",
     validate("param", z.object({ seniorId: uuid, id: uuid })),

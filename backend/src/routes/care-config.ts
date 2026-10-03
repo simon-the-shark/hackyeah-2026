@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
@@ -7,6 +7,7 @@ import { contacts, medications, routines, safeAreas, trips } from "../db/schema.
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, lat, lng, phone, radiusM, seniorParam, timeOfDay, timezone, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
+import { corridorField, corridorNeedsRoute, needsStoredRoute, routeField, routeUpdate } from "./route-fields.js";
 import { validate } from "../validate.js";
 
 const conflict = (current: unknown) =>
@@ -39,16 +40,13 @@ const tripBody = z
     destLat: lat,
     destLng: lng,
     radiusM,
-    route: z.array(z.object({ lat, lng })).min(2).max(200).optional(),
-    corridorM: z.number().int().min(20).max(2000).optional(),
+    route: routeField,
+    corridorM: corridorField,
     windowStart: isoDate,
     windowEnd: isoDate,
   })
   .refine((t) => t.windowEnd > t.windowStart, { message: "windowEnd must be after windowStart", path: ["windowEnd"] })
-  .refine((t) => t.corridorM === undefined || t.route !== undefined, {
-    message: "corridorM needs a route",
-    path: ["corridorM"],
-  });
+  .refine(corridorNeedsRoute.check, corridorNeedsRoute.message);
 
 /** Guardian-managed configuration. Reads: linked senior or guardian. Writes: guardian. */
 export function careConfigRoutes(deps: Deps) {
@@ -289,9 +287,13 @@ export function careConfigRoutes(deps: Deps) {
     requireRole(auth, "guardian");
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, auth, seniorId);
+    const body = c.req.valid("json");
+    if (body.corridorM != null && body.route == null) {
+      throw new ApiError(400, "validation_error", "corridorM needs a route");
+    }
     const [row] = await db
       .insert(trips)
-      .values({ seniorId, ...c.req.valid("json") })
+      .values({ seniorId, ...body })
       .returning();
     return c.json(row, 201);
   });
@@ -305,16 +307,23 @@ export function careConfigRoutes(deps: Deps) {
       requireRole(auth, "guardian");
       const { seniorId, id } = c.req.valid("param");
       await assertLinked(db, auth, seniorId);
-      const { version: v, ...fields } = c.req.valid("json");
+      const { version: v, route, corridorM, ...fields } = c.req.valid("json");
       const [updated] = await db
         .update(trips)
-        // Full replacement: an omitted route or corridor is cleared.
-        .set({ ...fields, route: fields.route ?? null, corridorM: fields.corridorM ?? null, version: sql`${trips.version} + 1` })
-        .where(and(eq(trips.id, id), eq(trips.seniorId, seniorId), eq(trips.version, v)))
+        .set({ ...fields, ...routeUpdate({ route, corridorM }), version: sql`${trips.version} + 1` })
+        .where(
+          and(
+            eq(trips.id, id),
+            eq(trips.seniorId, seniorId),
+            eq(trips.version, v),
+            needsStoredRoute({ route, corridorM }) ? isNotNull(trips.route) : undefined,
+          ),
+        )
         .returning();
       if (updated) return c.json(updated);
       const [current] = await db.select().from(trips).where(and(eq(trips.id, id), eq(trips.seniorId, seniorId)));
       if (!current) throw notFound("Trip");
+      if (current.version === v) throw new ApiError(400, "validation_error", "corridorM needs a route");
       throw conflict(current);
     },
   );

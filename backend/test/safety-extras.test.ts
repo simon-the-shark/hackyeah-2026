@@ -252,15 +252,29 @@ describe("trip routes", () => {
     { lat: 50.07, lng: 19.94 },
   ];
 
-  it("stores an optional route and corridor, and clears them on a PUT without them", async () => {
+  it("keeps the route when an update omits it, and clears it only on an explicit null", async () => {
     const { seniorId, seniorToken, guardianToken } = await t.pair();
     const base = `/v1/seniors/${seniorId}/trips`;
     const created = await t.call("POST", base, guardianToken, { ...trip, route, corridorM: 150 });
     expect(created.status).toBe(201);
     expect((await t.call("GET", base, seniorToken)).body.items[0].route).toHaveLength(3);
-    const updated = await t.call("PUT", `${base}/${created.body.id}`, guardianToken, { ...trip, version: 1 });
-    expect(updated.body.route).toBeNull();
-    expect(updated.body.corridorM).toBeNull();
+    const path = `${base}/${created.body.id}`;
+    // Editing only the window must not drop the route.
+    const moved = await t.call("PUT", path, guardianToken, { ...trip, windowEnd: "2026-10-03T14:00:00Z", version: 1 });
+    expect(moved.body.route).toHaveLength(3);
+    expect(moved.body.corridorM).toBe(150);
+    const cleared = await t.call("PUT", path, guardianToken, { ...trip, route: null, version: 2 });
+    expect(cleared.body.route).toBeNull();
+    expect(cleared.body.corridorM).toBeNull();
+  });
+
+  it("rejects a corridor on a trip with no stored route", async () => {
+    const { seniorId, guardianToken } = await t.pair();
+    const base = `/v1/seniors/${seniorId}/trips`;
+    const created = (await t.call("POST", base, guardianToken, trip)).body;
+    const res = await t.call("PUT", `${base}/${created.id}`, guardianToken, { ...trip, corridorM: 100, version: 1 });
+    expect(res.status).toBe(400);
+    expect((await t.call("PUT", `${base}/${created.id}`, guardianToken, { ...trip, version: 2 })).status).toBe(409);
   });
 
   it("rejects a corridor without a route and a one-point route", async () => {
@@ -268,6 +282,7 @@ describe("trip routes", () => {
     const base = `/v1/seniors/${seniorId}/trips`;
     expect((await t.call("POST", base, guardianToken, { ...trip, corridorM: 150 })).status).toBe(400);
     expect((await t.call("POST", base, guardianToken, { ...trip, route: [route[0]] })).status).toBe(400);
+    expect((await t.call("POST", base, guardianToken, { ...trip, route: null, corridorM: 150 })).status).toBe(400);
   });
 });
 

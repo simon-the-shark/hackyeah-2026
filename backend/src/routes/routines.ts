@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
@@ -6,6 +6,7 @@ import { routines, routineSuggestions } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, lat, lng, radiusM, seniorParam, timeOfDay, timezone, uuid } from "../schemas.js";
 import { dropUpcomingRoutineTrips } from "../services/routines.js";
+import { corridorField, corridorNeedsRoute, routeField, needsStoredRoute, routeUpdate } from "./route-fields.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -18,7 +19,7 @@ const recurringTrip = z
     destLat: lat,
     destLng: lng,
     radiusM,
-    route: z.array(z.object({ lat, lng })).min(2).max(200).optional(),
+    route: routeField,
     weekdays: z
       .array(z.number().int().min(1).max(7))
       .min(1)
@@ -31,9 +32,9 @@ const recurringTrip = z
   .refine((r) => r.endTime > r.startTime, { message: "endTime must be after startTime on the same day", path: ["endTime"] });
 
 const suggestionBody = recurringTrip.and(z.object({ source: eventSource }));
-const routineBody = recurringTrip.and(
-  z.object({ corridorM: z.number().int().min(20).max(2000).optional(), active: z.boolean().default(true) }),
-);
+const routineBody = recurringTrip
+  .and(z.object({ corridorM: corridorField, active: z.boolean().default(true) }))
+  .refine(corridorNeedsRoute.check, corridorNeedsRoute.message);
 
 /**
  * Learned routines (P2 v2). The senior device suggests a routine computed on the device; a guardian
@@ -151,9 +152,13 @@ export function routineRoutes(deps: Deps) {
     requireRole(auth, "guardian");
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, auth, seniorId);
+    const body = c.req.valid("json");
+    if (body.corridorM != null && body.route == null) {
+      throw new ApiError(400, "validation_error", "corridorM needs a route");
+    }
     const [row] = await db
       .insert(routines)
-      .values({ seniorId, ...c.req.valid("json"), createdAt: deps.clock() })
+      .values({ seniorId, ...body, createdAt: deps.clock() })
       .returning();
     return c.json(row, 201);
   });
@@ -167,16 +172,18 @@ export function routineRoutes(deps: Deps) {
       requireRole(auth, "guardian");
       const { seniorId, id } = c.req.valid("param");
       await assertLinked(db, auth, seniorId);
-      const { version: v, ...fields } = c.req.valid("json");
+      const { version: v, route, corridorM, ...fields } = c.req.valid("json");
       const [updated] = await db
         .update(routines)
-        .set({
-          ...fields,
-          route: fields.route ?? null,
-          corridorM: fields.corridorM ?? null,
-          version: sql`${routines.version} + 1`,
-        })
-        .where(and(eq(routines.id, id), eq(routines.seniorId, seniorId), eq(routines.version, v)))
+        .set({ ...fields, ...routeUpdate({ route, corridorM }), version: sql`${routines.version} + 1` })
+        .where(
+          and(
+            eq(routines.id, id),
+            eq(routines.seniorId, seniorId),
+            eq(routines.version, v),
+            needsStoredRoute({ route, corridorM }) ? isNotNull(routines.route) : undefined,
+          ),
+        )
         .returning();
       if (updated) {
         // Upcoming generated trips are rebuilt from the new schedule on the next watchdog pass.
@@ -185,6 +192,7 @@ export function routineRoutes(deps: Deps) {
       }
       const [current] = await db.select().from(routines).where(and(eq(routines.id, id), eq(routines.seniorId, seniorId)));
       if (!current) throw notFound("Routine");
+      if (current.version === v) throw new ApiError(400, "validation_error", "corridorM needs a route");
       throw new ApiError(409, "version_conflict", "Entity was modified; refetch and retry", { current });
     },
   );

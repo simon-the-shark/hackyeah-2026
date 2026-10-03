@@ -9,7 +9,7 @@ const schema = z
     PUSH_KIT_KEY_FILE: z.string().optional(),
     HEARTBEAT_STALE_SECONDS: z.coerce.number().int().positive().default(900),
     DOSE_MISSED_GRACE_MINUTES: z.coerce.number().int().positive().default(60),
-    SOS_REPUSH_SECONDS: z.coerce.number().int().positive().default(120),
+    SOS_REPUSH_SECONDS: z.coerce.number().int().positive().default(300),
     WATCHDOG_INTERVAL_MS: z.coerce.number().int().min(1000).default(30_000),
     LOW_BATTERY_PERCENT: z.coerce.number().int().min(1).max(90).default(15),
     RATE_LIMIT_BOOTSTRAP_PER_MINUTE: z.coerce.number().int().positive().default(10),
