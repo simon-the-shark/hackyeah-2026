@@ -59,7 +59,7 @@ export function localDateIn(instant: Date, timeZone: string) {
   return `${p.y}-${String(p.mo).padStart(2, "0")}-${String(p.d).padStart(2, "0")}`;
 }
 
-function addDays(localDate: string, days: number) {
+export function addDays(localDate: string, days: number) {
   const [y, mo, d] = localDate.split("-").map(Number) as [number, number, number];
   return new Date(Date.UTC(y, mo - 1, d) + days * DAY_MS).toISOString().slice(0, 10);
 }

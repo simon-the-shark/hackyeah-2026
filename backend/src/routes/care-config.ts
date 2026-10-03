@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { contacts, medications, safeAreas, trips } from "../db/schema.js";
+import { contacts, medications, routines, safeAreas, trips } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, lat, lng, phone, radiusM, seniorParam, timeOfDay, timezone, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
@@ -59,7 +59,7 @@ export function careConfigRoutes(deps: Deps) {
   app.get("/seniors/:seniorId/config", validate("param", seniorParam), async (c) => {
     const { seniorId } = c.req.valid("param");
     await assertLinked(db, c.get("auth"), seniorId);
-    const [[safeArea], contactRows, medicationRows, tripRows] = await Promise.all([
+    const [[safeArea], contactRows, medicationRows, tripRows, routineRows] = await Promise.all([
       db.select().from(safeAreas).where(eq(safeAreas.seniorId, seniorId)),
       db.select().from(contacts).where(eq(contacts.seniorId, seniorId)).orderBy(asc(contacts.sortOrder), asc(contacts.name)),
       db.select().from(medications).where(eq(medications.seniorId, seniorId)).orderBy(asc(medications.name), asc(medications.id)),
@@ -68,8 +68,19 @@ export function careConfigRoutes(deps: Deps) {
         .from(trips)
         .where(and(eq(trips.seniorId, seniorId), inArray(trips.status, ["planned", "active"])))
         .orderBy(asc(trips.windowStart), asc(trips.id)),
+      db
+        .select()
+        .from(routines)
+        .where(and(eq(routines.seniorId, seniorId), eq(routines.active, true)))
+        .orderBy(asc(routines.startTime), asc(routines.id)),
     ]);
-    const config = { safeArea: safeArea ?? null, contacts: contactRows, medications: medicationRows, trips: tripRows };
+    const config = {
+      safeArea: safeArea ?? null,
+      contacts: contactRows,
+      medications: medicationRows,
+      trips: tripRows,
+      routines: routineRows,
+    };
     // Content hash: any create, edit or delete changes it, and an unchanged config can be skipped with 304.
     const configVersion = createHash("sha256").update(JSON.stringify(config)).digest("hex").slice(0, 16);
     const etag = `"${configVersion}"`;

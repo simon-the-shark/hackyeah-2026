@@ -47,6 +47,7 @@ export const monitoringStateEnum = pgEnum("monitoring_state", [
 ]);
 export const reportSourceEnum = pgEnum("report_source", ["ai", "structured", "simulated"]);
 export const tripStatusEnum = pgEnum("trip_status", ["planned", "active", "completed", "missed"]);
+export const suggestionStatusEnum = pgEnum("suggestion_status", ["pending", "accepted", "rejected"]);
 /** Where an event or heartbeat came from; anything but `device` is a labelled simulation. */
 export const eventSourceEnum = pgEnum("event_source", ["device", "trace_replay", "simulated"]);
 
@@ -302,8 +303,68 @@ export const trips = pgTable(
     windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
     status: tripStatusEnum("status").notNull().default("planned"),
     version: integer("version").notNull().default(1),
+    /** Set when the trip was generated from a routine, for that routine's local date. */
+    routineId: uuid("routine_id").references(() => routines.id, { onDelete: "set null" }),
+    localDate: text("local_date"),
   },
-  (t) => [index("trips_senior_idx").on(t.seniorId)],
+  (t) => [
+    index("trips_senior_idx").on(t.seniorId),
+    uniqueIndex("trips_routine_date_idx").on(t.routineId, t.localDate),
+  ],
+);
+
+/** Shared shape of a recurring trip: where to, on which weekdays, and the local time window. */
+const recurringTripColumns = () => ({
+  label: text("label").notNull(),
+  destLat: doublePrecision("dest_lat").notNull(),
+  destLng: doublePrecision("dest_lng").notNull(),
+  radiusM: integer("radius_m").notNull(),
+  route: jsonb("route").$type<{ lat: number; lng: number }[]>(),
+  /** ISO weekdays, 1 = Monday ... 7 = Sunday. */
+  weekdays: jsonb("weekdays").$type<number[]>().notNull(),
+  /** Local HH:MM window in `timezone`; the end is on the same day. */
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  timezone: text("timezone").notNull(),
+});
+
+/**
+ * A routine the senior's device inferred on the device from consented history. Only this summary
+ * is sent, never the raw location history. A guardian accepts or rejects it.
+ */
+export const routineSuggestions = pgTable(
+  "routine_suggestions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ...recurringTripColumns(),
+    source: eventSourceEnum("source").notNull().default("device"),
+    status: suggestionStatusEnum("status").notNull().default("pending"),
+    createdAt: createdAt(),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decidedBy: uuid("decided_by").references(() => users.id, { onDelete: "set null" }),
+  },
+  (t) => [index("routine_suggestions_senior_idx").on(t.seniorId, t.createdAt)],
+);
+
+/** Guardian-confirmed recurring trip; the watchdog creates one trip per matching local day. */
+export const routines = pgTable(
+  "routines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ...recurringTripColumns(),
+    corridorM: integer("corridor_m"),
+    active: boolean("active").notNull().default(true),
+    suggestionId: uuid("suggestion_id").references(() => routineSuggestions.id, { onDelete: "set null" }),
+    version: integer("version").notNull().default(1),
+    createdAt: createdAt(),
+  },
+  (t) => [index("routines_senior_idx").on(t.seniorId)],
 );
 
 /** Synthetic demo data only; barcodes identify a candidate, never a prescription. */
