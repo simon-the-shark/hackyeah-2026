@@ -1,7 +1,7 @@
-import preferences from '@ohos.data.preferences';
-import common from '@ohos.app.ability.common';
+import { common } from '@kit.AbilityKit';
 import { http } from '@kit.NetworkKit';
 import { apiSession, careApi, SafetyEventRequest } from './CareApi';
+import { SafePreferences } from './SafePreferences';
 
 const STORE_NAME = 'carely_pending_events';
 const QUEUE_KEY = 'queue';
@@ -20,36 +20,41 @@ class QueuedSafetyEvent {
   }
 }
 
+/**
+ * Holds safe-area exit events that could not reach the care service and replays
+ * them later. Event ids are reused, so a replay that the backend already accepted
+ * is deduplicated instead of alerting the guardian twice.
+ */
 export class PendingSafetyEvents {
-  private readQueue(context: common.Context): QueuedSafetyEvent[] {
-    const prefs = preferences.getPreferencesSync(context, { name: STORE_NAME });
-    const raw = prefs.getSync(QUEUE_KEY, '[]') as string;
+  private readonly store = new SafePreferences(STORE_NAME);
+
+  private async readQueue(context: common.Context): Promise<QueuedSafetyEvent[]> {
+    const raw = await this.store.getString(context, QUEUE_KEY, '[]');
     try {
       const parsed = JSON.parse(raw) as QueuedSafetyEvent[];
       return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
+      console.error(`[PendingSafetyEvents] queue unreadable: ${JSON.stringify(error)}`);
       return [];
     }
   }
 
-  private writeQueue(context: common.Context, queue: QueuedSafetyEvent[]): void {
-    const prefs = preferences.getPreferencesSync(context, { name: STORE_NAME });
-    prefs.putSync(QUEUE_KEY, JSON.stringify(queue));
-    prefs.flushSync();
+  private async writeQueue(context: common.Context, queue: QueuedSafetyEvent[]): Promise<void> {
+    await this.store.putStrings(context, { 'queue': JSON.stringify(queue) });
   }
 
-  enqueue(context: common.Context, event: SafetyEventRequest): void {
-    const queue = this.readQueue(context);
+  async enqueue(context: common.Context, event: SafetyEventRequest): Promise<void> {
+    const queue = await this.readQueue(context);
     const locationJson = event.location === undefined ? '' : JSON.stringify(event.location);
     queue.push(new QueuedSafetyEvent(event.id, event.type, event.occurredAt, locationJson));
-    this.writeQueue(context, queue);
+    await this.writeQueue(context, queue);
   }
 
   async flush(context: common.Context): Promise<void> {
     if (!apiSession.configured() || apiSession.role !== 'senior') {
       return;
     }
-    const queue = this.readQueue(context);
+    const queue = await this.readQueue(context);
     if (queue.length === 0) {
       return;
     }
@@ -65,7 +70,7 @@ export class PendingSafetyEvents {
         remaining.push(item);
       }
     }
-    this.writeQueue(context, remaining);
+    await this.writeQueue(context, remaining);
   }
 }
 

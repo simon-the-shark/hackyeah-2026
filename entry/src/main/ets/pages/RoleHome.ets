@@ -9,11 +9,16 @@ export struct RoleHome {
   profile: RoleProfile = SENIOR_PROFILE;
   @State selectedTab: number = 0;
 
+  /** Clears pairing, then returns to setup. Signing out must always take effect. */
+  private async signOut(): Promise<void> {
+    await apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
+    AppStorage.set('paired', false);
+    this.navStack.clear();
+  }
+
   private open(feature: Feature): void {
     if (feature.id === 'sign-out') {
-      apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
-      AppStorage.set('paired', false);
-      this.navStack.clear();
+      this.signOut();
     } else if (feature.id === 'sos') {
       this.navStack.pushPathByName('sos', null);
     } else if (feature.id === 'safe-area') {

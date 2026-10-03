@@ -26,6 +26,24 @@ export struct SafetyPage {
     return this.getUIContext().getHostContext() as common.UIAbilityContext;
   }
 
+  /**
+   * The guardian owns the safe area, so the senior's phone must monitor the same
+   * boundary the backend raises alerts against. Without this the app geofences
+   * against its local default while the backend uses the configured area, which
+   * produces false exits.
+   */
+  private async loadSafeAreaFromBackend(): Promise<void> {
+    try {
+      const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.GET) as Record<string, Object>;
+      if (safetyStore.configureHomeCircle(result['lat'] as number, result['lng'] as number, result['radiusM'] as number)) {
+        this.syncFromStore();
+      }
+    } catch (error) {
+      // No stored area yet, or the service is unreachable: keep the current boundary.
+      console.error(`[SafetyPage] safe area load failed: ${JSON.stringify(error)}`);
+    }
+  }
+
   private async reportLocation(latitude: number, longitude: number, accuracy: number, exited: boolean): Promise<void> {
     if (!apiSession.configured() || apiSession.role !== 'senior') {
       return;
@@ -42,7 +60,7 @@ export struct SafetyPage {
         try {
           await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
         } catch (postError) {
-          pendingSafetyEvents.enqueue(context, event);
+          await pendingSafetyEvents.enqueue(context, event);
           this.errorMessage = 'Left the safe area, but the alert is queued until the care service is reachable.';
         }
       } else {
@@ -52,7 +70,7 @@ export struct SafetyPage {
       if (exited) {
         const event = new SafetyEventRequest(generateEventId(), 'area_exit');
         event.location = point;
-        pendingSafetyEvents.enqueue(context, event);
+        await pendingSafetyEvents.enqueue(context, event);
         this.errorMessage = 'Left the safe area. The alert is saved and will be sent when connection returns.';
       } else {
         this.errorMessage = 'Location was checked, but could not reach the care service.';
@@ -312,6 +330,7 @@ export struct SafetyPage {
     .onShown(() => {
       this.syncFromStore();
       if (apiSession.configured() && apiSession.role === 'senior') {
+        this.loadSafeAreaFromBackend();
         pendingSafetyEvents.flush(this.hostContext());
       }
     })

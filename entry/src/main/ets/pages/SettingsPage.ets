@@ -35,6 +35,13 @@ export struct SettingsPage {
     safetyStore.developerMode = enabled;
   }
 
+  /** Clears pairing, then returns to setup. Signing out must always take effect. */
+  private async signOut(): Promise<void> {
+    await apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
+    AppStorage.set('paired', false);
+    this.navStack.clear();
+  }
+
   build() {
     NavDestination() {
       Scroll() {
@@ -81,9 +88,7 @@ export struct SettingsPage {
             .fontColor($r('app.color.sos'))
             .backgroundColor($r('app.color.sos_tint'))
             .onClick(() => {
-              apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
-              AppStorage.set('paired', false);
-              this.navStack.clear();
+              this.signOut();
             })
           Column({ space: 8 }) {
             sectionTitle('Advanced')
