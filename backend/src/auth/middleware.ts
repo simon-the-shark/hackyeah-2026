@@ -6,17 +6,24 @@ import { ApiError } from "../errors.js";
 import type { AppEnv, Auth, Deps } from "../types.js";
 import { hashToken } from "./tokens.js";
 
+/** Resolves a bearer token to its device and user, or null. */
+export async function findAuth(db: Db, token: string): Promise<Auth | null> {
+  const [row] = await db
+    .select({ deviceId: devices.id, userId: users.id, role: users.role })
+    .from(devices)
+    .innerJoin(users, eq(users.id, devices.userId))
+    .where(eq(devices.tokenHash, hashToken(token)))
+    .limit(1);
+  return row ?? null;
+}
+
+export const bearerToken = (header: string | undefined) => /^Bearer (.+)$/.exec(header ?? "")?.[1];
+
 export const authenticate = (deps: Pick<Deps, "db" | "clock">) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    const header = c.req.header("authorization") ?? "";
-    const match = /^Bearer (.+)$/.exec(header);
-    if (!match?.[1]) throw new ApiError(401, "unauthorized", "Missing bearer token");
-    const [row] = await deps.db
-      .select({ deviceId: devices.id, userId: users.id, role: users.role })
-      .from(devices)
-      .innerJoin(users, eq(users.id, devices.userId))
-      .where(eq(devices.tokenHash, hashToken(match[1])))
-      .limit(1);
+    const token = bearerToken(c.req.header("authorization"));
+    if (!token) throw new ApiError(401, "unauthorized", "Missing bearer token");
+    const row = await findAuth(deps.db, token);
     if (!row) throw new ApiError(401, "unauthorized", "Invalid token");
     await deps.db.update(devices).set({ lastSeenAt: deps.clock() }).where(eq(devices.id, row.deviceId));
     c.set("auth", row);

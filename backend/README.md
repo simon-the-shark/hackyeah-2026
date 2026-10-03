@@ -93,6 +93,8 @@ Timestamps are ISO 8601 with offset.
 | `GET /health` | none | |
 | `POST /v1/seniors` `{displayName, deviceKind?}` | none | Returns `seniorId, deviceId, token, pairingCode, pairingExpiresAt` (code lives 10 min) |
 | `POST /v1/pairing/claim` `{code, displayName, deviceKind?}` | none | Creates the guardian and care link. Returns `guardianId, seniorId, deviceId, token` |
+| `POST /v1/pairing/claim` with a guardian bearer token | guardian | Links the **existing** guardian to the code's senior (no new account or token; `displayName` is ignored). Returns `guardianId, seniorId, deviceId`. Invalid token: 401; senior token: 403 (the code is not consumed) |
+| `DELETE /v1/care-links/:seniorId/:guardianId` | that senior or guardian | Ends the relationship (204); the guardian immediately loses access |
 | `POST /v1/pairing/codes` | senior | Active pairing code; creates one only when none is valid |
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
@@ -185,9 +187,6 @@ device testing.
 
 - Pairing and the demo bootstrap are unauthenticated and meant for the hackathon
   demo, not production: no rate limiting, token rotation or revocation.
-- `POST /v1/pairing/claim` always creates a new guardian, so one guardian cannot
-  yet be linked to several seniors through the API (the data model and
-  `GET /v1/alerts` already support it).
 - Push retries are limited: one retry for a failed non-SOS push, and at most
   three SOS reminders. Clients still recover by refreshing alerts.
 - The seed data and barcode catalog are synthetic.

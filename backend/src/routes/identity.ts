@@ -2,10 +2,10 @@ import { and, desc, eq, gt, isNull } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { generatePairingCode, generateToken, hashToken } from "../auth/tokens.js";
-import { requireRole } from "../auth/middleware.js";
+import { bearerToken, findAuth, requireRole } from "../auth/middleware.js";
 import { careLinks, devices, pairingCodes, users } from "../db/schema.js";
 import { ApiError } from "../errors.js";
-import { deviceKind } from "../schemas.js";
+import { deviceKind, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -75,6 +75,11 @@ export function publicIdentityRoutes(deps: Deps) {
     async (c) => {
       const body = c.req.valid("json");
       const now = deps.clock();
+      // An already-paired guardian sends their token to link another senior to the same account.
+      const token = bearerToken(c.req.header("authorization"));
+      const existing = token ? await findAuth(deps.db, token) : null;
+      if (token && !existing) throw new ApiError(401, "unauthorized", "Invalid token");
+      if (existing) requireRole(existing, "guardian");
       // Atomic claim: only one request can flip used_at for a live code.
       const [claimed] = await deps.db
         .update(pairingCodes)
@@ -82,6 +87,13 @@ export function publicIdentityRoutes(deps: Deps) {
         .where(and(eq(pairingCodes.code, body.code), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
         .returning();
       if (!claimed) throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+      if (existing) {
+        await deps.db
+          .insert(careLinks)
+          .values({ seniorId: claimed.seniorId, guardianId: existing.userId })
+          .onConflictDoNothing();
+        return c.json({ guardianId: existing.userId, seniorId: claimed.seniorId, deviceId: existing.deviceId }, 201);
+      }
       const [guardian] = await deps.db
         .insert(users)
         .values({ role: "guardian", displayName: body.displayName })
@@ -141,6 +153,23 @@ export function identityRoutes(deps: Deps) {
     const device = await createDevice(deps, auth.userId, c.req.valid("json").kind);
     return c.json(device, 201);
   });
+
+  /** Either side ends a care relationship; the guardian loses all access to that senior. */
+  app.delete(
+    "/care-links/:seniorId/:guardianId",
+    validate("param", z.object({ seniorId: uuid, guardianId: uuid })),
+    async (c) => {
+      const auth = c.get("auth");
+      const { seniorId, guardianId } = c.req.valid("param");
+      if (auth.userId !== seniorId && auth.userId !== guardianId) throw new ApiError(403, "forbidden", "Not your link");
+      const deleted = await deps.db
+        .delete(careLinks)
+        .where(and(eq(careLinks.seniorId, seniorId), eq(careLinks.guardianId, guardianId)))
+        .returning();
+      if (deleted.length === 0) throw new ApiError(404, "not_found", "Care link not found");
+      return c.body(null, 204);
+    },
+  );
 
   app.post("/pairing/codes", async (c) => {
     const auth = c.get("auth");
