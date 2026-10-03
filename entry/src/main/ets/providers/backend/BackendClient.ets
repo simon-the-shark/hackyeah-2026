@@ -24,6 +24,7 @@ interface ErrorBody {
 interface ErrorDetails {
   code?: string;
   message?: string;
+  details?: Object;
 }
 
 export class ApiError extends Error {
@@ -32,13 +33,26 @@ export class ApiError extends Error {
   readonly status: number;
   // Backend error code such as "not_found" or "unauthorized"; empty when unknown.
   readonly code: string;
+  // Backend `error.details`, e.g. `{ current }` for a 409 version conflict; undefined when absent.
+  readonly details: Object | undefined;
 
-  constructor(kind: ApiErrorKind, status: number, code: string, message: string) {
+  constructor(kind: ApiErrorKind, status: number, code: string, message: string, details?: Object) {
     super(message);
     this.name = 'ApiError';
     this.kind = kind;
     this.status = status;
     this.code = code;
+    this.details = details;
+  }
+}
+
+class RawResponse {
+  readonly status: number;
+  readonly text: string;
+
+  constructor(status: number, text: string) {
+    this.status = status;
+    this.text = text;
   }
 }
 
@@ -64,7 +78,31 @@ export class BackendClient {
     return this.send<T>(http.RequestMethod.POST, path, JSON.stringify(body));
   }
 
+  async put<T>(path: string, body: Object): Promise<T> {
+    return this.send<T>(http.RequestMethod.PUT, path, JSON.stringify(body));
+  }
+
+  // DELETE answers 204 with no body, so there is nothing to return.
+  async delete(path: string): Promise<void> {
+    await this.sendRaw(http.RequestMethod.DELETE, path, undefined);
+  }
+
   private async send<T>(method: http.RequestMethod, path: string, body: string | undefined): Promise<T> {
+    const response = await this.sendRaw(method, path, body);
+    if (response.text.length === 0) {
+      throw new ApiError(ApiErrorKind.InvalidResponse, response.status, '', 'The server sent an empty response.');
+    }
+    try {
+      return JSON.parse(response.text) as T;
+    } catch (err) {
+      hilog.error(LOG_DOMAIN, LOG_TAG, `${method} ${path} returned invalid JSON`);
+      throw new ApiError(ApiErrorKind.InvalidResponse, response.status, '',
+        'The server sent a response this app cannot read.');
+    }
+  }
+
+  // Sends one request and returns the 2xx status and body text; any other outcome becomes an ApiError.
+  private async sendRaw(method: http.RequestMethod, path: string, body: string | undefined): Promise<RawResponse> {
     const headers: Record<string, string> = {
       'Accept': 'application/json',
       'Authorization': `Bearer ${this.config.deviceToken}`
@@ -99,30 +137,24 @@ export class BackendClient {
     if (status < 200 || status >= 300) {
       throw this.httpError(method, path, status, text);
     }
-    if (text.length === 0) {
-      throw new ApiError(ApiErrorKind.InvalidResponse, status, '', 'The server sent an empty response.');
-    }
-    try {
-      return JSON.parse(text) as T;
-    } catch (err) {
-      hilog.error(LOG_DOMAIN, LOG_TAG, `${method} ${path} returned invalid JSON`);
-      throw new ApiError(ApiErrorKind.InvalidResponse, status, '', 'The server sent a response this app cannot read.');
-    }
+    return new RawResponse(status, text);
   }
 
   private httpError(method: http.RequestMethod, path: string, status: number, text: string): ApiError {
     let code = '';
     let message = `The server answered with status ${status}.`;
+    let extra: Object | undefined = undefined;
     try {
       const details = (JSON.parse(text) as ErrorBody).error;
       if (details !== undefined && details !== null) {
         code = typeof details.code === 'string' ? details.code : '';
         message = typeof details.message === 'string' ? details.message : message;
+        extra = details.details === null ? undefined : details.details;
       }
     } catch (err) {
       // Not the backend's JSON error shape (for example a proxy page); keep the generic message.
     }
     hilog.warn(LOG_DOMAIN, LOG_TAG, `${method} ${path} -> ${status} ${code}`);
-    return new ApiError(ApiErrorKind.Http, status, code, message);
+    return new ApiError(ApiErrorKind.Http, status, code, message, extra);
   }
 }

@@ -1,4 +1,5 @@
 import { CatalogProduct, DoseRecord, DoseStatus, Medication } from '../../models/Medication';
+import { MedicationRequestBody } from '../../models/MedicationDraft';
 import { ApiError, BackendClient, invalidResponse } from './BackendClient';
 
 // Wire shapes from backend/README.md. Fields are optional because the payload is checked before use.
@@ -10,6 +11,12 @@ interface MedicationDto {
   barcode?: string | null;
   times?: string[];
   timezone?: string;
+  version?: number;
+  modelAssetKey?: string | null;
+}
+
+interface ConflictDetailsDto {
+  current?: MedicationDto | null;
 }
 
 interface MedicationListDto {
@@ -32,6 +39,20 @@ interface CatalogDto {
   barcode?: string;
   name?: string;
   isSynthetic?: boolean;
+  form?: string | null;
+  modelAssetKey?: string | null;
+}
+
+// A guardian edit was based on an outdated version (HTTP 409). `current` is the stored copy, or undefined
+// when the backend did not include it.
+export class MedicationConflictError extends Error {
+  readonly current: Medication | undefined;
+
+  constructor(current: Medication | undefined) {
+    super('This medication was changed on another device.');
+    this.name = 'MedicationConflictError';
+    this.current = current;
+  }
 }
 
 class DoseRecordBody {
@@ -64,7 +85,7 @@ function toMedication(dto: MedicationDto): Medication {
   const times = (dto.times as Object[]).filter((time: Object) => typeof time === 'string' &&
   TIME_OF_DAY.test(time as string)) as string[];
   return new Medication(dto.id, dto.name, text(dto.doseText), text(dto.instructions), text(dto.barcode), times,
-    text(dto.timezone));
+    text(dto.timezone), typeof dto.version === 'number' ? dto.version : 0, text(dto.modelAssetKey));
 }
 
 function toDoseRecord(dto: DoseRecordDto): DoseRecord | undefined {
@@ -83,7 +104,8 @@ function toDoseRecord(dto: DoseRecordDto): DoseRecord | undefined {
     scheduledFor, recordedAt, true);
 }
 
-// Senior-side medication endpoints from backend/README.md.
+// Medication endpoints from backend/README.md. Reads work for the linked senior and guardian; writes
+// (create, update, delete) are guardian-only on the backend.
 export class MedicationApi {
   private readonly client: BackendClient;
 
@@ -97,6 +119,38 @@ export class MedicationApi {
       throw invalidResponse('medication list');
     }
     return (list.items as MedicationDto[]).map((dto: MedicationDto) => toMedication(dto));
+  }
+
+  async createMedication(seniorId: string, body: MedicationRequestBody): Promise<Medication> {
+    return toMedication(await this.client.post<MedicationDto>(
+      `/v1/seniors/${encodeURIComponent(seniorId)}/medications`, body));
+  }
+
+  // `body.version` must be the version the edit is based on; a stale one throws MedicationConflictError.
+  async updateMedication(seniorId: string, medicationId: string, body: MedicationRequestBody): Promise<Medication> {
+    try {
+      return toMedication(await this.client.put<MedicationDto>(
+        `/v1/seniors/${encodeURIComponent(seniorId)}/medications/${encodeURIComponent(medicationId)}`, body));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        const current = (err.details as ConflictDetailsDto | undefined)?.current;
+        throw new MedicationConflictError(current === undefined || current === null ? undefined :
+          toMedication(current));
+      }
+      throw err as Error;
+    }
+  }
+
+  // Already deleted elsewhere (HTTP 404) counts as success: the end state is the same.
+  async deleteMedication(seniorId: string, medicationId: string): Promise<void> {
+    try {
+      await this.client.delete(
+        `/v1/seniors/${encodeURIComponent(seniorId)}/medications/${encodeURIComponent(medicationId)}`);
+    } catch (err) {
+      if (!(err instanceof ApiError && err.status === 404)) {
+        throw err as Error;
+      }
+    }
   }
 
   // Taken and skipped records whose recordedAt is at or after `since`.
@@ -130,7 +184,8 @@ export class MedicationApi {
       if (typeof dto.barcode !== 'string' || typeof dto.name !== 'string') {
         throw invalidResponse('catalog entry');
       }
-      return new CatalogProduct(dto.barcode, dto.name, dto.isSynthetic !== false);
+      return new CatalogProduct(dto.barcode, dto.name, dto.isSynthetic !== false, text(dto.form),
+        text(dto.modelAssetKey));
     } catch (err) {
       if (err instanceof ApiError && err.status === 404) {
         return undefined;

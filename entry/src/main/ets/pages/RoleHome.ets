@@ -2,8 +2,9 @@ import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/
 import common from '@ohos.app.ability.common';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
-import { AlertsList } from './AlertsPage';
 import { MedicationToday } from './MedicationToday';
+import { AlertsList } from './AlertsPage';
+import { GuardianMedicationList } from './GuardianMedication';
 
 @Component
 export struct RoleHome {
@@ -187,6 +188,8 @@ export struct RoleHome {
       AlertsList({ refreshKey: this.tabRefresh })
     } else if (feature.id === 'medication') {
       MedicationToday()
+    } else if (feature.id === 'medication-schedule') {
+      GuardianMedicationList({ refreshKey: this.tabRefresh })
     } else {
       FeaturePlaceholder({ feature: feature })
     }

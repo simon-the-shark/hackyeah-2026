@@ -11,9 +11,13 @@ export class Medication {
   readonly times: string[];
   // IANA time zone the times are expressed in.
   readonly timezone: string;
+  // Optimistic-concurrency version; a guardian edit must send the version it was based on.
+  readonly version: number;
+  // Optional 3D/illustration reference from the catalog; empty when none.
+  readonly modelAssetKey: string;
 
   constructor(id: string, name: string, doseText: string, instructions: string, barcode: string, times: string[],
-    timezone: string) {
+    timezone: string, version: number = 0, modelAssetKey: string = '') {
     this.id = id;
     this.name = name;
     this.doseText = doseText;
@@ -21,6 +25,8 @@ export class Medication {
     this.barcode = barcode;
     this.times = times;
     this.timezone = timezone;
+    this.version = version;
+    this.modelAssetKey = modelAssetKey;
   }
 }
 
@@ -76,10 +82,15 @@ export class CatalogProduct {
   readonly barcode: string;
   readonly name: string;
   readonly isSynthetic: boolean;
+  // Dosage form such as "tablet"; empty when unknown.
+  readonly form: string;
+  readonly modelAssetKey: string;
 
-  constructor(barcode: string, name: string, isSynthetic: boolean) {
+  constructor(barcode: string, name: string, isSynthetic: boolean, form: string = '', modelAssetKey: string = '') {
     this.barcode = barcode;
     this.name = name;
     this.isSynthetic = isSynthetic;
+    this.form = form;
+    this.modelAssetKey = modelAssetKey;
   }
 }
