@@ -99,6 +99,7 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/devices` `{kind}` | senior | Extra device (e.g. watch) for the same senior; returns its token |
 | `PUT /v1/devices/me/push-token` `{pushToken}` | any | 204 |
 | `GET /v1/me` | any | Role and linked seniors (guardian) or guardians (senior) |
+| `GET /v1/seniors/:id/config` | linked | Everything the senior device needs to run offline: `safeArea` (or null), `contacts`, `medications`, planned or active `trips`, plus `configVersion` (a content hash). The response carries `ETag: "<configVersion>"`; send it back as `If-None-Match` to get `304` when nothing changed. Poll this to reschedule reminders after guardian edits; there is no "config changed" push yet |
 | `GET/PUT /v1/seniors/:id/safe-area` `{lat,lng,radiusM,version?}` | read: linked, write: guardian | First PUT omits `version` (201). Later PUTs need the current `version` |
 | `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | `{name, phone, sortOrder?, isEmergency?}`. `isEmergency` marks the person to offer first when an SOS cannot be delivered. PUT needs `version` and, like `sortOrder`, resets an omitted `isEmergency` to `false` |
 | `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered. Optional `missedGraceMinutes` and `maxSnoozes`, see Missed doses |

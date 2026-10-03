@@ -1,4 +1,5 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
@@ -47,6 +48,29 @@ const tripBody = z
 export function careConfigRoutes(deps: Deps) {
   const { db } = deps;
   const app = new Hono<AppEnv>();
+
+  // ---- whole configuration, for the senior device to sync and reschedule reminders ----
+  app.get("/seniors/:seniorId/config", validate("param", seniorParam), async (c) => {
+    const { seniorId } = c.req.valid("param");
+    await assertLinked(db, c.get("auth"), seniorId);
+    const [[safeArea], contactRows, medicationRows, tripRows] = await Promise.all([
+      db.select().from(safeAreas).where(eq(safeAreas.seniorId, seniorId)),
+      db.select().from(contacts).where(eq(contacts.seniorId, seniorId)).orderBy(asc(contacts.sortOrder), asc(contacts.name)),
+      db.select().from(medications).where(eq(medications.seniorId, seniorId)).orderBy(asc(medications.name), asc(medications.id)),
+      db
+        .select()
+        .from(trips)
+        .where(and(eq(trips.seniorId, seniorId), inArray(trips.status, ["planned", "active"])))
+        .orderBy(asc(trips.windowStart), asc(trips.id)),
+    ]);
+    const config = { safeArea: safeArea ?? null, contacts: contactRows, medications: medicationRows, trips: tripRows };
+    // Content hash: any create, edit or delete changes it, and an unchanged config can be skipped with 304.
+    const configVersion = createHash("sha256").update(JSON.stringify(config)).digest("hex").slice(0, 16);
+    const etag = `"${configVersion}"`;
+    c.header("ETag", etag);
+    if (c.req.header("if-none-match") === etag) return c.body(null, 304);
+    return c.json({ ...config, configVersion });
+  });
 
   // ---- safe area ----
   app.get("/seniors/:seniorId/safe-area", validate("param", seniorParam), async (c) => {

@@ -53,3 +53,28 @@ describe("emergency contacts", () => {
     expect(c.body.isEmergency).toBe(true);
   });
 });
+
+describe("config sync", () => {
+  it("returns the whole config with an ETag and 304 when unchanged", async () => {
+    const ctx = await t.pair();
+    const base = `/v1/seniors/${ctx.seniorId}`;
+    await t.call("POST", `${base}/medications`, ctx.guardianToken, { name: "Demo", times: ["08:00"], timezone: "Europe/Warsaw" });
+    const first = await t.app.request(`${base}/config`, { headers: { Authorization: `Bearer ${ctx.seniorToken}` } });
+    expect(first.status).toBe(200);
+    const etag = first.headers.get("etag")!;
+    const body = await first.json();
+    expect(body.medications).toHaveLength(1);
+    expect(etag).toBe(`"${body.configVersion}"`);
+
+    const again = await t.app.request(`${base}/config`, {
+      headers: { Authorization: `Bearer ${ctx.seniorToken}`, "If-None-Match": etag },
+    });
+    expect(again.status).toBe(304);
+
+    await t.call("POST", `${base}/contacts`, ctx.guardianToken, { name: "Marek", phone: "+48 600 000 001" });
+    const changed = await t.app.request(`${base}/config`, {
+      headers: { Authorization: `Bearer ${ctx.seniorToken}`, "If-None-Match": etag },
+    });
+    expect(changed.status).toBe(200);
+  });
+});

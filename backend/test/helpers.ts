@@ -45,5 +45,5 @@ export function setup() {
     return { seniorId: senior.seniorId as string, seniorToken: senior.token as string, guardianToken: guardian.token as string };
   }
 
-  return { db, close, push, time, deps, call, reset, pair };
+  return { db, close, push, time, deps, app, call, reset, pair };
 }
