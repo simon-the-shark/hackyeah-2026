@@ -1,8 +1,9 @@
 import { common } from '@kit.AbilityKit';
 import { DoseAction } from '../components/DoseAction';
+import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { CatalogProduct, DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
 import { isBarcodeScanSupported, scanProductBarcode, ScanOutcome, ScanStatus } from '../platform/BarcodeScanner';
-import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
+import { describeBackendError, NOT_CONFIGURED_MESSAGE } from '../services/BackendErrors';
 import {
   dateKey,
   dosesOf,
@@ -23,19 +24,6 @@ enum LoadPhase {
   Ready,
   Failed,
   NotConfigured
-}
-
-function describeLoadError(err: Object): string {
-  if (err instanceof ApiError) {
-    if (err.kind === ApiErrorKind.Network) {
-      return 'Cannot reach the Carely server. Check the internet connection and try again.';
-    }
-    if (err.status === 401 || err.status === 403) {
-      return 'This phone is not connected to a care plan. Ask your guardian to pair it again.';
-    }
-    return err.message;
-  }
-  return 'Something went wrong while loading your medicines.';
 }
 
 // Changes whenever anything shown on a medication card changes (including the day), so ForEach rebuilds it.
@@ -196,7 +184,7 @@ export struct MedicationToday {
       this.refreshFailed = false;
       this.phase = LoadPhase.Ready;
     } catch (err) {
-      this.errorMessage = describeLoadError(err as Object);
+      this.errorMessage = describeBackendError(err as Object, 'Something went wrong while loading your medicines.');
       // Keep showing the last loaded list; only a first load turns into the error screen.
       if (this.phase === LoadPhase.Ready) {
         this.refreshFailed = true;
@@ -291,36 +279,6 @@ export struct MedicationToday {
   }
 
   @Builder
-  message(icon: Resource, title: string, body: string, retry: boolean) {
-    Column({ space: 12 }) {
-      SymbolGlyph(icon)
-        .fontSize(48)
-        .fontColor([$r('app.color.senior_accent')])
-      Text(title)
-        .fontSize(22)
-        .fontWeight(FontWeight.Bold)
-        .fontColor($r('app.color.text_primary'))
-        .textAlign(TextAlign.Center)
-      Text(body)
-        .fontSize(17)
-        .fontColor($r('app.color.text_secondary'))
-        .textAlign(TextAlign.Center)
-      if (retry) {
-        Button('Try again')
-          .height(56)
-          .padding({ left: 32, right: 32 })
-          .fontSize(18)
-          .backgroundColor($r('app.color.senior_accent'))
-          .margin({ top: 8 })
-          .onClick(() => this.load())
-      }
-    }
-    .width('100%')
-    .padding({ left: 32, right: 32 })
-    .justifyContent(FlexAlign.Center)
-  }
-
-  @Builder
   medicationList() {
     Refresh({ refreshing: $$this.refreshing }) {
       Scroll() {
@@ -378,35 +336,20 @@ export struct MedicationToday {
       if (this.phase === LoadPhase.Ready) {
         this.medicationList()
       } else if (this.phase === LoadPhase.Loading) {
-        Column({ space: 12 }) {
-          LoadingProgress()
-            .width(48)
-            .height(48)
-            .color($r('app.color.senior_accent'))
-          Text('Loading your medicines…')
-            .fontSize(18)
-            .fontColor($r('app.color.text_secondary'))
-        }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
+        LoadingMessage({ message: 'Loading your medicines…' })
       } else if (this.phase === LoadPhase.Failed) {
-        Column() {
-          this.message($r('sys.symbol.wifi_slash'), 'Medicines not loaded', this.errorMessage, true)
-        }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
+        StatusMessage({
+          icon: $r('sys.symbol.wifi_slash'),
+          title: 'Medicines not loaded',
+          message: this.errorMessage,
+          onRetry: () => this.load()
+        })
       } else {
-        Column() {
-          this.message($r('sys.symbol.exclamationmark_triangle_fill'), 'Not connected yet',
-            'This phone is not connected to a Carely care plan yet. For development, add the server address ' +
-              'and device token in entry/src/main/resources/rawfile/backend.json (see entry/backend.example.json).',
-            false)
-        }
-        .width('100%')
-        .height('100%')
-        .justifyContent(FlexAlign.Center)
+        StatusMessage({
+          icon: $r('sys.symbol.exclamationmark_triangle_fill'),
+          title: 'Not connected yet',
+          message: NOT_CONFIGURED_MESSAGE
+        })
       }
 
       if (this.phase === LoadPhase.Ready) {

@@ -1,12 +1,7 @@
 import { CatalogProduct, DoseRecord, DoseStatus, Medication } from '../../models/Medication';
-import { ApiError, ApiErrorKind, BackendClient } from './BackendClient';
+import { ApiError, BackendClient, invalidResponse } from './BackendClient';
 
 // Wire shapes from backend/README.md. Fields are optional because the payload is checked before use.
-interface MeDto {
-  id?: string;
-  role?: string;
-}
-
 interface MedicationDto {
   id?: string;
   name?: string;
@@ -57,17 +52,13 @@ class DoseRecordBody {
 
 const TIME_OF_DAY = new RegExp('^([01]\\d|2[0-3]):[0-5]\\d$');
 
-function invalid(what: string): ApiError {
-  return new ApiError(ApiErrorKind.InvalidResponse, 200, '', `The server sent an unreadable ${what}.`);
-}
-
 function text(value: string | null | undefined): string {
   return typeof value === 'string' ? value : '';
 }
 
 function toMedication(dto: MedicationDto): Medication {
   if (typeof dto.id !== 'string' || typeof dto.name !== 'string' || !Array.isArray(dto.times)) {
-    throw invalid('medication');
+    throw invalidResponse('medication');
   }
   // Skip malformed times rather than dropping the whole medicine from the senior's list.
   const times = (dto.times as Object[]).filter((time: Object) => typeof time === 'string' &&
@@ -92,30 +83,18 @@ function toDoseRecord(dto: DoseRecordDto): DoseRecord | undefined {
     scheduledFor, recordedAt, true);
 }
 
-// Typed access to the senior-side endpoints the medication feature uses.
-export class CarelyApi {
+// Senior-side medication endpoints from backend/README.md.
+export class MedicationApi {
   private readonly client: BackendClient;
 
   constructor(client: BackendClient) {
     this.client = client;
   }
 
-  // The senior this device belongs to. Throws ApiError with status 403 for a guardian device.
-  async currentSeniorId(): Promise<string> {
-    const me = await this.client.get<MeDto>('/v1/me');
-    if (typeof me.id !== 'string') {
-      throw invalid('account');
-    }
-    if (me.role !== 'senior') {
-      throw new ApiError(ApiErrorKind.Http, 403, 'forbidden', 'This device is not paired as a senior.');
-    }
-    return me.id;
-  }
-
   async medications(seniorId: string): Promise<Medication[]> {
     const list = await this.client.get<MedicationListDto>(`/v1/seniors/${encodeURIComponent(seniorId)}/medications`);
     if (!Array.isArray(list.items)) {
-      throw invalid('medication list');
+      throw invalidResponse('medication list');
     }
     return (list.items as MedicationDto[]).map((dto: MedicationDto) => toMedication(dto));
   }
@@ -125,7 +104,7 @@ export class CarelyApi {
     const list = await this.client.get<DoseRecordListDto>(
       `/v1/seniors/${encodeURIComponent(seniorId)}/doses?from=${encodeURIComponent(since.toISOString())}`);
     if (!Array.isArray(list.items)) {
-      throw invalid('dose list');
+      throw invalidResponse('dose list');
     }
     const records: DoseRecord[] = [];
     (list.items as DoseRecordDto[]).forEach((dto: DoseRecordDto) => {
@@ -149,7 +128,7 @@ export class CarelyApi {
     try {
       const dto = await this.client.get<CatalogDto>(`/v1/catalog/${encodeURIComponent(barcode)}`);
       if (typeof dto.barcode !== 'string' || typeof dto.name !== 'string') {
-        throw invalid('catalog entry');
+        throw invalidResponse('catalog entry');
       }
       return new CatalogProduct(dto.barcode, dto.name, dto.isSynthetic !== false);
     } catch (err) {

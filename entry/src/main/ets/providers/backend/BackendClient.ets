@@ -42,6 +42,11 @@ export class ApiError extends Error {
   }
 }
 
+// For a 2xx response whose payload does not have the documented shape.
+export function invalidResponse(what: string): ApiError {
+  return new ApiError(ApiErrorKind.InvalidResponse, 200, '', `The server sent an unreadable ${what}.`);
+}
+
 // Thin JSON-over-HTTP client for the Carely backend. Every call sends the device token and
 // maps failures to ApiError, so callers never see raw transport errors.
 export class BackendClient {

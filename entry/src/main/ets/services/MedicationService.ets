@@ -2,10 +2,10 @@ import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CatalogProduct, DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
 import { DoseOutboxStore } from '../platform/DoseOutboxStore';
-import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { loadBackendConfig } from '../providers/backend/BackendConfig';
-import { CarelyApi } from '../providers/backend/CarelyApi';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
+import { MedicationApi } from '../providers/backend/MedicationApi';
 import { mergeDoseRecords, startOfDay } from './MedicationSchedule';
+import { SeniorAccount, seniorAccount } from './SeniorAccount';
 
 const LOG_DOMAIN = 0x0000;
 const LOG_TAG = 'MedicationService';
@@ -34,14 +34,15 @@ function isPermanentRejection(err: Object): boolean {
 
 // Senior medication data from the backend, with dose answers queued on the device while offline.
 export class MedicationService {
-  private readonly api: CarelyApi;
+  private readonly account: SeniorAccount;
+  private readonly api: MedicationApi;
   private readonly outbox: DoseOutboxStore;
   private pending: DoseRecord[];
-  private seniorId: string | undefined = undefined;
   private delivering: Promise<void> | undefined = undefined;
 
-  constructor(api: CarelyApi, outbox: DoseOutboxStore) {
-    this.api = api;
+  constructor(account: SeniorAccount, outbox: DoseOutboxStore) {
+    this.account = account;
+    this.api = new MedicationApi(account.client);
     this.outbox = outbox;
     this.pending = outbox.load();
   }
@@ -76,10 +77,7 @@ export class MedicationService {
   }
 
   private async currentSeniorId(): Promise<string> {
-    if (this.seniorId === undefined) {
-      this.seniorId = await this.api.currentSeniorId();
-    }
-    return this.seniorId;
+    return this.account.currentSeniorId();
   }
 
   private async enqueue(record: DoseRecord): Promise<void> {
@@ -135,9 +133,9 @@ let sharedService: MedicationService | undefined = undefined;
 // Undefined until the device has a backend configuration (see entry/backend.example.json).
 export function medicationService(context: common.Context): MedicationService | undefined {
   if (sharedService === undefined) {
-    const config = loadBackendConfig(context);
-    if (config !== undefined) {
-      sharedService = new MedicationService(new CarelyApi(new BackendClient(config)), new DoseOutboxStore(context));
+    const account = seniorAccount(context);
+    if (account !== undefined) {
+      sharedService = new MedicationService(account, new DoseOutboxStore(context));
     }
   }
   return sharedService;
