@@ -27,6 +27,8 @@ export const eventTypeEnum = pgEnum("event_type", [
   "trip_deviation",
   "fall_detected",
   "cancel",
+  "heart_rate_out_of_range",
+  "heart_rate_in_range",
 ]);
 export const alertKindEnum = pgEnum("alert_kind", [
   "sos",
@@ -37,6 +39,7 @@ export const alertKindEnum = pgEnum("alert_kind", [
   "monitoring_lost",
   "fall",
   "low_battery",
+  "heart_rate",
 ]);
 export const pushStatusEnum = pgEnum("push_status", ["none", "sent", "failed", "simulated"]);
 export const doseStatusEnum = pgEnum("dose_status", ["taken", "skipped", "snoozed"]);
@@ -51,6 +54,9 @@ export const tripStatusEnum = pgEnum("trip_status", ["planned", "active", "compl
 export const suggestionStatusEnum = pgEnum("suggestion_status", ["pending", "accepted", "rejected"]);
 /** Where an event or heartbeat came from; anything but `device` is a labelled simulation. */
 export const eventSourceEnum = pgEnum("event_source", ["device", "trace_replay", "simulated"]);
+/** What a pairing code is for: linking a guardian, or adding a watch to the senior's own account. */
+export const pairingPurposeEnum = pgEnum("pairing_purpose", ["guardian", "watch"]);
+export const vitalKindEnum = pgEnum("vital_kind", ["heart_rate"]);
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -92,6 +98,8 @@ export const pairingCodes = pgTable("pairing_codes", {
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   usedAt: timestamp("used_at", { withTimezone: true }),
+  /** A guardian code can never add a watch, and a watch code can never link a guardian. */
+  purpose: pairingPurposeEnum("purpose").notNull().default("guardian"),
 });
 
 export const devices = pgTable(
@@ -378,5 +386,31 @@ export const medicationCatalog = pgTable("medication_catalog", {
   modelAssetKey: text("model_asset_key"),
   isSynthetic: boolean("is_synthetic").notNull().default(true),
 });
+
+/** Heart-rate readings uploaded in batches by the senior's watch. Stored and shown, never evaluated. */
+export const vitalSamples = pgTable(
+  "vital_samples",
+  {
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id")
+      .notNull()
+      .references(() => devices.id, { onDelete: "cascade" }),
+    kind: vitalKindEnum("kind").notNull(),
+    /** bpm for heart_rate. */
+    value: integer("value").notNull(),
+    /** Device clock at measurement. */
+    measuredAt: timestamp("measured_at", { withTimezone: true }).notNull(),
+    receivedAt: timestamp("received_at", { withTimezone: true }).notNull().defaultNow(),
+    /** No default: an emulator's virtual sensor must declare `simulated`. */
+    source: eventSourceEnum("source").notNull(),
+  },
+  (t) => [
+    // One reading per device and instant, so a retried batch never stores duplicates.
+    primaryKey({ columns: [t.deviceId, t.kind, t.measuredAt] }),
+    index("vital_samples_senior_idx").on(t.seniorId, t.kind, t.measuredAt),
+  ],
+);
 
 export type PushStatus = (typeof pushStatusEnum.enumValues)[number];

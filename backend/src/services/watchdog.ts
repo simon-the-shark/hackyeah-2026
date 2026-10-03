@@ -4,10 +4,11 @@ import type { Deps } from "../types.js";
 import { isUrgent, notifyGuardians, raiseServerAlert, URGENT_KINDS } from "./alerts.js";
 import { checkMissedDoses } from "./doses.js";
 import { materializeRoutines } from "./routines.js";
+import { pruneVitalSamples } from "./vitals.js";
 
 /**
- * One pass: stale heartbeats -> monitoring_lost; routines -> upcoming trips; elapsed trip windows ->
- * trip_not_completed; overdue doses -> dose_missed; then push reminders and retries.
+ * One pass: stale heartbeats -> monitoring_lost; routines -> upcoming trips; old heart-rate samples pruned;
+ * elapsed trip windows -> trip_not_completed; overdue doses -> dose_missed; then push reminders and retries.
  */
 export async function runWatchdogOnce(deps: Deps) {
   const now = deps.clock();
@@ -44,6 +45,7 @@ export async function runWatchdogOnce(deps: Deps) {
   }
 
   await materializeRoutines(deps);
+  await pruneVitalSamples(deps);
 
   const missed = await deps.db
     .update(trips)

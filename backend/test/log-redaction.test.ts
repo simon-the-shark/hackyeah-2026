@@ -15,4 +15,20 @@ describe("redactBody", () => {
       seniorId: "550e8400-e29b-41d4-a716-446655440000",
     });
   });
+
+  it("redacts heart-rate readings but keeps their context", () => {
+    expect(
+      redactBody({
+        kind: "heart_rate",
+        heartRate: [{ bpm: 72, measuredAt: "2026-10-03T12:00:00Z" }],
+        details: { bpm: 134, direction: "high", lowBpm: 45, highBpm: 120 },
+        latest: { bpm: 72, measuredAt: "2026-10-03T12:00:00Z" },
+      }),
+    ).toEqual({
+      kind: "heart_rate",
+      heartRate: "[REDACTED]",
+      details: { bpm: "[REDACTED]", direction: "high", lowBpm: "[REDACTED]", highBpm: "[REDACTED]" },
+      latest: { bpm: "[REDACTED]", measuredAt: "2026-10-03T12:00:00Z" },
+    });
+  });
 });

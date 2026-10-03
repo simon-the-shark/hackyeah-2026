@@ -10,29 +10,57 @@ import { deviceKind, uuid } from "../schemas.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
-const PAIRING_TTL_MS = 10 * 60 * 1000;
+type PairingPurpose = (typeof pairingCodes.$inferSelect)["purpose"];
 
-async function issueCode(deps: Deps, seniorId: string) {
+/** A watch code yields a senior-role token, so it lives shorter than a guardian code. */
+const PAIRING_TTL_MS: Record<PairingPurpose, number> = { guardian: 10 * 60 * 1000, watch: 5 * 60 * 1000 };
+
+async function issueCode(deps: Deps, seniorId: string, purpose: PairingPurpose = "guardian") {
   const now = deps.clock();
   const [activeCode] = await deps.db
     .select({ code: pairingCodes.code, expiresAt: pairingCodes.expiresAt })
     .from(pairingCodes)
-    .where(and(eq(pairingCodes.seniorId, seniorId), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
+    .where(
+      and(
+        eq(pairingCodes.seniorId, seniorId),
+        eq(pairingCodes.purpose, purpose),
+        isNull(pairingCodes.usedAt),
+        gt(pairingCodes.expiresAt, now),
+      ),
+    )
     .orderBy(desc(pairingCodes.expiresAt))
     .limit(1);
   if (activeCode) return { pairingCode: activeCode.code, pairingExpiresAt: activeCode.expiresAt };
 
-  const expiresAt = new Date(deps.clock().getTime() + PAIRING_TTL_MS);
+  const expiresAt = new Date(deps.clock().getTime() + PAIRING_TTL_MS[purpose]);
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = generatePairingCode();
     const [row] = await deps.db
       .insert(pairingCodes)
-      .values({ code, seniorId, expiresAt })
+      .values({ code, seniorId, purpose, expiresAt })
       .onConflictDoNothing()
       .returning();
     if (row) return { pairingCode: code, pairingExpiresAt: expiresAt };
   }
   throw new ApiError(500, "internal_error", "Could not allocate pairing code");
+}
+
+/** Atomic claim: only one request can flip used_at for a live code of the given purpose. */
+async function claimCode(deps: Deps, code: string, purpose: PairingPurpose) {
+  const now = deps.clock();
+  const [claimed] = await deps.db
+    .update(pairingCodes)
+    .set({ usedAt: now })
+    .where(
+      and(
+        eq(pairingCodes.code, code),
+        eq(pairingCodes.purpose, purpose),
+        isNull(pairingCodes.usedAt),
+        gt(pairingCodes.expiresAt, now),
+      ),
+    )
+    .returning();
+  return claimed;
 }
 
 async function createDevice(deps: Deps, userId: string, kind: "phone" | "watch") {
@@ -44,7 +72,7 @@ async function createDevice(deps: Deps, userId: string, kind: "phone" | "watch")
   return { deviceId: device!.id, token };
 }
 
-/** Unauthenticated bootstrap: create a senior, or claim a pairing code as a guardian. */
+/** Unauthenticated bootstrap: create a senior, or claim a pairing code as a guardian or as the senior's watch. */
 export function publicIdentityRoutes(deps: Deps) {
   const app = new Hono<AppEnv>();
   const nowMs = () => deps.clock().getTime();
@@ -84,18 +112,13 @@ export function publicIdentityRoutes(deps: Deps) {
       const ip = clientIp(c);
       const wait = claimFailures.blockedFor(ip);
       if (wait > 0) throw tooManyRequests(wait);
-      const now = deps.clock();
       // An already-paired guardian sends their token to link another senior to the same account.
       const token = bearerToken(c.req.header("authorization"));
       const existing = token ? await findAuth(deps.db, token) : null;
       if (token && !existing) throw new ApiError(401, "unauthorized", "Invalid token");
       if (existing) requireRole(existing, "guardian");
-      // Atomic claim: only one request can flip used_at for a live code.
-      const [claimed] = await deps.db
-        .update(pairingCodes)
-        .set({ usedAt: now })
-        .where(and(eq(pairingCodes.code, body.code), isNull(pairingCodes.usedAt), gt(pairingCodes.expiresAt, now)))
-        .returning();
+      // A watch code is never consumed here: it would otherwise link a stranger as guardian.
+      const claimed = await claimCode(deps, body.code, "guardian");
       if (!claimed) {
         claimFailures.hit(ip);
         throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
@@ -116,6 +139,22 @@ export function publicIdentityRoutes(deps: Deps) {
       return c.json({ guardianId: guardian!.id, seniorId: claimed.seniorId, ...device }, 201);
     },
   );
+
+  /** The senior's watch types a code from `POST /pairing/watch-codes` and becomes another senior device. */
+  app.post("/pairing/watch-claim", validate("json", z.object({ code: z.string().regex(/^\d{6}$/) })), async (c) => {
+    const { code } = c.req.valid("json");
+    const ip = clientIp(c);
+    // Shares the failed-claim budget with guardian claims, so guesses cannot be split across both.
+    const wait = claimFailures.blockedFor(ip);
+    if (wait > 0) throw tooManyRequests(wait);
+    const claimed = await claimCode(deps, code, "watch");
+    if (!claimed) {
+      claimFailures.hit(ip);
+      throw new ApiError(410, "pairing_expired", "Pairing code is invalid, used or expired");
+    }
+    const device = await createDevice(deps, claimed.seniorId, "watch");
+    return c.json({ seniorId: claimed.seniorId, ...device }, 201);
+  });
 
   return app;
 }
@@ -244,6 +283,13 @@ export function identityRoutes(deps: Deps) {
     const auth = c.get("auth");
     requireRole(auth, "senior");
     return c.json(await issueCode(deps, auth.userId), 201);
+  });
+
+  /** A short-lived code for the senior's watch; never accepted by `/pairing/claim`. No body. */
+  app.post("/pairing/watch-codes", async (c) => {
+    const auth = c.get("auth");
+    requireRole(auth, "senior");
+    return c.json(await issueCode(deps, auth.userId, "watch"), 201);
   });
 
   return app;

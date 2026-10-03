@@ -28,6 +28,7 @@ Push Kit** (the DevEco Studio emulator supports push, per
 | Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event. Stores an optional route and corridor | Route tracking, deviation detection |
 | Learned routines v2 (P2) | Stores device-computed routine suggestions (summary only, never raw history). Guardian accepts or rejects them into versioned routines. The watchdog turns each routine into daily planned trips | Learning routines from consented history on the device, suggesting them |
 | Fall detection (P2) | Accepts `fall_detected` events, which must declare their `source`. Raises an urgent `fall` alert, which can be cancelled | Sensor feasibility spike, detection, false-positive evaluation |
+| Vital signs (watch, heart rate) | Watch pairing codes. Stores heart-rate readings (7 days) for linked guardians. Accepts `heart_rate_out_of_range` / `heart_rate_in_range` events and turns them into an informational `heart_rate` alert (no reading in the push) | Sensor access, thresholds and episode detection on the watch |
 
 Principle: the backend never evaluates raw location or health data. It stores configuration,
 relays events and delivers alerts, which keeps private data on the device as the mobile plan requires.
@@ -70,19 +71,20 @@ backend/
 Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Version checks use `update … where id = ? and version = ?` with `.returning()`, and an empty result means 409.
 
 `users(id, role senior|guardian, display_name, created_at)`, `care_links(senior_id, guardian_id, created_at)`,
-`pairing_codes(code, senior_id, expires_at, used_at)`,
+`pairing_codes(code, senior_id, expires_at, used_at, purpose guardian|watch)`,
 `devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, revoked_at, created_at)`,
 `safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
 `contacts(id, senior_id, name, phone, sort_order, is_emergency, version)`,
 `medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, missed_grace_minutes, max_snoozes, version, schedule_updated_at)`,
 `dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, snooze_count, scheduled_for, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|cancel|fall_detected|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null, source device|trace_replay|simulated)`,
-`alerts(id, event_id, senior_id, kind sos|fall|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost|low_battery, created_at, cancelled_at, resolved_at, resolved_by_event_id, push_status none|sent|failed|simulated, push_attempts, last_push_at, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|cancel|fall_detected|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation|heart_rate_out_of_range|heart_rate_in_range, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null, source device|trace_replay|simulated)`,
+`alerts(id, event_id, senior_id, kind sos|fall|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost|low_battery|heart_rate, created_at, cancelled_at, resolved_at, resolved_by_event_id, push_status none|sent|failed|simulated, push_attempts, last_push_at, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
 `status_heartbeats(device_id PK, senior_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, source, reported_at (server receipt time), stale_alerted_at, low_battery_alerted_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
 `trips(id, senior_id, label, dest_lat, dest_lng, radius_m, route jsonb, corridor_m, window_start, window_end, status planned|active|completed|missed, version, routine_id, local_date; unique (routine_id, local_date))`,
 `routine_suggestions(id, senior_id, label, destination, route, weekdays, start_time, end_time, timezone, source, status pending|accepted|rejected, created_at, decided_at, decided_by)`,
 `routines(id, senior_id, label, destination, route, corridor_m, weekdays, start_time, end_time, timezone, active, suggestion_id, version, created_at)`,
+`vital_samples(senior_id, device_id, kind heart_rate, value, measured_at, received_at, source; PK (device_id, kind, measured_at))`,
 `medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic boolean)`.
 
 `src/db/schema.ts` is the source of truth; this list is a summary.
@@ -181,3 +183,9 @@ The gaps against `MOBILE_PLAN.md` were tracked as tiers A to C, one commit each,
 - Per-IP rate limits on bootstrap and failed pairing claims; low-battery alerts per device; `pnpm demo`.
 
 Not done: Push Kit click-through data and invalid-token cleanup, because the HarmonyOS Push Kit payload and result codes could not be verified against official documentation. There is also no "config changed" data push, for the same reason.
+
+## Watch and heart rate (2026-10-03)
+
+- Watch pairing: `POST /v1/pairing/watch-codes` (senior, 5 min) and `POST /v1/pairing/watch-claim` (public, shares the failed-claim limit). Codes carry a `purpose`, so a guardian code never adds a watch and a watch code never links a guardian.
+- The watch reports its own location through the existing per-device heartbeat (`measuredBy: "watch"`); no new endpoint.
+- Heart rate: `POST /v1/seniors/:id/vitals` batches and `GET .../vitals/heart-rate` (7-day retention, idempotent per device and instant). The watch decides when a reading is out of range and sends `heart_rate_out_of_range` / `heart_rate_in_range`; the server stores the reported values in the alert `details` and never evaluates readings itself, keeping the principle above. Pushes never include the reading, and readings are redacted from dev logs.
