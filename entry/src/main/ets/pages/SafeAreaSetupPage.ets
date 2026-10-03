@@ -175,7 +175,7 @@ export struct SafeAreaSetupPage {
           .width('100%')
           .alignItems(HorizontalAlign.Start)
 
-          NoticeBanner({ text: 'Saved for this app session only. It resets when the app is closed.' })
+          NoticeBanner({ text: 'Saved on the care service. The senior phone still needs location sharing while the app is open.' })
 
           Button('Save safe area')
             .width('100%')

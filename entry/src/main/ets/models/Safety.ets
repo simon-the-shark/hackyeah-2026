@@ -6,7 +6,64 @@ export enum GeofenceStatus {
 
 export enum AlertType {
   Sos,
-  SafeAreaExit
+  SafeAreaExit,
+  DoseMissed,
+  TripDeviation,
+  TripNotCompleted,
+  MonitoringLost
+}
+
+export interface RemoteAlertCopy {
+  type: AlertType;
+  title: string;
+  detail: string;
+}
+
+export function remoteAlertCopy(kind: string): RemoteAlertCopy {
+  switch (kind) {
+    case 'sos':
+      return {
+        type: AlertType.Sos,
+        title: 'SOS requested',
+        detail: 'The senior requested help.'
+      };
+    case 'area_exit':
+      return {
+        type: AlertType.SafeAreaExit,
+        title: 'Safe area exit',
+        detail: 'The senior left the safe area.'
+      };
+    case 'dose_missed':
+      return {
+        type: AlertType.DoseMissed,
+        title: 'Medication missed',
+        detail: 'A scheduled dose was not taken on time.'
+      };
+    case 'trip_deviation':
+      return {
+        type: AlertType.TripDeviation,
+        title: 'Trip deviation',
+        detail: 'The senior left the planned route.'
+      };
+    case 'trip_not_completed':
+      return {
+        type: AlertType.TripNotCompleted,
+        title: 'Trip not completed',
+        detail: 'A planned trip was not finished on time.'
+      };
+    case 'monitoring_lost':
+      return {
+        type: AlertType.MonitoringLost,
+        title: 'Monitoring lost',
+        detail: 'Location updates stopped. Check on the senior.'
+      };
+    default:
+      return {
+        type: AlertType.SafeAreaExit,
+        title: 'Care alert',
+        detail: 'Open the alert for details.'
+      };
+  }
 }
 
 export enum DeliveryState {

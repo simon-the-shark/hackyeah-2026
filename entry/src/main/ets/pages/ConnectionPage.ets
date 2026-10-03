@@ -1,5 +1,7 @@
 import { http } from '@kit.NetworkKit';
+import common from '@ohos.app.ability.common';
 import { apiSession, BootstrapRequest, careApi } from '../services/CareApi';
+import { apiSessionStore } from '../services/ApiSessionStore';
 
 @Component
 export struct ConnectionPage {
@@ -21,6 +23,7 @@ export struct ConnectionPage {
       apiSession.token = result['token'];
       apiSession.seniorId = result['seniorId'];
       apiSession.role = this.guardian ? 'guardian' : 'senior';
+      await apiSessionStore.save(this.getUIContext().getHostContext() as common.UIAbilityContext);
       this.pairingCode = this.guardian ? '' : result['pairingCode'];
       this.message = this.guardian ? 'You are paired with your senior.' : 'Share this code with your guardian.';
       this.connected = true;

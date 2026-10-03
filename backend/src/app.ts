@@ -6,10 +6,10 @@ import { careConfigRoutes } from "./routes/care-config.js";
 import { dailyCareRoutes } from "./routes/daily-care.js";
 import { identityRoutes, publicIdentityRoutes } from "./routes/identity.js";
 import { safetyRoutes } from "./routes/safety.js";
+import { redactBody } from "./log-redaction.js";
 import type { AppEnv, Deps } from "./types.js";
 
 const SENSITIVE_HEADERS = new Set(["authorization", "cookie", "proxy-authorization", "set-cookie"]);
-const SENSITIVE_BODY_FIELDS = /token|pairing.?code|authorization|password|secret|credential|api.?key/i;
 
 function headersForLog(headers: Headers): Record<string, string> {
   const result: Record<string, string> = {};
@@ -27,16 +27,6 @@ async function bodyForLog(message: Request | Response): Promise<string | undefin
   } catch {
     return body;
   }
-}
-
-function redactBody(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(redactBody);
-  if (value !== null && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value).map(([key, nested]) => [key, SENSITIVE_BODY_FIELDS.test(key) ? "[REDACTED]" : redactBody(nested)]),
-    );
-  }
-  return value;
 }
 
 export function createApp(deps: Deps) {
