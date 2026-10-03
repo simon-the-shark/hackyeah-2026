@@ -1,11 +1,10 @@
 import { abilityAccessCtrl, common } from '@kit.AbilityKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { geoLocationManager } from '@kit.LocationKit';
-import { util } from '@kit.ArkTS';
 import { http } from '@kit.NetworkKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
-import { apiSession, careApi, SafetyEventRequest } from '../services/CareApi';
+import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
 
 @Component
 export struct SafetyPage {
@@ -31,7 +30,7 @@ export struct SafetyPage {
       await careApi.request(`/seniors/${apiSession.seniorId}/status`, http.RequestMethod.PUT,
         new StatusReport(this.backendStatus(), point));
       if (exited) {
-        const event = new SafetyEventRequest(util.generateRandomUUID(), 'area_exit');
+        const event = new SafetyEventRequest(generateEventId(), 'area_exit');
         event.location = point;
         await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
       }
