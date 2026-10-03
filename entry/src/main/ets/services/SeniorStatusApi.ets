@@ -15,10 +15,13 @@ interface RemoteStatus {
   battery?: number | null;
   reportedAt: string;
   staleAlertedAt?: string | null;
+  deviceKind?: string;
 }
 
 interface RemoteStatusResponse {
   status: RemoteStatus | null;
+  /** Latest heartbeat per device, newest first. */
+  devices?: RemoteStatus[];
   serverTime: string;
 }
 
@@ -59,7 +62,12 @@ export class SeniorStatusApi {
       http.RequestMethod.GET) as RemoteStatusResponse;
     snapshot.fetchedAt = Date.now();
 
-    const status = response.status;
+    // This tab describes the senior's phone; the watch has its own screen (Watch & vitals), so a watch
+    // heartbeat must never appear here as the phone's. Only a backend without `devices` falls back to `status`.
+    const devices = response.devices;
+    const status: RemoteStatus | null | undefined = devices !== undefined
+      ? devices.find((device: RemoteStatus) => device.deviceKind === 'phone')
+      : response.status;
     if (status !== null && status !== undefined) {
       snapshot.hasStatus = true;
       snapshot.monitoringState = status.monitoringState;
