@@ -24,6 +24,21 @@ pnpm dev                      # http://localhost:8787
 Scripts: `pnpm test` (needs the compose DB), `pnpm typecheck`,
 `pnpm db:generate` (after editing `src/db/schema.ts`; commit the generated SQL).
 
+## Container image
+
+Build the backend image from this directory:
+
+```sh
+docker build -t elder-care-backend .
+```
+
+The image runs as the unprivileged `node` user, listens on port 8787, and has a
+`/health` health check. It does not run migrations automatically: run them as a
+separate deployment step before starting the application. Provide `DATABASE_URL`
+and the push configuration through the runtime environment; do not copy an
+`.env` file or Push Kit key into the image. For local development without Push
+Kit credentials, set `PUSH_PROVIDER=log` explicitly.
+
 Detailed HTTP request/response diagnostics are enabled only outside production
 and redact credential-like JSON fields. Set `NODE_ENV=production` to disable
 these per-request diagnostic logs.
