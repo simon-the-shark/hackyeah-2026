@@ -1,4 +1,5 @@
 import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { ContactsList } from './ContactsList';
 import common from '@ohos.app.ability.common';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
@@ -190,6 +191,8 @@ export struct RoleHome {
       MedicationToday()
     } else if (feature.id === 'medication-schedule') {
       GuardianMedicationList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'contacts') {
+      ContactsList()
     } else {
       FeaturePlaceholder({ feature: feature })
     }
