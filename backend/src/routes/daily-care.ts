@@ -6,9 +6,11 @@ import { alerts, doseRecords, medicationCatalog, medications, reports } from "..
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, seniorParam, uuid } from "../schemas.js";
 import { resolveAlerts } from "../services/alerts.js";
-import { parseOccurrenceId } from "../services/doses.js";
+import { doseSchedule, parseOccurrenceId } from "../services/doses.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
+
+const HOUR_MS = 60 * 60 * 1000;
 
 const doseBody = z.object({
   occurrenceId: z.string().min(1).max(128),
@@ -36,7 +38,7 @@ export function dailyCareRoutes(deps: Deps) {
     await assertLinked(db, auth, seniorId);
     const body = c.req.valid("json");
     const [med] = await db
-      .select({ id: medications.id, name: medications.name })
+      .select({ id: medications.id, name: medications.name, maxSnoozes: medications.maxSnoozes })
       .from(medications)
       .where(and(eq(medications.id, body.medicationId), eq(medications.seniorId, seniorId)));
     if (!med) throw notFound("Medication");
@@ -53,13 +55,23 @@ export function dailyCareRoutes(deps: Deps) {
       scheduledFor: body.scheduledFor ?? null,
       recordedAt: body.recordedAt,
     };
-    // Duplicate taps are no-ops. Only a snoozed occurrence can still change (to taken/skipped).
+    const snooze = body.status === "snoozed";
+    // Past the medication's snooze cap a snooze is still recorded but no longer restarts the grace period.
+    const recordedAt =
+      snooze && med.maxSnoozes !== null
+        ? sql`case when ${doseRecords.snoozeCount} >= ${med.maxSnoozes} then ${doseRecords.recordedAt} else ${values.recordedAt.toISOString()}::timestamptz end`
+        : values.recordedAt;
+    // Duplicate taps are no-ops. Only a snoozed occurrence can still change (to taken/skipped, or snoozed again).
     const [row] = await db
       .insert(doseRecords)
-      .values(values)
+      .values({ ...values, snoozeCount: snooze ? 1 : 0 })
       .onConflictDoUpdate({
         target: doseRecords.occurrenceId,
-        set: { status: values.status, recordedAt: values.recordedAt },
+        set: {
+          status: values.status,
+          recordedAt,
+          snoozeCount: snooze ? sql`${doseRecords.snoozeCount} + 1` : doseRecords.snoozeCount,
+        },
         setWhere: and(sql`${doseRecords.status} = 'snoozed'`, eq(doseRecords.seniorId, seniorId)),
       })
       .returning();
@@ -98,6 +110,25 @@ export function dailyCareRoutes(deps: Deps) {
         .orderBy(desc(doseRecords.recordedAt))
         .limit(500);
       return c.json({ items });
+    },
+  );
+
+  /** Expanded schedule with per-occurrence status: "next medication" for the senior, adherence for the guardian. */
+  app.get(
+    "/seniors/:seniorId/dose-schedule",
+    validate("param", seniorParam),
+    validate("query", z.object({ from: isoDate.optional(), to: isoDate.optional() })),
+    async (c) => {
+      const { seniorId } = c.req.valid("param");
+      await assertLinked(db, c.get("auth"), seniorId);
+      const now = deps.clock();
+      const q = c.req.valid("query");
+      const from = q.from ?? new Date(now.getTime() - 12 * HOUR_MS);
+      const to = q.to ?? new Date(now.getTime() + 24 * HOUR_MS);
+      if (to <= from || to.getTime() - from.getTime() > 7 * 24 * HOUR_MS) {
+        throw new ApiError(400, "validation_error", "to must be after from and at most 7 days later");
+      }
+      return c.json({ items: await doseSchedule(deps, seniorId, from, to), serverTime: now });
     },
   );
 

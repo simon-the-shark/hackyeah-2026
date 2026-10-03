@@ -24,6 +24,8 @@ const medicationBody = z.object({
   modelAssetKey: z.string().max(64).optional(),
   times: z.array(timeOfDay).max(12),
   timezone,
+  missedGraceMinutes: z.number().int().min(5).max(24 * 60).optional(),
+  maxSnoozes: z.number().int().min(1).max(10).optional(),
 });
 const tripBody = z
   .object({
@@ -197,6 +199,8 @@ export function careConfigRoutes(deps: Deps) {
           modelAssetKey: fields.modelAssetKey ?? null,
           times: fields.times,
           timezone: fields.timezone,
+          missedGraceMinutes: fields.missedGraceMinutes ?? null,
+          maxSnoozes: fields.maxSnoozes ?? null,
           version: sql`${medications.version} + 1`,
           ...(scheduleChanged ? { scheduleUpdatedAt: deps.clock() } : {}),
         })

@@ -101,7 +101,7 @@ Timestamps are ISO 8601 with offset.
 | `GET /v1/me` | any | Role and linked seniors (guardian) or guardians (senior) |
 | `GET/PUT /v1/seniors/:id/safe-area` `{lat,lng,radiusM,version?}` | read: linked, write: guardian | First PUT omits `version` (201). Later PUTs need the current `version` |
 | `GET/POST /v1/seniors/:id/contacts`, `PUT/DELETE .../contacts/:id` | read: linked, write: guardian | PUT needs `version` |
-| `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered |
+| `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered. Optional `missedGraceMinutes` and `maxSnoozes`, see Missed doses |
 | `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
 | `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
 | `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
@@ -111,6 +111,7 @@ Timestamps are ISO 8601 with offset.
 | `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. When **no** device of the senior has sent a heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900), one `monitoring_lost` alert is raised per gap, with each device's last `reportedAt` in `details.devices`. A heartbeat from any device ends the gap. See the note below |
 | `GET /v1/seniors/:id/status` | linked | `{status, devices, serverTime}`. Heartbeats are stored per device, so phone and watch never overwrite each other: `devices` lists the latest heartbeat of each device (newest first, with `deviceKind`), and `status` is the newest of them (null before the first heartbeat). Show age, never an unqualified "safe" |
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
+| `GET /v1/seniors/:id/dose-schedule?from=&to=` | linked | Scheduled occurrences with `from < scheduledFor <= to` (default: 12 h ago to 24 h ahead, at most 7 days), oldest first. Each item: `occurrenceId, medicationId, medicationName, doseText, localTime, timezone, scheduledFor, status, recordedAt`. `status` is `pending`, `taken`, `skipped`, `snoozed` or `missed` (same rule as the alert). Occurrences before a medication's last schedule change are left out |
 | `POST /v1/seniors/:id/reports`, `GET .../reports` | POST: senior, GET: guardian | The senior submits but cannot read reports back. Only user-approved content. `source` is `ai`, `structured` or `simulated` |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 
@@ -169,11 +170,12 @@ the grace period from the snooze's `recordedAt`.
 - These alerts have no source event (`event: null`). Instead `details` holds
   `medicationId`, `medicationName`, `occurrenceId`, `scheduledFor` (UTC),
   `localTime` and `timezone`.
-- The 60-minute default is unvalidated, like the heartbeat threshold, and one
-  grace period applies to every medication. Time-sensitive medicines may need a
-  shorter, per-medication window; that is not implemented.
-- Snoozes are not capped: a dose snoozed again before each grace period ends
-  is never reported. A snooze limit is not implemented.
+- The 60-minute default is unvalidated, like the heartbeat threshold. A
+  medication can override it with `missedGraceMinutes` (5 to 1440).
+- A medication's `maxSnoozes` (1 to 10, null means no cap) limits how many
+  snoozes restart the grace period. Later snoozes are still recorded
+  (`snoozeCount` on the dose record) but no longer delay the alert. Without a cap,
+  a dose snoozed again before each grace period ends is never reported.
 
 ## Heartbeat threshold
 

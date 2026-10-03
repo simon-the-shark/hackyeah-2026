@@ -1,4 +1,4 @@
-import { and, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 import { doseRecords, medications } from "../db/schema.js";
 import type { Deps } from "../types.js";
 import { raiseServerAlert } from "./alerts.js";
@@ -81,13 +81,66 @@ export function occurrencesBetween(med: Med, from: Date, to: Date) {
   return out;
 }
 
+type DoseRecord = typeof doseRecords.$inferSelect;
+export type DoseStatus = "pending" | "taken" | "skipped" | "snoozed" | "missed";
+
+export const graceMsFor = (med: Med, defaultMinutes: number) => (med.missedGraceMinutes ?? defaultMinutes) * 60 * 1000;
+
 /**
- * Raises one dose_missed alert per occurrence that has no taken/skipped record once the grace
- * period has passed. The grace runs from the scheduled time, or from the latest snooze.
+ * Status of one occurrence. A dose is missed when it has no taken/skipped record once the grace
+ * period has passed; the grace runs from the scheduled time, or from the latest counted snooze.
  */
+export function doseStatus(scheduledAt: Date, record: DoseRecord | undefined, now: Date, graceMs: number): DoseStatus {
+  if (record && record.status !== "snoozed") return record.status;
+  const startedAt = record ? Math.max(scheduledAt.getTime(), record.recordedAt.getTime()) : scheduledAt.getTime();
+  if (startedAt + graceMs <= now.getTime()) return "missed";
+  return record ? "snoozed" : "pending";
+}
+
+async function recordsFor(deps: Deps, ids: string[]) {
+  if (ids.length === 0) return new Map<string, DoseRecord>();
+  const rows = await deps.db.select().from(doseRecords).where(inArray(doseRecords.occurrenceId, ids));
+  return new Map(rows.map((r) => [r.occurrenceId, r]));
+}
+
+/**
+ * Expands a senior's medications into occurrences with from < scheduledFor <= to, each with its
+ * status. Occurrences before a medication's last schedule change are left out, as in detection.
+ */
+export async function doseSchedule(deps: Deps, seniorId: string, from: Date, to: Date) {
+  const now = deps.clock();
+  const meds = await deps.db.select().from(medications).where(eq(medications.seniorId, seniorId));
+  const occs = meds.flatMap((med) =>
+    occurrencesBetween(med, new Date(Math.max(from.getTime(), med.scheduleUpdatedAt.getTime())), to).map((o) => ({
+      med,
+      ...o,
+    })),
+  );
+  const records = await recordsFor(
+    deps,
+    occs.map((o) => o.occurrenceId),
+  );
+  return occs
+    .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())
+    .map((o) => {
+      const record = records.get(o.occurrenceId);
+      return {
+        occurrenceId: o.occurrenceId,
+        medicationId: o.med.id,
+        medicationName: o.med.name,
+        doseText: o.med.doseText,
+        localTime: o.time,
+        timezone: o.med.timezone,
+        scheduledFor: o.scheduledAt,
+        status: doseStatus(o.scheduledAt, record, now, graceMsFor(o.med, deps.doseGraceMinutes)),
+        recordedAt: record?.recordedAt ?? null,
+      };
+    });
+}
+
+/** Raises one dose_missed alert per missed occurrence in the lookback window. */
 export async function checkMissedDoses(deps: Deps) {
   const now = deps.clock();
-  const graceMs = deps.doseGraceMinutes * 60 * 1000;
   const meds = await deps.db
     .select()
     .from(medications)
@@ -97,24 +150,20 @@ export async function checkMissedDoses(deps: Deps) {
   for (const med of meds) {
     // Doses scheduled before the medication was created or its schedule last changed never count as missed.
     const from = new Date(Math.max(med.scheduleUpdatedAt.getTime(), now.getTime() - LOOKBACK_MS));
-    const to = new Date(now.getTime() - graceMs);
+    const to = new Date(now.getTime() - graceMsFor(med, deps.doseGraceMinutes));
     if (to <= from) continue;
     for (const occ of occurrencesBetween(med, from, to)) candidates.push({ med, ...occ });
   }
   if (candidates.length === 0) return 0;
 
-  const records = await deps.db
-    .select()
-    .from(doseRecords)
-    .where(and(inArray(doseRecords.occurrenceId, candidates.map((c) => c.occurrenceId))));
-  const byId = new Map(records.map((r) => [r.occurrenceId, r]));
-
+  const byId = await recordsFor(
+    deps,
+    candidates.map((c) => c.occurrenceId),
+  );
   let raised = 0;
   for (const c of candidates) {
-    const record = byId.get(c.occurrenceId);
-    if (record && record.status !== "snoozed") continue;
-    const startedAt = record ? Math.max(c.scheduledAt.getTime(), record.recordedAt.getTime()) : c.scheduledAt.getTime();
-    if (startedAt + graceMs > now.getTime()) continue;
+    const status = doseStatus(c.scheduledAt, byId.get(c.occurrenceId), now, graceMsFor(c.med, deps.doseGraceMinutes));
+    if (status !== "missed") continue;
     const alert = await raiseServerAlert(deps, c.med.seniorId, "dose_missed", `dose_missed:${c.occurrenceId}`, {
       medicationId: c.med.id,
       medicationName: c.med.name,

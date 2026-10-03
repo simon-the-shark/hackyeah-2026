@@ -148,6 +148,10 @@ export const medications = pgTable(
     /** Local times of day, e.g. ["08:00", "20:00"]. */
     times: jsonb("times").$type<string[]>().notNull().default(sql`'[]'::jsonb`),
     timezone: text("timezone").notNull(),
+    /** Per-medication missed-dose grace; null uses DOSE_MISSED_GRACE_MINUTES. */
+    missedGraceMinutes: integer("missed_grace_minutes"),
+    /** Snoozes that restart the grace period; later snoozes are recorded but no longer delay it. Null: no cap. */
+    maxSnoozes: integer("max_snoozes"),
     version: integer("version").notNull().default(1),
     /**
      * Set on create and whenever `times` or `timezone` change (not on name or other edits);
@@ -169,6 +173,8 @@ export const doseRecords = pgTable("dose_records", {
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
   status: doseStatusEnum("status").notNull(),
+  /** Snoozes recorded for this occurrence (counted against the medication's maxSnoozes). */
+  snoozeCount: integer("snooze_count").notNull().default(0),
   scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
 });
