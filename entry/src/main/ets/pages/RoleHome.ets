@@ -2,12 +2,15 @@ import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/
 import common from '@ohos.app.ability.common';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
+import { AlertsList } from './AlertsPage';
 
 @Component
 export struct RoleHome {
   @Consume('navStack') navStack: NavPathStack;
   profile: RoleProfile = SENIOR_PROFILE;
   @State selectedTab: number = 0;
+  /** Bumped whenever a tab or this page becomes visible, so tab content can reload. */
+  @State tabRefresh: number = 0;
 
   /** Clears pairing, then returns to setup. Signing out must always take effect. */
   private async signOut(): Promise<void> {
@@ -176,6 +179,16 @@ export struct RoleHome {
     .scrollBar(BarState.Off)
   }
 
+  /** Content of a bottom-bar tab; features without a screen yet show a placeholder. */
+  @Builder
+  tabContent(feature: Feature) {
+    if (feature.id === 'alerts') {
+      AlertsList({ refreshKey: this.tabRefresh })
+    } else {
+      FeaturePlaceholder({ feature: feature })
+    }
+  }
+
   @Builder
   tabItem(icon: Resource, label: string, index: number) {
     Column({ space: 4 }) {
@@ -204,7 +217,7 @@ export struct RoleHome {
 
           ForEach(this.profile.tabs, (feature: Feature, index: number) => {
             TabContent() {
-              FeaturePlaceholder({ feature: feature })
+              this.tabContent(feature)
             }
             .tabBar(this.tabItem(feature.icon, feature.title, index + 1))
           }, (feature: Feature) => feature.id)
@@ -215,12 +228,14 @@ export struct RoleHome {
         .divider({ strokeWidth: 1, color: $r('app.color.divider') })
         .onChange((index: number) => {
           this.selectedTab = index;
+          this.tabRefresh++;
         })
       } else {
         this.homeContent()
       }
     }
-    .title(this.profile.label)
+    .title(this.selectedTab === 0 ? this.profile.label : this.profile.tabs[this.selectedTab - 1].title)
     .backgroundColor($r('app.color.page_background'))
+    .onShown(() => this.tabRefresh++)
   }
 }
