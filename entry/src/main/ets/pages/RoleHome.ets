@@ -24,6 +24,7 @@ export struct RoleHome {
   @Consume('navStack') navStack: NavPathStack;
   profile: RoleProfile = SENIOR_PROFILE;
   @State selectedTab: number = 0;
+  private tabsController: TabsController = new TabsController();
   /** Bumped whenever a tab or this page becomes visible, so tab content can reload. */
   @State tabRefresh: number = 0;
   @State private seniorName: string = '';
@@ -280,51 +281,84 @@ export struct RoleHome {
   @Builder
   tabItem(icon: Resource, label: string, index: number) {
     Column({ space: 4 }) {
-      SymbolGlyph(icon)
-        .fontSize(24)
-        .fontColor([this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary')])
+      // The pill marks the selected tab without changing the item's size.
+      Stack() {
+        SymbolGlyph(icon)
+          .fontSize(24)
+          .fontColor([this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary')])
+      }
+      .width(56)
+      .height(32)
+      .borderRadius(16)
+      .backgroundColor(this.selectedTab === index ? this.profile.tint : Color.Transparent)
       Text(label)
-        .fontSize(11)
+        .fontSize(13)
         .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.Ellipsis })
         .fontWeight(FontWeight.Medium)
         .fontColor(this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary'))
     }
-    .width('100%')
+    .layoutWeight(1)
     .height('100%')
     .justifyContent(FlexAlign.Center)
-    .padding({ top: 8, bottom: 8 })
-    .borderRadius(16)
-    .backgroundColor(this.selectedTab === index ? this.profile.tint : Color.Transparent)
-    .border({ width: 2, color: this.selectedTab === index ? this.profile.accent : Color.Transparent })
+    .clickEffect({ level: ClickEffectLevel.LIGHT })
     .accessibilityGroup(true)
     .accessibilityText(label)
     .accessibilitySelected(this.selectedTab === index)
+    .onClick(() => this.tabsController.changeIndex(index))
+  }
+
+  /**
+   * Custom bottom bar: its background reaches behind the system gesture bar so
+   * no strip of page background shows, while the items stay above it.
+   */
+  @Builder
+  bottomBar() {
+    Column() {
+      Row() {
+        this.tabItem($r('sys.symbol.house_fill'), 'Home', 0)
+        ForEach(this.profile.tabs, (feature: Feature, index: number) => {
+          this.tabItem(feature.icon, feature.title, index + 1)
+        }, (feature: Feature) => feature.id)
+      }
+      .width('100%')
+      .height(72)
+      .padding({ left: 8, right: 8 })
+    }
+    .width('100%')
+    .justifyContent(FlexAlign.Start)
+    .backgroundColor($r('app.color.surface'))
+    .border({ width: { top: 1 }, color: $r('app.color.divider') })
+    .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
 
   build() {
     NavDestination() {
       if (this.profile.tabs.length > 0) {
-        Tabs({ barPosition: BarPosition.End, index: this.selectedTab }) {
-          TabContent() {
-            this.homeContent()
-          }
-          .tabBar(this.tabItem($r('sys.symbol.house_fill'), 'Home', 0))
-
-          ForEach(this.profile.tabs, (feature: Feature, index: number) => {
+        Column() {
+          Tabs({ barPosition: BarPosition.End, index: this.selectedTab, controller: this.tabsController }) {
             TabContent() {
-              this.tabContent(feature)
+              this.homeContent()
             }
-            .tabBar(this.tabItem(feature.icon, feature.title, index + 1))
-          }, (feature: Feature) => feature.id)
+
+            ForEach(this.profile.tabs, (feature: Feature) => {
+              TabContent() {
+                this.tabContent(feature)
+              }
+            }, (feature: Feature) => feature.id)
+          }
+          .scrollable(false)
+          .barHeight(0)
+          .layoutWeight(1)
+          .onChange((index: number) => {
+            this.selectedTab = index;
+            this.tabRefresh++;
+          })
+
+          this.bottomBar()
         }
-        .scrollable(false)
-        .barHeight(88)
-        .barBackgroundColor($r('app.color.surface'))
-        .divider({ strokeWidth: 1, color: $r('app.color.divider') })
-        .onChange((index: number) => {
-          this.selectedTab = index;
-          this.tabRefresh++;
-        })
+        .width('100%')
+        .height('100%')
       } else {
         this.homeContent()
       }
