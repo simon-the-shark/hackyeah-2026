@@ -128,6 +128,15 @@ Timestamps are ISO 8601 with offset.
 | `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 
+### Low battery
+
+A heartbeat with `battery` at or below `LOW_BATTERY_PERCENT` (default 15,
+unvalidated) raises one `low_battery` alert for that device, with
+`details {deviceId, deviceKind, battery}`. No new alert fires for the same
+device until its battery has climbed to the threshold plus 10, so a battery
+hovering around the threshold does not flood guardians. The watch matters most
+here, because it is the intended SOS surface.
+
 ### Re-sends
 
 The watchdog re-sends pushes that may not have reached anyone. Alerts expose
@@ -149,6 +158,7 @@ sends one push to guardians:
 | `area_exit` | an `area_enter` event (`resolvedByEventId` set) | "… is back in the safe area" |
 | `trip_not_completed`, `trip_deviation` | `trip_arrived` for the same trip | "… arrived at the trip destination" |
 | `monitoring_lost` | the next heartbeat from any device | "Monitoring restored for …" |
+| `low_battery` | a heartbeat from that device with battery at least `LOW_BATTERY_PERCENT` + 10 | "…'s device is charged again" |
 | `dose_missed` | a late `taken` or `skipped` record for that occurrence | "… took/skipped the missed dose of …" |
 
 Alerts expose `resolvedAt` and `resolvedByEventId` (null when not resolved, or
@@ -156,7 +166,7 @@ resolved by a heartbeat or dose record). `sos` is ended by cancellation
 (`cancelledAt`), not resolution.
 
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
-`trip_not_completed`, `monitoring_lost`, `fall`. Alert `pushStatus`: `none` (no guardian
+`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`. Alert `pushStatus`: `none` (no guardian
 device had a push token), `sent`, `failed`, `simulated`.
 
 ## Missed doses

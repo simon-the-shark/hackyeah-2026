@@ -15,6 +15,8 @@ export type Deps = {
   doseGraceMinutes: number;
   /** An unacknowledged SOS is pushed again after this many seconds (up to SOS_MAX_REMINDERS times). */
   sosRepushSeconds: number;
+  /** Battery percentage at or below which a heartbeat raises low_battery (once per discharge). */
+  lowBatteryPercent: number;
   /** Per-IP limits on the unauthenticated endpoints. */
   rateLimits: { bootstrapPerMinute: number; claimFailuresPer15Min: number };
 };

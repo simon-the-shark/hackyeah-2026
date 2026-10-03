@@ -26,6 +26,7 @@ export function setup(overrides: Partial<Deps> = {}) {
     staleSeconds: 900,
     doseGraceMinutes: 60,
     sosRepushSeconds: 120,
+    lowBatteryPercent: 15,
     // Tests share one "unknown" client IP, so limits are off unless a test sets them.
     rateLimits: { bootstrapPerMinute: 1_000_000, claimFailuresPer15Min: 1_000_000 },
     ...overrides,

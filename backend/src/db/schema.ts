@@ -36,6 +36,7 @@ export const alertKindEnum = pgEnum("alert_kind", [
   "trip_not_completed",
   "monitoring_lost",
   "fall",
+  "low_battery",
 ]);
 export const pushStatusEnum = pgEnum("push_status", ["none", "sent", "failed", "simulated"]);
 export const doseStatusEnum = pgEnum("dose_status", ["taken", "skipped", "snoozed"]);
@@ -264,6 +265,8 @@ export const statusHeartbeats = pgTable(
      * (every device stale); a fresh heartbeat from any device clears it on all rows.
      */
     staleAlertedAt: timestamp("stale_alerted_at", { withTimezone: true }),
+    /** Set when a low_battery alert was raised for this discharge; cleared once the battery recovers. */
+    lowBatteryAlertedAt: timestamp("low_battery_alerted_at", { withTimezone: true }),
   },
   (t) => [index("status_heartbeats_senior_idx").on(t.seniorId)],
 );

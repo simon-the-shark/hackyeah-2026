@@ -37,6 +37,7 @@ const TITLES: Record<AlertKind, (name: string) => string> = {
   trip_not_completed: (n) => `${n} did not complete the planned trip`,
   monitoring_lost: (n) => `Monitoring lost for ${n}`,
   fall: (n) => `Possible fall detected for ${n}`,
+  low_battery: (n) => `Low battery on ${n}'s device`,
 };
 
 async function seniorName(deps: Deps, seniorId: string): Promise<string> {
@@ -217,6 +218,7 @@ export async function raiseServerAlert(
   kind: AlertKind,
   dedupKey: string,
   details?: Record<string, unknown>,
+  opts: { source?: EventSource } = {},
 ) {
   const [alert] = await deps.db
     .insert(alerts)
@@ -224,6 +226,6 @@ export async function raiseServerAlert(
     .onConflictDoNothing()
     .returning();
   if (!alert) return null;
-  const pushStatus = await notifyGuardians(deps, alert);
+  const pushStatus = await notifyGuardians(deps, alert, opts);
   return { ...alert, pushStatus };
 }

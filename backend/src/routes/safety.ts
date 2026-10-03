@@ -6,6 +6,7 @@ import { alerts, careLinks, events, statusHeartbeats, trips, users } from "../db
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
 import { ingestEvent, isUrgent, pushToSenior, resolveAlerts } from "../services/alerts.js";
+import { checkBattery } from "../services/battery.js";
 import { seniorStatus } from "../services/status.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
@@ -248,6 +249,7 @@ export function safetyRoutes(deps: Deps) {
       title: (n) => `Monitoring restored for ${n}`,
       source: body.source,
     });
+    await checkBattery(deps, seniorId, auth.deviceId, body.battery, body.source);
     return c.json({ ...row!, staleAlertedAt: null });
   });
 

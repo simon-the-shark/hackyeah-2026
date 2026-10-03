@@ -10,6 +10,7 @@ const schema = z
     HEARTBEAT_STALE_SECONDS: z.coerce.number().int().positive().default(900),
     DOSE_MISSED_GRACE_MINUTES: z.coerce.number().int().positive().default(60),
     SOS_REPUSH_SECONDS: z.coerce.number().int().positive().default(120),
+    LOW_BATTERY_PERCENT: z.coerce.number().int().min(1).max(90).default(15),
     RATE_LIMIT_BOOTSTRAP_PER_MINUTE: z.coerce.number().int().positive().default(10),
     RATE_LIMIT_CLAIM_FAILURES_PER_15MIN: z.coerce.number().int().positive().default(10),
   })

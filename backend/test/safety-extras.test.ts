@@ -270,3 +270,33 @@ describe("trip routes", () => {
     expect((await t.call("POST", base, guardianToken, { ...trip, route: [route[0]] })).status).toBe(400);
   });
 });
+
+describe("low battery", () => {
+  it("alerts once per discharge and resolves after recovery", async () => {
+    const { seniorId, seniorToken } = await t.pair();
+    const beat = (battery: number) =>
+      t.call("PUT", `/v1/seniors/${seniorId}/status`, seniorToken, { monitoringState: "inside", battery });
+    await beat(40);
+    await beat(15);
+    await beat(9);
+    await beat(20); // above threshold, not yet recovered
+    await beat(12);
+    let rows = await t.db.select().from(alerts).where(eq(alerts.seniorId, seniorId));
+    expect(rows.map((r) => r.kind)).toEqual(["low_battery"]);
+    expect(rows[0]!.details).toMatchObject({ deviceKind: "phone", battery: 15 });
+
+    await beat(25); // recovered: resolved, and re-armed
+    t.time.now = new Date("2026-10-03T12:30:00Z");
+    await beat(10);
+    rows = await t.db.select().from(alerts).where(eq(alerts.seniorId, seniorId));
+    expect(rows.map((r) => [r.kind, r.resolvedAt !== null])).toEqual([
+      ["low_battery", true],
+      ["low_battery", false],
+    ]);
+    expect(t.push.calls.map((c) => c.message.title)).toEqual([
+      "Low battery on Halina's device",
+      "Halina's device is charged again",
+      "Low battery on Halina's device",
+    ]);
+  });
+});
