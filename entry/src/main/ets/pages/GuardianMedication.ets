@@ -204,7 +204,7 @@ export struct GuardianMedicationList {
     .enabled(isGuardianPaired())
     .opacity(isGuardianPaired() ? 1 : 0.5)
     .attributeModifier(new CareButtonStyle())
-    .accessibilityText('Add medication: scan the package barcode or type the details')
+    .accessibilityText('Add medication')
     .onClick(() => this.openAdd())
   }
 

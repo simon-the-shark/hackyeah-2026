@@ -219,8 +219,6 @@ export struct SafeAreaSetupPage {
           .width('100%')
           .alignItems(HorizontalAlign.Start)
 
-          NoticeBanner({ text: 'Saved on the care service. The senior phone still needs location sharing while the app is open.' })
-
           if (this.saveError !== '') {
             NoticeBanner({ text: this.saveError })
           }

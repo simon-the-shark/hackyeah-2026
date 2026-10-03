@@ -6,11 +6,9 @@ import {
   addDoseTime,
   AddTimeResult,
   BARCODE_MAX,
-  DEMO_BARCODE,
   DOSE_MAX,
   DraftErrors,
   INSTRUCTIONS_MAX,
-  isValidManualBarcode,
   MedicationDraft,
   NAME_MAX,
   SUGGESTED_TIMES,
@@ -35,12 +33,9 @@ export class MedicationFormParams {
   }
 }
 
-// How the barcode on the form was obtained, shown so a simulated value is never mistaken for a scan.
 enum BarcodeSource {
   None,
-  Scan,
-  Manual,
-  Demo
+  Scan
 }
 
 enum LookupState {
@@ -55,12 +50,6 @@ function sourceLabel(source: BarcodeSource): string {
   if (source === BarcodeSource.Scan) {
     return 'Scanned with the camera';
   }
-  if (source === BarcodeSource.Demo) {
-    return 'Demo barcode (simulated, not a camera scan)';
-  }
-  if (source === BarcodeSource.Manual) {
-    return 'Typed in by hand';
-  }
   return '';
 }
 
@@ -72,7 +61,7 @@ function showToast(context: UIContext, message: string): void {
   }
 }
 
-// Adds a medication (scan or type the package barcode, then guardian-confirmed details) or edits one.
+// Adds a medication (optional package scan, then guardian-confirmed details) or edits one.
 // A catalog match is only a candidate name; dose and times always come from the guardian.
 @Component
 export struct MedicationFormPage {
@@ -96,9 +85,6 @@ export struct MedicationFormPage {
   @State private lookupError: string = '';
   @State private scanning: boolean = false;
   @State private scanUnavailable: boolean = false;
-  @State private showManualBarcode: boolean = false;
-  @State private manualBarcode: string = '';
-  @State private manualBarcodeError: boolean = false;
 
   @State private newTime: string = '';
   @State private timeError: string = '';
@@ -158,7 +144,6 @@ export struct MedicationFormPage {
   private async scan(): Promise<void> {
     if (!isBarcodeScanSupported()) {
       this.scanUnavailable = true;
-      this.showManualBarcode = true;
       return;
     }
     this.scanning = true;
@@ -169,17 +154,7 @@ export struct MedicationFormPage {
       await this.identify(outcome.value.trim(), BarcodeSource.Scan);
     } else if (outcome.status === ScanStatus.Unavailable) {
       this.scanUnavailable = true;
-      this.showManualBarcode = true;
     }
-  }
-
-  private async lookUpManual(): Promise<void> {
-    if (!isValidManualBarcode(this.manualBarcode)) {
-      this.manualBarcodeError = true;
-      return;
-    }
-    this.manualBarcodeError = false;
-    await this.identify(this.manualBarcode.trim(), BarcodeSource.Manual);
   }
 
   private async identify(code: string, source: BarcodeSource): Promise<void> {
@@ -344,93 +319,10 @@ export struct MedicationFormPage {
         .onClick(() => this.scan())
 
         if (this.scanUnavailable) {
-          NoticeBanner({ text: 'The camera scanner is not available on this device. Enter the barcode instead.' })
-        }
-
-        Column({ space: 12 }) {
-          Button() {
-            Row({ space: 6 }) {
-              SymbolGlyph($r('sys.symbol.keyboard'))
-                .fontSize(18)
-                .fontColor([$r('app.color.guardian_accent')])
-              Text('Enter barcode manually')
-                .fontSize(19)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.guardian_accent'))
-            }
-          }
-          .width('100%')
-          .height(56)
-          .attributeModifier(new CareButtonStyle('secondary'))
-          .onClick(() => {
-            this.showManualBarcode = !this.showManualBarcode;
-          })
-
-          Button() {
-            Text('Use demo barcode (simulated)')
-              .fontSize(19)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_primary'))
-              .textAlign(TextAlign.Center)
-          }
-          .width('100%')
-          .height(56)
-          .attributeModifier(new CareButtonStyle('secondary'))
-          .enabled(this.lookupState !== LookupState.Looking)
-          .accessibilityText('Use demo barcode. Simulated, not a real scan.')
-          .onClick(() => this.identify(DEMO_BARCODE, BarcodeSource.Demo))
-        }
-        .width('100%')
-
-        Text('Demo only: the demo barcode is a synthetic code for emulators without a camera. It is not a real scan.')
-          .fontSize(17)
-          .fontColor($r('app.color.text_secondary'))
-
-        if (this.showManualBarcode) {
-          Column({ space: 6 }) {
-            this.fieldLabel('Digits under the barcode')
-            Row({ space: 8 }) {
-              TextInput({ text: this.manualBarcode, placeholder: 'e.g. 5900000000011' })
-                .layoutWeight(1)
-                .height(52)
-                .fontSize(18)
-                .type(InputType.Number)
-                .maxLength(BARCODE_MAX)
-                .backgroundColor($r('app.color.page_background'))
-                .border({ width: this.manualBarcodeError ? 2 : 0, color: $r('app.color.sos') })
-                .attributeModifier(new CareInputStyle('Digits under the barcode',
-                  this.manualBarcodeError ? 'Enter the digits printed under the barcode.' : ''))
-                .onChange((value: string) => {
-                  this.manualBarcode = value;
-                })
-                .onSubmit(() => {
-                  this.lookUpManual();
-                })
-              Button('Look up')
-                .height(52)
-                .fontSize(17)
-                .enabled(this.lookupState !== LookupState.Looking)
-                .attributeModifier(new CareButtonStyle())
-                .onClick(() => this.lookUpManual())
-            }
-            .width('100%')
-            if (this.manualBarcodeError) {
-              Text('Enter the digits printed under the barcode.')
-                .fontSize(14)
-                .fontColor($r('app.color.sos'))
-            }
-          }
-          .width('100%')
-          .alignItems(HorizontalAlign.Start)
+          NoticeBanner({ text: 'Barcode scanning is not available on this device. You can still enter the details below.' })
         }
 
         this.lookupResult()
-
-        if (this.barcode === '') {
-          Text('No barcode? Fill in the details below.')
-            .fontSize(15)
-            .fontColor($r('app.color.text_secondary'))
-        }
       }
       .width('100%')
       .padding(16)
@@ -452,10 +344,11 @@ export struct MedicationFormPage {
               .fontSize(17)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
-            Text(sourceLabel(this.barcodeSource))
-              .fontSize(14)
-              .fontColor(this.barcodeSource === BarcodeSource.Demo ? $r('app.color.warning') :
-                $r('app.color.text_secondary'))
+            if (sourceLabel(this.barcodeSource) !== '') {
+              Text(sourceLabel(this.barcodeSource))
+                .fontSize(14)
+                .fontColor($r('app.color.text_secondary'))
+            }
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)
@@ -487,11 +380,9 @@ export struct MedicationFormPage {
         } else if (this.lookupState === LookupState.Found && this.candidate !== undefined) {
           NoticeBanner({
             icon: $r('sys.symbol.info_circle'),
-            text: `Catalog candidate: ${this.candidate.name}` +
+            text: `Catalog match: ${this.candidate.name}` +
               (this.candidate.form === '' ? '' : ` (${this.candidate.form})`) +
-              (this.candidate.isSynthetic ? ', from the synthetic demo catalog' : '') +
-              '. This is a possible match, not a prescription. Check it against the package; ' +
-              'the dose and times must come from the prescription.',
+              '. Confirm against the package.',
             accent: $r('app.color.guardian_accent'),
             tint: $r('app.color.guardian_tint')
           })
@@ -570,9 +461,6 @@ export struct MedicationFormPage {
             .onChange((value: string) => {
               this.doseText = value;
             })
-          Text('Write the dose exactly as prescribed. It is never taken from the barcode.')
-            .fontSize(17)
-            .fontColor($r('app.color.text_secondary'))
           this.errorText(this.errors().doseText)
         }
         .width('100%')
@@ -743,20 +631,21 @@ export struct MedicationFormPage {
     NavDestination() {
       Scroll() {
         Column({ space: 20 }) {
-          Row({ space: 16 }) {
-            IconBadge({
-              icon: $r('sys.symbol.cross_case'),
-              accent: $r('app.color.guardian_accent'),
-              tint: $r('app.color.guardian_tint'),
-              badgeSize: 56
-            })
-            Text(this.isEdit() ? 'Changes appear on the senior phone the next time its list loads.' :
-              'Scan the package to look up the medicine name, then set the dose and times.')
-              .fontSize(17)
-              .fontColor($r('app.color.text_primary'))
-              .layoutWeight(1)
+          if (this.isEdit()) {
+            Row({ space: 16 }) {
+              IconBadge({
+                icon: $r('sys.symbol.cross_case'),
+                accent: $r('app.color.guardian_accent'),
+                tint: $r('app.color.guardian_tint'),
+                badgeSize: 56
+              })
+              Text('Changes appear on the senior phone the next time its list loads.')
+                .fontSize(17)
+                .fontColor($r('app.color.text_primary'))
+                .layoutWeight(1)
+            }
+            .width('100%')
           }
-          .width('100%')
 
           if (!isGuardianPaired()) {
             NoticeBanner({ text: NOT_GUARDIAN_MESSAGE })
