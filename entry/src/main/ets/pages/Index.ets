@@ -75,7 +75,7 @@ struct Index {
           .backgroundColor($r('app.color.senior_tint'))
           .margin({ bottom: 8 })
 
-          Text('Care Companion')
+          Text('Carely')
             .fontSize(34)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
