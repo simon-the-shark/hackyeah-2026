@@ -10,7 +10,11 @@ primary intended SOS surface; a phone provides the full companion experience.
 
 - Core: safe-area exit alerts, SOS on phone/watch, medication reminders,
   barcode-assisted medication entry, 3D medication references, and easy calling.
-- Planned intelligence: an on-device wellbeing assistant and guardian summaries.
+- Intelligence: a daily wellbeing check-in (tap or speak; questions can be read
+  aloud) whose free-text answers are checked for health worries by a bundled
+  on-device model (Qwen2.5-0.5B-Instruct on MindSpore Lite). The senior previews
+  and approves what is shared; the guardian sees the answers, a factual note and
+  the AI check result. See "On-Device Companion Model" below.
 - Stretch: guardian-defined trips, learned routine deviations, voice interaction,
   and fall detection.
 
@@ -31,7 +35,18 @@ API 20 compatibility (the hackathon minimum).
 
 ## Build
 
-On macOS, run:
+On macOS, first build the on-device companion model once (needs Docker with
+about 12 GB of memory and about 8 GB of free disk; takes roughly 10 minutes):
+
+```zsh
+./scripts/build-companion-model.sh
+```
+
+It downloads Qwen2.5-0.5B-Instruct (Apache-2.0) from Hugging Face, converts it
+for MindSpore Lite, checks the converted model against the original, and copies
+the result into `entry/src/main/resources/rawfile/companion/` (git-ignored, about
+512 MB). Without this step the app still builds and the check-in works without
+the AI check. Then build the app:
 
 ```zsh
 ./scripts/build-hap.sh
@@ -48,6 +63,18 @@ verification.
 Create and boot a compatible virtual device in DevEco Studio's Device Manager,
 then run the `entry` module on it. The starter screen displays `Hello World`
 and changes to `Welcome` when tapped.
+
+### On-Device Companion Model
+
+The Wellbeing tab runs a fixed check-in script (mood, sleep, pain, medicines,
+eating, social contact, notes). Free text the senior types or says is scored by
+the bundled model with a single yes/no question ("does this mention pain, a
+fall, feeling unwell, not eating, or loneliness?"); nothing is generated, so the
+model cannot invent text. The guardian note is built from the answers by fixed
+templates. Details, evaluation and limitations are in `AI_WORKFLOW.md` and
+`tools/companion-model/README.md`. Developer Tools (Settings → Developer Mode)
+has a diagnostics action that re-checks the tokenizer, the model's answers,
+latency and speech support on the running device.
 
 ### Connect The App To The Backend
 

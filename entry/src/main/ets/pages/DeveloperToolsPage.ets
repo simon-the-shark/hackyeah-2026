@@ -1,10 +1,28 @@
 import { ActionRow, NoticeBanner, sectionTitle } from '../components/Common';
+import { common } from '@kit.AbilityKit';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
+import { runCompanionDiagnostics } from '../services/CompanionDiagnostics';
 
 @Component
 export struct DeveloperToolsPage {
   @State private result: string = '';
   @State private alertCreated: boolean = false;
+  @State private diagnostics: string[] = [];
+  @State private diagnosing: boolean = false;
+
+  private async diagnose(): Promise<void> {
+    if (this.diagnosing) {
+      return;
+    }
+    this.diagnosing = true;
+    this.diagnostics = [];
+    try {
+      await runCompanionDiagnostics(this.getUIContext().getHostContext() as common.UIAbilityContext,
+        (line: string) => this.diagnostics.push(line));
+    } finally {
+      this.diagnosing = false;
+    }
+  }
 
   private replay(status: GeofenceStatus): void {
     this.alertCreated = safetyStore.recordDemoLocation(status) !== undefined;
@@ -58,6 +76,36 @@ export struct DeveloperToolsPage {
           .width('100%')
           .alignItems(HorizontalAlign.Start)
 
+          Column({ space: 8 }) {
+            sectionTitle('On-device AI and speech')
+            Column() {
+              ActionRow({
+                icon: $r('sys.symbol.checkmark_shield_fill'),
+                title: this.diagnosing ? 'Running…' : 'Run diagnostics',
+                summary: 'Loads the bundled model, re-checks its answers and speech support',
+                showChevron: false,
+                onTap: () => this.diagnose()
+              })
+            }
+            .width('100%')
+            .borderRadius(20)
+            .clip(true)
+            .backgroundColor($r('app.color.surface'))
+            if (this.diagnostics.length > 0) {
+              Text(this.diagnostics.join('\n'))
+                .fontSize(13)
+                .fontFamily('monospace')
+                .fontColor($r('app.color.text_primary'))
+                .width('100%')
+                .padding(12)
+                .borderRadius(14)
+                .backgroundColor($r('app.color.surface'))
+                .copyOption(CopyOptions.LocalDevice)
+            }
+          }
+          .width('100%')
+          .alignItems(HorizontalAlign.Start)
+
           if (this.result !== '') {
             NoticeBanner({
               icon: this.alertCreated ? $r('sys.symbol.exclamationmark_circle_fill') : $r('sys.symbol.checkmark_circle_fill'),
@@ -75,7 +123,7 @@ export struct DeveloperToolsPage {
       .align(Alignment.Top)
       .scrollBar(BarState.Off)
     }
-    .title('Trace Replay')
+    .title('Developer Tools')
     .backgroundColor($r('app.color.page_background'))
   }
 }

@@ -12,3 +12,6 @@
 /.appanalyzer
 # Local backend address and device token for development (see entry/backend.example.json)
 /entry/src/main/resources/rawfile/backend.json
+# On-device companion model and tokenizer, produced by scripts/build-companion-model.sh
+/entry/src/main/resources/rawfile/companion/
+/tools/companion-model/.work/

@@ -154,7 +154,11 @@ mobile scope. A self-hosted server model would be a separate decision.
   sensing is not assumed. Keep deterministic records usable without a model.
 - Select a redistributable small model and supported runtime only after a
   feasibility spike on the target, recording license, quantization, model size,
-  memory, latency, and supported ABI. No model/runtime has been chosen yet.
+  memory, latency, and supported ABI. Spike result (2026-10-03): the system
+  `localChatModel` is PC/2-in-1 only; small models invented facts when writing
+  notes. Chosen: Qwen2.5-0.5B-Instruct on MindSpore Lite as a yes/no concern
+  check of the senior's free text (no generation; template notes). Measured off
+  device only; see `tools/companion-model/README.md` and `AI_WORKFLOW.md`.
 - Flow: local check-in/history subset → local inference → constrained summary
   → user preview/approval → guardian report through the integration provider.
 - Keep raw prompts/history on device by default. Share only approved structured

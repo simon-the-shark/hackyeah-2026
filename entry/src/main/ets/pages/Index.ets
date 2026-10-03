@@ -20,6 +20,7 @@ import { SafetyPage } from './SafetyPage';
 import { SettingsPage } from './SettingsPage';
 import { SosPage } from './SosPage';
 import { WatchSafetyPage } from './WatchSafetyPage';
+import { WellbeingReportsPage } from './WellbeingReports';
 
 @Entry
 @Component
@@ -84,6 +85,8 @@ struct Index {
       SettingsPage()
     } else if (name === 'contact-editor') {
       ContactEditorPage({ target: param as ContactEditorTarget })
+    } else if (name === 'wellbeing-reports') {
+      WellbeingReportsPage()
     } else if (name === 'developer-tools') {
       DeveloperToolsPage()
     } else if (name === 'connection') {

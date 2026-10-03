@@ -7,6 +7,7 @@ import { MedicationToday } from './MedicationToday';
 import { AlertsList } from './AlertsPage';
 import { GuardianMedicationList } from './GuardianMedication';
 import { GuardianContactsList } from './GuardianContacts';
+import { WellbeingCompanion } from './WellbeingCompanion';
 
 @Component
 export struct RoleHome {
@@ -36,6 +37,8 @@ export struct RoleHome {
       this.navStack.pushPathByName('safe-area-setup', null);
     } else if (feature.id === 'settings') {
       this.navStack.pushPathByName('settings', null);
+    } else if (feature.id === 'wellbeing-reports') {
+      this.navStack.pushPathByName('wellbeing-reports', null);
     } else {
       this.navStack.pushPathByName('feature', feature);
     }
@@ -196,6 +199,8 @@ export struct RoleHome {
       ContactsList()
     } else if (feature.id === 'trusted-contacts') {
       GuardianContactsList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'wellbeing') {
+      WellbeingCompanion()
     } else {
       FeaturePlaceholder({ feature: feature })
     }

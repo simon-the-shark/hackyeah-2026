@@ -18,6 +18,9 @@ endpoints, or confidential prompts.
 | Prelint | GitHub app (prelint.com) | Automated AI code and product-decision review on pull requests |
 | Context7 MCP | Context7 | Current third-party library documentation when required |
 | Cursor Agent | Composer 2.5 | SOS UX polish, pairing-aware navigation, and AI workflow logging |
+| Claude Code | Claude Opus 5.5 | Wellbeing companion: on-device model feasibility, model conversion, check-in flow, speech, guardian reports |
+| Qwen2.5-0.5B-Instruct (product model) | Hugging Face `Qwen/Qwen2.5-0.5B-Instruct`, Apache-2.0 | Bundled on-device concern check for the wellbeing companion, converted to MindSpore Lite 2.3.1 |
+| SmolLM2-135M/360M-Instruct (evaluated, rejected) | Hugging Face `HuggingFaceTB`, Apache-2.0 | Candidate on-device models; failed the synthetic evaluation |
 
 ## Important Prompts And Instructions
 
@@ -79,6 +82,7 @@ endpoints, or confidential prompts.
 | 2026-10-03 | Cursor Agent / Composer 2.5 | Drop redundant SOS confirmation banner; fix empty screen after back from a paired home | Removed the post-send `NoticeBanner` on `SosPage` (headline and timestamp remain). Pairing onboarding had left the Index root without role actions when `paired` was true, so backing out of `RoleHome` showed a dead end. Replaced the interim role picker with session-aware routing: unpaired users see setup only; paired users auto-open senior or guardian `RoleHome` from `apiSession.role` on launch, after connection, and if the nav stack is empty; `RoleHome` consumes system back when it is the only stack entry. | ArkTS edits only (`SosPage.ets`, `Index.ets`, `RoleHome.ets`). `./scripts/build-hap.sh` was not completed in the agent environment (hvigor daemon lock in sandbox). Navigation behaviour (`NavPathStack.size()`, `onBackPressed` return value) checked against project routing notes and HarmonyOS guides. **Not re-verified on an emulator** after these navigation changes. |
 | 2026-10-03 | Claude Code / Claude Opus 5.5 | Fix the dead-end start screen after an app restart; merge with the upstream onboarding fix | A restored pairing showed "This phone is paired." with no way in. The branch first auto-opened the saved role's home and added a "Continue as" button; upstream's onboarding change fixed the same bug with `ensureRoleHome` and a back-consuming `RoleHome`, so the merge keeps upstream's routing and drops the branch's duplicate `aboutToAppear` and button. The one kept difference: on launch the role home is pushed without a transition (`pushPathByName(name, param, false)`), so the setup screen does not flash first. | `pushPathByName(name, param, animated)` checked in the SDK. `./scripts/build-hap.sh` passed after the merge (API 24, unsigned HAP; only the two existing `CareApi.ets` ArkTS warnings). Not re-run on the emulator. |
 | 2026-10-03 | OpenCode / `openai/gpt-5.6-terra`, Context7 MCP, HarmonyOS SDK declarations | Preserve location sharing across in-app navigation | Moved the foreground LocationKit subscription and backend status/event reporting from `SafetyPage` into a shared `LocationSharing` service. The Safe Area page subscribes only to UI state, so leaving it no longer stops sharing. `EntryAbility` pauses monitoring in background and resumes it only when the app returns to foreground; explicit user stop clears the session request. | `./scripts/build-hap.sh` and `git diff --check` passed. The user had verified emulator installation and launch before this change; the navigation persistence and foreground/background behavior need manual emulator verification after installing this build. |
+| 2026-10-03 | Claude Code / Claude Opus 5.5 | AI wellbeing companion on the senior phone, reports sent to the backend | Senior Wellbeing tab: fixed check-in script (tap, type, or speak; Core Speech Kit TTS reads questions, offline ASR answers with keyword matching), deterministic concern rules with Call family / SOS shortcuts, preview with an "include what I wrote" control, sharing through `POST /v1/seniors/:id/reports` with an offline queue and withdraw (`DELETE`). Guardian Wellbeing Reports page lists reports with answers, concern chips, the template note and the AI check result kept apart. On-device AI: Qwen2.5-0.5B-Instruct exported as a one-pass yes/no graph, converted to MindSpore Lite with int8 weights by `scripts/build-companion-model.sh` (Docker), loaded with `@kit.MindSporeLiteKit`; byte-level BPE tokenizer in ArkTS; Developer Tools diagnostics. `ohos.permission.MICROPHONE` added. System `localChatModel` (DataAugmentationKit) rejected: PC/2-in-1 only, whitelist, no emulator | Graph checked against Hugging Face and onnxruntime (identical scores) and the `.ms` through the MindSpore Lite runtime (12/12 decisions kept, max diff 0.24, ~1.2 s per check in Docker on Apple silicon). `./scripts/build-hap.sh` passed (518 MB unsigned HAP); 32 hypium unit tests pass. **Not run on an emulator or device** (no HDC target): model loading, latency and memory on HarmonyOS, the `.ms` 2.3.1 format against the device runtime, TTS/ASR language support, microphone permission and the report round trip are unverified. The app's report body was sent with curl to a local backend (synthetic accounts, log push): POST 201, guardian list returns it with `aiCheck` and concerns, senior read 403, withdraw 204 and gone for the guardian, repeat withdraw 404 (treated as done). |
 
 ## Workflow
 
@@ -128,6 +132,15 @@ handled:
   (client-side rendering); the request format came from secondary sources.
 - Starting Postgres in Docker first failed because the Docker disk was full; the
   user approved removing unused Docker data.
+- Wellbeing AI: the HarmonyOS system on-device LLM (`localChatModel`) runs only on
+  whitelisted PC/2-in-1 devices, not phones or the emulator. SmolLM2-135M and
+  360M invented facts in notes and replies and detected concerns at chance level.
+  Qwen2.5-0.5B also added details and medical speculation when writing notes, so
+  the model no longer writes text at all. A 4-D KV-cache graph converted
+  "successfully" to MindSpore Lite but produced wrong numbers (4-D tensors are
+  treated as NCHW); all graphs now stay at 3-D or below. Dynamic int8
+  quantization changed decisions and was ~20 s per check; int8 weight-only works.
+  The first Docker exports were killed for lack of memory in an 8 GB VM.
 
 ## Known Limitations
 
@@ -144,6 +157,11 @@ handled:
   data and barcode check), features are "Coming soon" placeholders. The
   medication schedule is not yet loaded from the backend, taken doses are only
   stored on the device, and reminders are not implemented.
+- The wellbeing check-in, its on-device concern check, speech input/output and
+  guardian reports have not run on an emulator or device. Core Speech Kit
+  language support (English) and offline recognition are unknown on the target;
+  touch input always works. Reports have no idempotency key, so a lost response
+  during sharing can create a duplicate report.
 - Live barcode scanning relies on HarmonyOS Scan Kit and has not been verified on
   an emulator or device; the simulated scan path is a demo fallback only.
 - The `.hap` is unsigned because no signing profile is configured. Emulator
@@ -163,24 +181,39 @@ handled:
 
 ## AI Feature Disclosure
 
-### Planned Feature (Not Implemented)
+### Wellbeing Check-In Concern Check (Implemented, Not Yet Verified On Device)
 
-- **Purpose:** Summarize voluntary wellbeing check-ins and support everyday
-  wellbeing conversations; share a reviewed report with the guardian.
-- **Model/service:** Not selected. The mobile goal is on-device inference;
-  on-premise server inference would require a separate decision. Record the
-  eventual runtime, model/version, license, quantization, and resource budget.
-- **Inference flow:** Structured check-in plus a limited local history subset →
-  local inference → validated summary → user preview → explicitly shared report.
-- **Data/privacy:** Keep raw check-ins and inference inputs on device by default;
-  expose sharing controls and local deletion. Only approved report data crosses
-  the mobile integration boundary. Use synthetic data in the public demo.
-- **Failure behavior:** Preserve structured check-ins without the model; show
-  unavailable state on timeout, memory failure, or invalid output. Do not label
-  scripted responses as local AI. SOS/geofence logic stays independent of AI.
-- **Limitations:** No clinical diagnosis, medication changes, or claim of passive
-  health monitoring. Generated summaries can omit or invent information and
-  must be checked against the recorded facts.
-- **Evaluation:** Synthetic check-ins covering factuality, missing data,
-  unsupported advice and malformed outputs; verify offline inference and record
-  latency/memory on the actual target. No product AI evaluation has run yet.
+- **Purpose:** During the senior's daily check-in, read the free text they type
+  or say (where it hurts, anything else to tell the family) and flag a possible
+  health worry, in addition to fixed keyword rules. A flag only offers a "Call
+  family" / SOS shortcut to the senior and adds a labelled line to the shared
+  report. It never sends anything or raises an alert by itself.
+- **Model/service:** Qwen2.5-0.5B-Instruct (Apache-2.0), bundled in the HAP and
+  run on the phone's CPU with MindSpore Lite Kit (`@kit.MindSporeLiteKit`, public
+  SDK, API 10+). Converted with MindSpore Lite 2.3.1 to a 512 MB `.ms` file with
+  int8 weights by `scripts/build-companion-model.sh`; not committed to git.
+- **Inference flow:** free text → fixed prompt that quotes the text as a message
+  to check (max 240 characters) → ArkTS byte-level BPE tokenizer → one call on a
+  static 128-token graph → logits of "yes" and "no" → flag if yes > no. No text
+  is generated. Questions, scripted replies and the guardian note are fixed text
+  built from the answers.
+- **Data/privacy:** Inference runs entirely on the device; the conversation is
+  not sent anywhere. Only what the senior approves on the preview is posted as a
+  report: the structured answers, the template note, and (only if they keep
+  "Include what I wrote") their free text and the AI check result. Shared
+  check-ins can be withdrawn. The public demo uses synthetic data.
+- **Failure behavior:** If MindSpore Lite is missing, the model was not bundled,
+  loading fails, the prompt does not fit, or inference errors, the check-in
+  continues with keyword rules only and the screen says on-device AI is not
+  available. SOS, geofencing and medication do not depend on the model.
+- **Limitations:** A 0.5B model can miss worries or flag harmless text; it is not
+  a medical assessment, and the guardian screen says so. English prompts only.
+  The model is large (518 MB HAP) and its on-device latency, memory use and
+  format compatibility with the HarmonyOS MindSpore Lite runtime are unverified.
+- **Evaluation:** `tools/companion-model/eval_narrow.py` and `eval_summaries.py`
+  compare candidate models on synthetic check-ins. On 12 synthetic messages the
+  chosen model scored 12/12 (fp32), and the converted int8 model kept every
+  decision (max score change 0.24, about 1.2 s per check in Docker on Apple
+  silicon). The in-app diagnostics re-run the tokenizer vectors and these 12
+  checks on the device and report latency; their results are to be recorded here
+  once run on an emulator or phone.
