@@ -87,7 +87,10 @@ and community write-ups and has NOT been verified against a live project or
 emulator.** `pushStatus: "sent"` means only that Push Kit accepted the request,
 never that a guardian saw it. Guardian acknowledgement (`acknowledgedAt`) is the
 only proof of a human seeing an alert. Notification click-through data (deep
-link payload) is not sent yet, because its format is unverified. On a
+link payload) is not sent yet, because its format is unverified. Invalid push
+tokens are not cleared automatically for the same reason: the HarmonyOS Push Kit
+result codes could not be confirmed (the official reference pages render only
+client-side, and search results describe the older HMS Core API). On a
 notification tap the guardian app should open and call
 `GET /v1/alerts?unacknowledged=true`, then show the newest entry; this needs no
 push payload data.

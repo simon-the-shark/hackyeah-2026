@@ -160,3 +160,21 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 - Seniors may also read their own alerts (to show accepted vs guardian-acknowledged).
 - Push Kit notification click-through data is not sent yet (payload shape unverified); `GET /v1/alerts` covers the tap case.
 - The docs switch to HarmonyOS and the `AI_WORKFLOW.md` entry were not made: they are outside `/backend`.
+
+## Gap work after the first release (2026-10-03)
+
+The gaps against `MOBILE_PLAN.md` were tracked as tiers A to C, one commit each, with the README updated in the same commit:
+
+- Provenance: `source` on events and heartbeats (`device | trace_replay | simulated`) and `measuredBy` on locations; simulated pushes are titled `[Simulation]`.
+- Heartbeats are stored per device; `monitoring_lost` needs every device stale.
+- Alert resolution (`resolvedAt`) for area exit, trips, monitoring and missed doses, with one push.
+- Delivery loop: the senior is told when an SOS or fall is acknowledged, unacknowledged urgent alerts get up to 3 reminders, and a failed push is retried once.
+- An existing guardian can claim further seniors; care links can be deleted; devices can be listed and revoked (soft, events kept).
+- Dose schedule view with statuses; per-medication `missedGraceMinutes` and `maxSnoozes`.
+- Guardian overview, emergency contacts, and a config bundle with an ETag.
+- Report sharing controls (`GET /me/reports`, withdraw), catalog name search, and senior account deletion.
+- Fall alerts (explicit `source` required) and a generic `cancel` event.
+- Trip routes and corridor; learned routines (device suggestions, guardian-confirmed, materialized into daily trips by the watchdog).
+- Per-IP rate limits on bootstrap and failed pairing claims; low-battery alerts per device; `pnpm demo`.
+
+Not done: Push Kit click-through data and invalid-token cleanup, because the HarmonyOS Push Kit payload and result codes could not be verified against official documentation. There is also no "config changed" data push, for the same reason.
