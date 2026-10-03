@@ -19,7 +19,7 @@ export function setup() {
   const { db, close } = createDb(process.env.DATABASE_URL!);
   const push = new FakePush();
   const time = { now: new Date("2026-10-03T12:00:00Z") };
-  const deps: Deps = { db, push, clock: () => time.now, staleSeconds: 900 };
+  const deps: Deps = { db, push, clock: () => time.now, staleSeconds: 900, doseGraceMinutes: 60 };
   const app = createApp(deps);
 
   const call = async (method: string, path: string, token?: string, body?: unknown) => {

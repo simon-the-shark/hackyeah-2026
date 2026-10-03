@@ -43,6 +43,7 @@ const alertView = (row: {
   createdAt: row.alert.createdAt,
   cancelledAt: row.alert.cancelledAt,
   pushStatus: row.alert.pushStatus,
+  details: row.alert.details,
   acknowledgedAt: row.alert.acknowledgedAt,
   acknowledgedBy: row.alert.acknowledgedBy,
   event: row.event && {

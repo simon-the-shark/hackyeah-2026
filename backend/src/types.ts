@@ -12,6 +12,7 @@ export type Deps = {
   push: PushProvider;
   clock: () => Date;
   staleSeconds: number;
+  doseGraceMinutes: number;
 };
 
 export type AppEnv = { Variables: { auth: Auth } };

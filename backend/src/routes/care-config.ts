@@ -162,7 +162,7 @@ export function careConfigRoutes(deps: Deps) {
       await assertLinked(db, auth, seniorId);
       const [row] = await db
         .insert(medications)
-        .values({ seniorId, ...c.req.valid("json") })
+        .values({ seniorId, ...c.req.valid("json"), scheduleUpdatedAt: deps.clock() })
         .returning();
       return c.json(row, 201);
     },
@@ -178,6 +178,15 @@ export function careConfigRoutes(deps: Deps) {
       const { seniorId, id } = c.req.valid("param");
       await assertLinked(db, auth, seniorId);
       const { version: v, ...fields } = c.req.valid("json");
+      const [existing] = await db
+        .select()
+        .from(medications)
+        .where(and(eq(medications.id, id), eq(medications.seniorId, seniorId)));
+      if (!existing) throw notFound("Medication");
+      // Only a schedule change restarts missed-dose detection; a name or note fix must not hide missed doses.
+      // The version check below guarantees `existing` is the row being replaced.
+      const scheduleChanged =
+        existing.timezone !== fields.timezone || JSON.stringify(existing.times) !== JSON.stringify(fields.times);
       const [updated] = await db
         .update(medications)
         .set({
@@ -189,6 +198,7 @@ export function careConfigRoutes(deps: Deps) {
           times: fields.times,
           timezone: fields.timezone,
           version: sql`${medications.version} + 1`,
+          ...(scheduleChanged ? { scheduleUpdatedAt: deps.clock() } : {}),
         })
         .where(and(eq(medications.id, id), eq(medications.seniorId, seniorId), eq(medications.version, v)))
         .returning();

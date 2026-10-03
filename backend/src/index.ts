@@ -12,7 +12,13 @@ const push =
   config.PUSH_PROVIDER === "pushkit" ? new HarmonyPushKitProvider(config.PUSH_KIT_KEY_FILE!) : new LogPushProvider();
 if (push.name === "log") console.warn("[push] PUSH_PROVIDER=log: notifications are SIMULATED, nothing is delivered");
 
-const deps = { db, push, clock: () => new Date(), staleSeconds: config.HEARTBEAT_STALE_SECONDS };
+const deps = {
+  db,
+  push,
+  clock: () => new Date(),
+  staleSeconds: config.HEARTBEAT_STALE_SECONDS,
+  doseGraceMinutes: config.DOSE_MISSED_GRACE_MINUTES,
+};
 startWatchdog(deps);
 
 serve({ fetch: createApp(deps).fetch, port: config.PORT }, (info) => {
