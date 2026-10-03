@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { medicationCatalog } from "../src/db/schema.js";
 import { setup } from "./helpers.js";
 
 const t = setup();
@@ -95,5 +96,19 @@ describe("report sharing controls", () => {
     expect((await t.call("DELETE", `${base}/${r1.id}`, ctx.seniorToken)).status).toBe(204);
     expect((await t.call("DELETE", `${base}/${r1.id}`, ctx.seniorToken)).status).toBe(404);
     expect((await t.call("GET", base, ctx.guardianToken)).body.items).toHaveLength(1);
+  });
+});
+
+describe("catalog search", () => {
+  it("finds synthetic catalog entries by name and treats wildcards literally", async () => {
+    const ctx = await t.pair();
+    await t.db.insert(medicationCatalog).values([
+      { barcode: "1", name: "Demo Blood Pressure 5 mg (synthetic)" },
+      { barcode: "2", name: "Demo Vitamin D (synthetic)" },
+    ]);
+    const hits = (await t.call("GET", "/v1/catalog?q=blood", ctx.seniorToken)).body.items;
+    expect(hits.map((h: { barcode: string }) => h.barcode)).toEqual(["1"]);
+    expect((await t.call("GET", "/v1/catalog?q=%25%25", ctx.seniorToken)).body.items).toHaveLength(0);
+    expect((await t.call("GET", "/v1/catalog?q=a", ctx.seniorToken)).status).toBe(400);
   });
 });

@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, ilike, lt, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
@@ -204,6 +204,18 @@ export function dailyCareRoutes(deps: Deps) {
       return c.body(null, 204);
     },
   );
+
+  /** Case-insensitive name search, to help manual entry after an unknown barcode. Synthetic demo data only. */
+  app.get("/catalog", validate("query", z.object({ q: z.string().trim().min(2).max(64) })), async (c) => {
+    const term = c.req.valid("query").q.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+    const items = await db
+      .select()
+      .from(medicationCatalog)
+      .where(ilike(medicationCatalog.name, `%${term}%`))
+      .orderBy(asc(medicationCatalog.name))
+      .limit(10);
+    return c.json({ items });
+  });
 
   app.get("/catalog/:barcode", validate("param", z.object({ barcode: z.string().min(1).max(64) })), async (c) => {
     const [row] = await db

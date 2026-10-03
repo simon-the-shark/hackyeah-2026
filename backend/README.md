@@ -123,6 +123,7 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/seniors/:id/reports`, `GET .../reports?before=&limit=` | POST: senior, GET: guardian | Only user-approved content. `source` is `ai`, `structured` or `simulated`. The guardian list is newest first; page with `before` (an ISO time, exclusive) |
 | `GET /v1/me/reports` | senior | Sharing controls: the senior's own shared reports, newest first |
 | `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report; guardians no longer see it (204) |
+| `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 
 ### Re-sends
