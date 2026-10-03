@@ -102,7 +102,7 @@ Timestamps are ISO 8601 with offset.
 | `GET/POST /v1/seniors/:id/medications`, `PUT/DELETE .../medications/:id` | read: linked, write: guardian | `times` are `HH:MM`, `timezone` is IANA. Dose text is user-entered |
 | `GET/POST /v1/seniors/:id/trips`, `PUT/DELETE .../trips/:id` | read: linked, write: guardian | P2. Status: `planned`, then `active` (`trip_started`), then `completed` (`trip_arrived`). The server marks a trip `missed` and alerts once when the window ends without `trip_arrived` |
 | `POST /v1/seniors/:id/events` | senior | Idempotent on client `id` (UUID): 201 first time, 200 on repeat, never a second push. Types: `sos`, `sos_cancel` (needs `cancelsEventId`), `area_exit`, `area_enter`, `dose_missed`, `trip_started`, `trip_arrived`, `trip_deviation` (the three trip types need `tripId`). `trip_started` creates no alert and moves a `planned` trip to `active` (a missed or completed trip is never revived). `trip_arrived` always marks the trip `completed`, even after it was marked `missed`: a late arrival is still an arrival, and the earlier `trip_not_completed` alert stays as history. Optional `location {lat,lng,accuracyM?,sampledAt?,measuredBy?}` (`measuredBy`: `phone` or `watch`, the device that took the fix). Optional `source`: `device` (default), `trace_replay` or `simulated`; anything other than `device` is returned on the alert's `event.source` and prefixes the push title with `[Simulation]`. `sos`, `area_exit` and `trip_deviation` create an alert. `dose_missed` is **deprecated**: it is still accepted and stored, but creates no alert, because the server detects missed doses itself (see below). Apps should stop sending it; a cancel marks the original alert `cancelledAt` and notifies, it never deletes |
-| `GET /v1/alerts?unacknowledged=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set |
+| `GET /v1/alerts?unacknowledged=true&unresolved=true&since=&limit=` | guardian | Inbox across all linked seniors, newest first, includes `seniorName`. Cancelled alerts are included with `cancelledAt` set. `unresolved=true` drops resolved and cancelled alerts |
 | `GET /v1/seniors/:id/alerts?since=&limit=` | linked | Newest first, with the source event. Seniors can read their own alerts to show accepted vs acknowledged |
 | `GET /v1/alerts/:id` | linked | |
 | `POST /v1/alerts/:id/ack` | guardian | Idempotent; first acknowledgement wins |
@@ -111,6 +111,23 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
 | `POST /v1/seniors/:id/reports`, `GET .../reports` | POST: senior, GET: guardian | The senior submits but cannot read reports back. Only user-approved content. `source` is `ai`, `structured` or `simulated` |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
+
+### Alert resolution
+
+An alert is **resolved** when its condition ends. Resolution is separate from
+acknowledgement (a guardian still acknowledges), never deletes the alert, and
+sends one push to guardians:
+
+| Alert | Resolved by | Push title |
+| --- | --- | --- |
+| `area_exit` | an `area_enter` event (`resolvedByEventId` set) | "… is back in the safe area" |
+| `trip_not_completed`, `trip_deviation` | `trip_arrived` for the same trip | "… arrived at the trip destination" |
+| `monitoring_lost` | the next heartbeat from any device | "Monitoring restored for …" |
+| `dose_missed` | a late `taken` or `skipped` record for that occurrence | "… took/skipped the missed dose of …" |
+
+Alerts expose `resolvedAt` and `resolvedByEventId` (null when not resolved, or
+resolved by a heartbeat or dose record). `sos` is ended by cancellation
+(`cancelledAt`), not resolution.
 
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
 `trip_not_completed`, `monitoring_lost`. Alert `pushStatus`: `none` (no guardian

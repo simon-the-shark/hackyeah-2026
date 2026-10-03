@@ -1,4 +1,4 @@
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import { alerts, careLinks, devices, events, users } from "../db/schema.js";
 import type { GeoPoint } from "../db/schema.js";
 import { ApiError } from "../errors.js";
@@ -38,32 +38,65 @@ async function seniorName(deps: Deps, seniorId: string): Promise<string> {
   return u?.name ?? "Senior";
 }
 
+/** Sends one push to every device of the senior's guardians; "none" when no guardian device has a token. */
+async function pushToGuardians(deps: Deps, seniorId: string, title: string, data: Record<string, string>) {
+  const rows = await deps.db
+    .select({ token: devices.pushToken })
+    .from(careLinks)
+    .innerJoin(devices, eq(devices.userId, careLinks.guardianId))
+    .where(and(eq(careLinks.seniorId, seniorId), isNotNull(devices.pushToken)));
+  const tokens = rows.map((r) => r.token).filter((t): t is string => !!t);
+  if (tokens.length === 0) return "none" as const;
+  return deps.push.send(tokens, { title, body: "Open the app for details.", data });
+}
+
 /** Sends a push to every guardian device and records the provider result on the alert. */
 export async function notifyGuardians(
   deps: Deps,
   alert: { id: string; seniorId: string; kind: AlertKind },
   opts: { cancelled?: boolean; source?: EventSource } = {},
 ) {
-  const rows = await deps.db
-    .select({ token: devices.pushToken })
-    .from(careLinks)
-    .innerJoin(devices, eq(devices.userId, careLinks.guardianId))
-    .where(and(eq(careLinks.seniorId, alert.seniorId), isNotNull(devices.pushToken)));
-  const tokens = rows.map((r) => r.token).filter((t): t is string => !!t);
-  if (tokens.length === 0) return "none" as const;
-
   const name = await seniorName(deps, alert.seniorId);
   let title = opts.cancelled ? `Cancelled: ${TITLES[alert.kind](name)}` : TITLES[alert.kind](name);
   // Guardians must never mistake a replayed trace or demo trigger for a real event.
   if (opts.source && opts.source !== "device") title = `[Simulation] ${title}`;
-  const status = await deps.push.send(tokens, {
-    title,
-    body: "Open the app for details.",
-    data: { alertId: alert.id, seniorId: alert.seniorId, kind: alert.kind },
+  const status = await pushToGuardians(deps, alert.seniorId, title, {
+    alertId: alert.id,
+    seniorId: alert.seniorId,
+    kind: alert.kind,
   });
-  await deps.db.update(alerts).set({ pushStatus: status }).where(eq(alerts.id, alert.id));
+  if (status !== "none") await deps.db.update(alerts).set({ pushStatus: status }).where(eq(alerts.id, alert.id));
   return status;
 }
+
+/**
+ * Marks the senior's open alerts matching `match` as resolved (the condition ended) and sends one
+ * "resolved" push. Resolution never deletes the alert and does not replace acknowledgement.
+ */
+export async function resolveAlerts(
+  deps: Deps,
+  seniorId: string,
+  match: SQL,
+  opts: { title: (seniorName: string) => string; eventId?: string; source?: EventSource },
+) {
+  const resolved = await deps.db
+    .update(alerts)
+    .set({ resolvedAt: deps.clock(), resolvedByEventId: opts.eventId ?? null })
+    .where(and(eq(alerts.seniorId, seniorId), isNull(alerts.resolvedAt), isNull(alerts.cancelledAt), match))
+    .returning();
+  if (resolved.length === 0) return resolved;
+  let title = opts.title(await seniorName(deps, seniorId));
+  if (opts.source && opts.source !== "device") title = `[Simulation] ${title}`;
+  await pushToGuardians(deps, seniorId, title, { alertId: resolved[0]!.id, seniorId, kind: resolved[0]!.kind });
+  return resolved;
+}
+
+/** Alerts for one trip: the watchdog's trip_not_completed and device trip_deviation alerts. */
+export const tripAlerts = (tripId: string) =>
+  or(
+    eq(alerts.dedupKey, `trip:${tripId}`),
+    inArray(alerts.eventId, sql`(select ${events.id} from ${events} where ${events.tripId} = ${tripId})`),
+  )!;
 
 export type IngestResult = {
   event: typeof events.$inferSelect;
@@ -129,6 +162,20 @@ export async function ingestEvent(deps: Deps, auth: Auth, seniorId: string, inpu
     // Alert is committed before the push; a push failure never fails the request.
     const pushStatus = await notifyGuardians(deps, alert, { cancelled: txResult.cancelled, source: input.source });
     alert = { ...alert, pushStatus };
+  }
+  if (txResult.created && input.type === "area_enter") {
+    await resolveAlerts(deps, seniorId, eq(alerts.kind, "area_exit"), {
+      title: (n) => `${n} is back in the safe area`,
+      eventId: input.id,
+      source: input.source,
+    });
+  }
+  if (txResult.created && input.type === "trip_arrived" && input.tripId) {
+    await resolveAlerts(deps, seniorId, tripAlerts(input.tripId), {
+      title: (n) => `${n} arrived at the trip destination`,
+      eventId: input.id,
+      source: input.source,
+    });
   }
   return { event: txResult.event, alert, created: txResult.created };
 }

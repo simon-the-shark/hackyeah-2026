@@ -89,3 +89,73 @@ describe("per-device heartbeats", () => {
     expect(await runWatchdogOnce(t.deps)).toBe(1);
   });
 });
+
+describe("alert resolution", () => {
+  it("resolves an area_exit on re-entry with one push, keeping the alert", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const events = `/v1/seniors/${seniorId}/events`;
+    await t.call("POST", events, seniorToken, event("area_exit"));
+    const enter = event("area_enter");
+    await t.call("POST", events, seniorToken, enter);
+    await t.call("POST", events, seniorToken, event("area_enter")); // nothing left to resolve
+    expect(t.push.calls.map((c) => c.message.title)).toEqual(["Halina left the safe area", "Halina is back in the safe area"]);
+    const [alert] = (await t.call("GET", `/v1/seniors/${seniorId}/alerts`, guardianToken)).body.items;
+    expect(alert.resolvedAt).not.toBeNull();
+    expect(alert.resolvedByEventId).toBe(enter.id);
+    expect(alert.acknowledgedAt).toBeNull();
+    expect((await t.call("GET", "/v1/alerts?unresolved=true", guardianToken)).body.items).toHaveLength(0);
+  });
+
+  it("resolves monitoring_lost on the next heartbeat", async () => {
+    const { seniorId, seniorToken } = await t.pair();
+    await t.call("PUT", `/v1/seniors/${seniorId}/status`, seniorToken, { monitoringState: "inside" });
+    t.time.now = new Date("2026-10-03T12:20:00Z");
+    await runWatchdogOnce(t.deps);
+    await t.call("PUT", `/v1/seniors/${seniorId}/status`, seniorToken, { monitoringState: "inside" });
+    const [alert] = await t.db.select().from(alerts).where(eq(alerts.seniorId, seniorId));
+    expect(alert!.resolvedAt).not.toBeNull();
+    expect(t.push.calls.at(-1)!.message.title).toBe("Monitoring restored for Halina");
+  });
+
+  it("resolves trip alerts for that trip on arrival", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    const trip = (
+      await t.call("POST", `/v1/seniors/${seniorId}/trips`, guardianToken, {
+        label: "Doctor",
+        destLat: 50.07,
+        destLng: 19.94,
+        radiusM: 100,
+        windowStart: "2026-10-03T12:00:00Z",
+        windowEnd: "2026-10-03T13:00:00Z",
+      })
+    ).body;
+    await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, event("trip_deviation", { tripId: trip.id }));
+    t.time.now = new Date("2026-10-03T13:30:00Z");
+    await runWatchdogOnce(t.deps);
+    await t.call("POST", `/v1/seniors/${seniorId}/events`, seniorToken, event("trip_arrived", { tripId: trip.id }));
+    const rows = await t.db.select().from(alerts).where(eq(alerts.seniorId, seniorId));
+    expect(rows.map((r) => [r.kind, r.resolvedAt !== null]).sort()).toEqual([
+      ["trip_deviation", true],
+      ["trip_not_completed", true],
+    ]);
+  });
+
+  it("resolves a dose_missed alert when the dose is recorded late", async () => {
+    const { seniorId, seniorToken, guardianToken } = await t.pair();
+    t.time.now = new Date("2026-10-03T05:00:00Z");
+    const med = (
+      await t.call("POST", `/v1/seniors/${seniorId}/medications`, guardianToken, {
+        name: "Demo",
+        times: ["08:00"],
+        timezone: "Europe/Warsaw",
+      })
+    ).body;
+    t.time.now = new Date("2026-10-03T07:30:00Z");
+    expect(await runWatchdogOnce(t.deps)).toBe(1);
+    const dose = { occurrenceId: `${med.id}@2026-10-03T08:00`, medicationId: med.id, recordedAt: "2026-10-03T07:31:00Z" };
+    await t.call("POST", `/v1/seniors/${seniorId}/doses`, seniorToken, { ...dose, status: "taken" });
+    const [alert] = await t.db.select().from(alerts).where(eq(alerts.seniorId, seniorId));
+    expect(alert!.resolvedAt).not.toBeNull();
+    expect(t.push.calls.at(-1)!.message.title).toBe("Halina took the missed dose of Demo");
+  });
+});

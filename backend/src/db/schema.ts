@@ -211,6 +211,10 @@ export const alerts = pgTable(
     pushStatus: pushStatusEnum("push_status").notNull().default("none"),
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
     acknowledgedBy: uuid("acknowledged_by").references(() => users.id, { onDelete: "set null" }),
+    /** The condition ended (e.g. back inside the safe area). Separate from acknowledgement; the alert is kept. */
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    /** The event that resolved it, when there was one (area_enter, trip_arrived). */
+    resolvedByEventId: uuid("resolved_by_event_id"),
     /** Dedup key for server-generated alerts (monitoring_lost, trip_not_completed, dose_missed). */
     dedupKey: text("dedup_key"),
     /** Context for server-generated alerts that have no source event, e.g. the missed dose. */

@@ -2,9 +2,10 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
-import { doseRecords, medicationCatalog, medications, reports } from "../db/schema.js";
+import { alerts, doseRecords, medicationCatalog, medications, reports } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { isoDate, seniorParam, uuid } from "../schemas.js";
+import { resolveAlerts } from "../services/alerts.js";
 import { parseOccurrenceId } from "../services/doses.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
@@ -62,7 +63,15 @@ export function dailyCareRoutes(deps: Deps) {
         setWhere: and(sql`${doseRecords.status} = 'snoozed'`, eq(doseRecords.seniorId, seniorId)),
       })
       .returning();
-    if (row) return c.json(row, 201);
+    if (row) {
+      // A late answer ends an already-reported missed dose; a snooze does not.
+      if (row.status !== "snoozed") {
+        await resolveAlerts(deps, seniorId, eq(alerts.dedupKey, `dose_missed:${row.occurrenceId}`), {
+          title: (n) => `${n} ${row.status === "taken" ? "took" : "skipped"} the missed dose of ${med.name}`,
+        });
+      }
+      return c.json(row, 201);
+    }
     const [existing] = await db.select().from(doseRecords).where(eq(doseRecords.occurrenceId, body.occurrenceId));
     if (!existing || existing.seniorId !== seniorId) throw new ApiError(409, "version_conflict", "Occurrence id already used");
     return c.json(existing, 200);

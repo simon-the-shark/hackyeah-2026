@@ -5,7 +5,7 @@ import { assertLinked, requireRole } from "../auth/middleware.js";
 import { alerts, careLinks, devices, events, statusHeartbeats, trips, users } from "../db/schema.js";
 import { ApiError, notFound } from "../errors.js";
 import { eventSource, geoPoint, idParam, isoDate, seniorParam, uuid } from "../schemas.js";
-import { ingestEvent } from "../services/alerts.js";
+import { ingestEvent, resolveAlerts } from "../services/alerts.js";
 import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
@@ -44,6 +44,8 @@ const alertView = (row: {
   kind: row.alert.kind,
   createdAt: row.alert.createdAt,
   cancelledAt: row.alert.cancelledAt,
+  resolvedAt: row.alert.resolvedAt,
+  resolvedByEventId: row.alert.resolvedByEventId,
   pushStatus: row.alert.pushStatus,
   details: row.alert.details,
   acknowledgedAt: row.alert.acknowledgedAt,
@@ -111,13 +113,14 @@ export function safetyRoutes(deps: Deps) {
       z.object({
         since: isoDate.optional(),
         unacknowledged: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
+        unresolved: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
         limit: z.coerce.number().int().min(1).max(200).default(50),
       }),
     ),
     async (c) => {
       const auth = c.get("auth");
       requireRole(auth, "guardian");
-      const { since, unacknowledged, limit } = c.req.valid("query");
+      const { since, unacknowledged, unresolved, limit } = c.req.valid("query");
       const rows = await db
         .select({ alert: alerts, event: events, seniorName: users.displayName })
         .from(careLinks)
@@ -129,6 +132,7 @@ export function safetyRoutes(deps: Deps) {
             eq(careLinks.guardianId, auth.userId),
             since ? gt(alerts.createdAt, since) : undefined,
             unacknowledged ? isNull(alerts.acknowledgedAt) : undefined,
+            unresolved ? and(isNull(alerts.resolvedAt), isNull(alerts.cancelledAt)) : undefined,
           ),
         )
         .orderBy(desc(alerts.createdAt))
@@ -212,6 +216,10 @@ export function safetyRoutes(deps: Deps) {
       .returning();
     // Any live device ends the senior's monitoring gap and re-arms monitoring_lost.
     await db.update(statusHeartbeats).set({ staleAlertedAt: null }).where(eq(statusHeartbeats.seniorId, seniorId));
+    await resolveAlerts(deps, seniorId, eq(alerts.kind, "monitoring_lost"), {
+      title: (n) => `Monitoring restored for ${n}`,
+      source: body.source,
+    });
     return c.json({ ...row!, staleAlertedAt: null });
   });
 
