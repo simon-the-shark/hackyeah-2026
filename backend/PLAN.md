@@ -71,16 +71,18 @@ Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Vers
 
 `users(id, role senior|guardian, display_name, created_at)`, `care_links(senior_id, guardian_id, created_at)`,
 `pairing_codes(code, senior_id, expires_at, used_at)`,
-`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, created_at)`,
+`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, revoked_at, created_at)`,
 `safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
-`contacts(id, senior_id, name, phone, sort_order, version)`,
-`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version, schedule_updated_at)`,
-`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, scheduled_for, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null)`,
-`alerts(id, event_id, senior_id, kind sos|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost, created_at, cancelled_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
-`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at (server receipt time), stale_alerted_at)`,
+`contacts(id, senior_id, name, phone, sort_order, is_emergency, version)`,
+`medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, missed_grace_minutes, max_snoozes, version, schedule_updated_at)`,
+`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, snooze_count, scheduled_for, recorded_at)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|cancel|fall_detected|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null, source device|trace_replay|simulated)`,
+`alerts(id, event_id, senior_id, kind sos|fall|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost|low_battery, created_at, cancelled_at, resolved_at, resolved_by_event_id, push_status none|sent|failed|simulated, push_attempts, last_push_at, acknowledged_at, acknowledged_by, dedup_key unique, details jsonb)`,
+`status_heartbeats(device_id PK, senior_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, source, reported_at (server receipt time), stale_alerted_at, low_battery_alerted_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
-`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, window_start, window_end, status planned|active|completed|missed, version)`,
+`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, route jsonb, corridor_m, window_start, window_end, status planned|active|completed|missed, version, routine_id, local_date; unique (routine_id, local_date))`,
+`routine_suggestions(id, senior_id, label, destination, route, weekdays, start_time, end_time, timezone, source, status pending|accepted|rejected, created_at, decided_at, decided_by)`,
+`routines(id, senior_id, label, destination, route, corridor_m, weekdays, start_time, end_time, timezone, active, suggestion_id, version, created_at)`,
 `medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic boolean)`.
 
 `src/db/schema.ts` is the source of truth; this list is a summary.
