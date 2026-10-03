@@ -32,10 +32,10 @@ hackathon delivery. P2 contains the user's nice-to-haves.
 | P1 | Barcode entry | Scan known code, show candidate, confirm before saving | Camera/decoder support and catalog; manual entry for unknown codes |
 | P1 | Medication 3D reference | View/rotate a bundled model associated with a demo medication | Verified renderer, licensed asset; clearly identify generic models |
 | P1 | Easy contacts | Large predefined contact cards and system voice-call handoff | Calling support; emulator can verify handoff without proving a real call |
-| P1 | Local AI and reporting | Structured wellbeing check-in, on-device summary, share preview | Verified local model/runtime and resource budget; structured check-in works without LLM |
+| P1 | AI wellbeing chat and reporting | Voice or text check-in chat; summary sent to the guardian when it ends | OpenAI key on the backend; microphone and playback verified on the target; scripted assistant labelled as a simulation |
 | P2 | Planned trips, v1 | Guardian defines destination/route and time window; deviation warning | Route definition and reliable location input |
 | P2 | Learned routines, v2 | Suggest frequent routes from consented history; guardian confirms | Sufficient history and evaluated false-alert behavior |
-| P2 | Voice interaction | Voice contact selection or assistant interaction | Verify speech support; always retain touch controls |
+| P2 | Voice interaction | Voice contact selection (the check-in chat already accepts speech) | Verify speech support; always retain touch controls |
 | P2 | Fall detection | Sensor feasibility spike before implementation | Real watch sensors and false-positive evaluation; never infer success from mock data |
 
 “Do not leave the house” means a designated safe-area alert, not precise indoor
@@ -58,8 +58,8 @@ packages are not required until deployment or pairing needs justify them.
 - Medication: schedule, detail/reference model, reminders and dose actions.
 - Contacts: recognizable names, large call buttons; “voice” initially means a
   voice call. Speech-controlled selection is the optional voice feature.
-- Wellbeing: short structured mood/energy/symptom check-in, optional text,
-  assistant response, and a preview of what will be shared.
+- Wellbeing: a short check-in chat with the assistant by voice or text; when it
+  ends, the summary sent to the guardian is shown, with the option to remove it.
 - Setup/status: permissions, relationship/pairing, safe area, and demo mode.
 
 ### Guardian Phone
@@ -69,7 +69,8 @@ packages are not required until deployment or pairing needs justify them.
 - Alert list/detail: SOS or area exit, event time, device source, location
   freshness/accuracy when available, acknowledgement, and call action.
 - Care setup: home circle, trusted contacts, medication schedule.
-- Wellbeing report: user-entered facts and AI-generated summary distinguished.
+- Wellbeing reports: AI-written check-in summaries, clearly labelled, with the
+  attention level and ratings in words; never the conversation itself.
 - Watch & vitals: the watch's own last location (with age, accuracy, distance
   from home), its battery, the latest heart rate with its age, a 6-hour trend
   and the latest heart-rate alert. Simulated data is labelled; no diagnosis.
@@ -156,28 +157,41 @@ ArkUI or hardware. Add a watch module only after establishing target support.
 - A model is an illustrative reference, not reliable pill identification.
   Display an image/text fallback if rendering is unavailable.
 
-### Local Wellbeing Assistant
+### Wellbeing Check-in Assistant
 
-Interpret the requested on-premise computing as on-device inference for this
-mobile scope. A self-hosted server model would be a separate decision.
+Changed by user decision (2026-10-03): the assistant is a chat with OpenAI
+models called by the backend, not on-device inference. The API key lives only
+on the server; the app never talks to OpenAI directly.
 
-- Structured voluntary check-ins are the initial data source; passive health
-  sensing is not assumed. Keep deterministic records usable without a model.
-- Select a redistributable small model and supported runtime only after a
-  feasibility spike on the target, recording license, quantization, model size,
-  memory, latency, and supported ABI. No model/runtime has been chosen yet.
-- Flow: local check-in/history subset → local inference → constrained summary
-  → user preview/approval → guardian report through the integration provider.
-- Keep raw prompts/history on device by default. Share only approved structured
-  data/summary; provide local history deletion and explain sharing controls.
-- Treat entered text as data, validate generated structure, and fall back to a
-  factual structured report on timeout, memory failure, or invalid output.
-- Summaries support wellbeing conversations; they must not invent observations,
-  change medication, diagnose, or independently control emergency alerts.
-- Evaluate against synthetic check-ins for factuality, missing data, unsupported
-  medical advice, offline operation, and measured device resource use. If the
-  runtime fails feasibility, label the assistant unavailable; scripted summaries
-  must be labelled simulation rather than on-device AI.
+- The senior's Wellbeing tab opens a short check-in chat. The assistant asks
+  about mood, energy, sleep, pain and worries, one short question at a time,
+  in the senior's language. The senior can type or speak: speech is recorded
+  with Media Kit `AVRecorder` (`ohos.permission.MICROPHONE`), transcribed on the
+  backend, and replies can be read aloud (backend text-to-speech, played with
+  `AVPlayer`). Touch and text always remain available.
+- Before starting, the screen says that a summary goes to the guardian, that
+  the guardian does not see the conversation, that replies come from an AI
+  assistant that cannot give medical advice, and where SOS is.
+- When the assistant has said goodbye (or the senior presses Finish, or the
+  chat is idle for 20 minutes) the backend writes a structured summary
+  (mood/energy/sleep/pain, things mentioned, attention level, 2-4 sentences)
+  and sends it to the guardian automatically. The conversation itself is
+  deleted from the server; the senior sees exactly what was shared and can
+  remove it.
+- Safety: the assistant never diagnoses or advises on medication. If the senior
+  describes an emergency it tells them to press SOS or call 112 and the app
+  shows a large SOS button; it never sends an SOS itself. A possible emergency
+  raises one informational `wellbeing` alert for the guardian.
+- Without an OpenAI key the assistant is shown as unavailable. A scripted demo
+  assistant (`ASSISTANT_PROVIDER=simulated`) is labelled as a simulation on
+  both phones and in the report.
+- Guardian: Wellbeing reports list and detail (summary, ratings in words,
+  attention, how the senior answered), a local notification for each new
+  report while the app is open, and an Overview row. AI-written content is
+  always labelled and called not a medical assessment.
+- Evaluate with synthetic conversations for factuality, missing topics,
+  unsupported medical advice, emergency wording and malformed output. Record
+  real latency on the target once a key is configured.
 
 ## Platform Feasibility Gates
 
@@ -197,7 +211,7 @@ other HarmonyOS Kits are not assumed until verified.
 | Barcode | Public camera/decoder support and catalog availability? | Barcode fixture/manual entry, not a claimed live scan |
 | 3D | Public renderer, asset formats, memory and licensing? | Static reference marked as such |
 | Calling/voice | System dial handoff and optional speech availability? | Show contact number if calling unsupported |
-| Local inference | Compatible runtime/model and acceptable resources? | Structured check-in without generated response |
+| AI check-in | OpenAI key configured on the backend; microphone and audio playback on the target? | Scripted assistant labelled as a simulation; typing instead of speaking |
 | Fall sensing | Sensors, sampling/background access, and reliable evaluation? | Defer; synthetic trigger is not fall detection |
 
 Fallbacks support development, but at least one real platform capability must
@@ -218,7 +232,8 @@ The backend now implements these needs; its API contract is
   timestamps; agree retry/deduplication and acknowledgement semantics.
 - Guardian delivery: registration if the chosen transport requires it, incoming
   alert payload, deep-link target, alert refresh, and acknowledgement operation.
-- Reports: submit user-approved check-in summaries and retrieve guardian reports.
+- Reports: check-in chat sessions whose summaries the backend sends to guardians,
+  and guardian report reads.
 - Errors: agreed handling of unauthorized access, expired pairing, validation
   errors, temporary outages, and offline recovery.
 
@@ -229,7 +244,7 @@ integration acceptance remains pending until both mobile roles run end to end.
 ## Implementation Sequence
 
 1. **Feasibility and baseline:** verify installed SDK/build, boot phone target,
-   check location/reminders/push/watch/local inference support, and record each
+   check location/reminders/push/watch/microphone support, and record each
    gate's evidence. Confirm mobile integration needs with backend owner.
 2. **Accessible safety slice:** role navigation, senior home/SOS, guardian alerts,
    persistent event queue, home-circle state machine, deterministic trace replay.
@@ -239,8 +254,8 @@ integration acceptance remains pending until both mobile roles run end to end.
    available. Exit: document exactly which real delivery/background paths pass.
 4. **Daily care:** schedule/persistence/reminders, barcode-assisted entry, bundled
    3D reference, contacts. Exit: demonstrate one complete medication flow.
-5. **Private wellbeing:** structured check-in, evaluated local inference, share
-   preview, guardian report. Exit: offline inference evidence or explicit gap.
+5. **Wellbeing:** voice/text check-in chat, automatic guardian report, guardian
+   report screens. Exit: a real model call on the target or an explicit gap.
 6. **Stretch and handoff:** only after core paths work, add planned trips before
    learned routes; assess voice/falls. Record demo, verified installation/launch
    commands, architecture, AI disclosures, and outstanding limitations.
@@ -254,8 +269,8 @@ integration acceptance remains pending until both mobile roles run end to end.
 - Events: offline SOS, restart with queued event, retries with same ID, duplicate
   guardian receipt, server acceptance versus guardian acknowledgement.
 - Medication: occurrence deduplication, snooze, edits, time-zone changes, restart.
-- AI: summary grounded in inputs, missing information, malformed output and
-  unavailable runtime; no dependency from safety alerts to inference.
+- AI: summary grounded in the conversation, missing topics, malformed output and
+  unavailable assistant; SOS never depends on the assistant.
 
 ### Runtime Checks
 
@@ -265,7 +280,8 @@ integration acceptance remains pending until both mobile roles run end to end.
 - Two phone instances/roles with real integration; watch standalone/relay and
   disconnect behavior if a supported watch is available.
 - Large fonts, screen reader, repeated SOS taps, unknown barcode, missing asset.
-- On-device inference with network disabled, recording latency/memory on target.
+- Check-in chat on the target: microphone permission, recording, read-aloud,
+  latency of replies and of the summary.
 
 ### Deterministic Demo Script
 
@@ -276,8 +292,9 @@ integration acceptance remains pending until both mobile roles run end to end.
    guardian contact action. Clearly label any local alert simulation.
 4. Show a real platform reminder, dose action, known barcode and 3D reference
    where implemented; disclose any fixtures/static fallbacks.
-5. Enter a wellbeing check-in, generate offline only if verified, preview and
-   share its summary. Show one failure path, such as an offline queued SOS.
+5. Have a wellbeing chat (spoken if the microphone works on the target), show
+   the summary the guardian receives, and label the scripted assistant if no
+   key is configured. Show one failure path, such as an offline queued SOS.
 
 Completion evidence: build output and `.hap` location, installation/launch steps,
 target/API details, test results, video, real-versus-simulated capability list,

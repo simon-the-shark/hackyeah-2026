@@ -14,6 +14,16 @@ const schema = z
     LOW_BATTERY_PERCENT: z.coerce.number().int().min(1).max(90).default(15),
     RATE_LIMIT_BOOTSTRAP_PER_MINUTE: z.coerce.number().int().positive().default(10),
     RATE_LIMIT_CLAIM_FAILURES_PER_15MIN: z.coerce.number().int().positive().default(10),
+    /** Wellbeing check-in assistant: OpenAI (default) or scripted replies for development (explicit opt-in). */
+    ASSISTANT_PROVIDER: z.enum(["openai", "simulated"]).default("openai"),
+    /** Without a key the OpenAI assistant is unavailable (503), but the server still starts. */
+    OPENAI_API_KEY: z.string().optional(),
+    OPENAI_CHAT_MODEL: z.string().min(1).default("gpt-6-luna"),
+    OPENAI_TRANSCRIBE_MODEL: z.string().min(1).default("gpt-transcribe"),
+    OPENAI_TTS_MODEL: z.string().min(1).default("gpt-4o-mini-tts"),
+    OPENAI_TTS_VOICE: z.string().min(1).default("marin"),
+    WELLBEING_IDLE_MINUTES: z.coerce.number().int().min(1).max(1440).default(20),
+    RATE_LIMIT_ASSISTANT_PER_HOUR: z.coerce.number().int().positive().default(120),
   })
   .superRefine((env, ctx) => {
     if (env.PUSH_PROVIDER === "pushkit" && !env.PUSH_KIT_KEY_FILE) {

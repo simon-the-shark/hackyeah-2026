@@ -22,6 +22,7 @@ import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession, careApi } from '../services/CareApi';
 import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
 import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
+import { WELLBEING_REPORT_ROUTE, WELLBEING_REPORTS_ROUTE, WellbeingReportTarget } from './WellbeingReportsPage';
 
 interface RemoteAlert {
   id: string;
@@ -31,6 +32,12 @@ interface RemoteAlert {
   acknowledgedAt?: string | null;
   // Null for server-raised alerts such as a missed dose.
   event?: RemoteEvent | null;
+  details?: RemoteAlertDetails | null;
+}
+
+/** Only the fields this screen uses; `details` differs per alert kind. */
+interface RemoteAlertDetails {
+  reportId?: string | null;
 }
 
 interface RemoteEvent {
@@ -61,6 +68,9 @@ function alertIcon(alert: CareAlert): Resource {
   }
   if (alert.type === AlertType.HeartRate) {
     return $r('sys.symbol.heart_fill');
+  }
+  if (alert.type === AlertType.Wellbeing) {
+    return $r('sys.symbol.message_fill');
   }
   return $r('sys.symbol.house_shield_fill');
 }
@@ -295,7 +305,10 @@ export struct AlertsPage {
 
 @Component
 export struct AlertDetailPage {
+  @Consume('navStack') navStack: NavPathStack;
   alert: CareAlert = new CareAlert('', AlertType.Sos, '', '', '');
+  /** The check-in summary a wellbeing alert points to, once it exists. */
+  @State private reportId: string = '';
   @State private acknowledged: boolean = false;
   @State private acknowledging: boolean = false;
   @State private acknowledgementError: string = '';
@@ -319,6 +332,8 @@ export struct AlertDetailPage {
     try {
       const item = await careApi.request(`/alerts/${encodeURIComponent(this.alert.id)}`,
         http.RequestMethod.GET) as RemoteAlert;
+      const reportId = item.details?.reportId;
+      this.reportId = typeof reportId === 'string' ? reportId : '';
       const event = item.event;
       if (event !== undefined && event !== null) {
         const occurredAt = Date.parse(event.occurredAt);
@@ -482,6 +497,25 @@ export struct AlertDetailPage {
 
           if (this.location !== undefined || isUrgent(this.alert)) {
             this.locationCard()
+          }
+
+          if (this.alert.type === AlertType.Wellbeing) {
+            Button(this.reportId !== '' ? 'Read the check-in summary' : 'Open wellbeing reports')
+              .width('100%')
+              .height(56)
+              .attributeModifier(new CareButtonStyle('secondary'))
+              .onClick(() => {
+                if (this.reportId !== '') {
+                  this.navStack.pushPathByName(WELLBEING_REPORT_ROUTE, new WellbeingReportTarget(this.reportId));
+                } else {
+                  this.navStack.pushPathByName(WELLBEING_REPORTS_ROUTE, null);
+                }
+              })
+            if (this.reportId === '') {
+              Text('The summary appears in Wellbeing reports once the check-in ends.')
+                .fontSize(14)
+                .fontColor($r('app.color.text_secondary'))
+            }
           }
 
           Column() {

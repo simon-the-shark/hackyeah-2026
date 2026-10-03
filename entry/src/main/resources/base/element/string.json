@@ -15,6 +15,10 @@
     {
       "name": "location_permission_reason",
       "value": "Location is used to check the configured safe area while the app is open."
+    },
+    {
+      "name": "microphone_permission_reason",
+      "value": "The microphone lets you answer the wellbeing check-in by speaking instead of typing."
     }
   ]
 }

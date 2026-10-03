@@ -14,6 +14,9 @@ export const OPEN_ALERT_NAME_PARAM = 'carelySeniorName';
 /** AppStorage keys EntryAbility sets from a tapped notification; read by the AlertDeepLink component. */
 export const OPEN_ALERT_ID_KEY = 'carelyOpenAlertId';
 export const OPEN_ALERT_NAME_KEY = 'carelyOpenAlertName';
+/** Want parameter and AppStorage key for a tapped wellbeing-report notification. */
+export const OPEN_REPORT_PARAM = 'carelyReportId';
+export const OPEN_REPORT_ID_KEY = 'carelyOpenReportId';
 
 export class LocalAlertNotification {
   /** Stable key, e.g. the backend alert id; the same key replaces the earlier notification. */
@@ -24,6 +27,8 @@ export class LocalAlertNotification {
   urgent: boolean;
   /** Backend alert id opened on tap; empty for simulations, which only open the app. */
   openAlertId: string = '';
+  /** Wellbeing report id opened on tap instead of an alert. */
+  openReportId: string = '';
   seniorName: string = '';
 
   constructor(key: string, title: string, text: string, urgent: boolean) {
@@ -126,13 +131,15 @@ export class Notifications {
     }
   }
 
-  /** Tapping opens EntryAbility; the alert id travels in Want parameters when there is one. */
+  /** Tapping opens EntryAbility; the alert or report id travels in Want parameters when there is one. */
   private async openAppAgent(context: common.UIAbilityContext, notification: LocalAlertNotification,
     requestCode: number): Promise<WantAgent | undefined> {
     const parameters: Record<string, Object> = {};
     if (notification.openAlertId !== '') {
       parameters[OPEN_ALERT_PARAM] = notification.openAlertId;
       parameters[OPEN_ALERT_NAME_PARAM] = notification.seniorName;
+    } else if (notification.openReportId !== '') {
+      parameters[OPEN_REPORT_PARAM] = notification.openReportId;
     }
     const want: Want = {
       bundleName: context.abilityInfo.bundleName,

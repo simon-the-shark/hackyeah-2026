@@ -21,7 +21,11 @@
   subject to compatible target verification.
 - Planned platform integrations: positioning, background execution,
   notifications/reminders, camera/barcodes, calling, local persistence, 3D
-  rendering, and on-device inference.
+  rendering, and microphone recording/audio playback (Media Kit) for the
+  wellbeing check-in.
+- AI: the wellbeing check-in chat uses OpenAI models through the backend
+  (Responses API for chat and summaries, speech-to-text and text-to-speech);
+  see `../backend/README.md`. No model runs on the device.
 - Start with two roles in the existing phone app for the demo; decide watch
   packaging after checking its actual SDK/device support.
 - Watch: a separate `watch` entry module for `wearable` devices in the same
@@ -33,7 +37,8 @@
 
 ## Not Selected Or Verified Yet
 
-- Local LLM model, runtime, quantization, licensing, and device resource budget.
+- Real OpenAI calls from the deployed backend (needs `OPENAI_API_KEY`), and
+  microphone recording and playback on the emulator or a device.
 - Public SDK support, API levels, permissions, and background restrictions for
   each planned platform integration.
 - Watch runtime on a real device; the watch currently assumes its own network
@@ -41,7 +46,7 @@
 - Live HarmonyOS Push Kit delivery: the backend sender is implemented but has
   not been verified against a real AppGallery Connect project or emulator.
 - Barcode catalog and 3D asset source/licensing.
-- Optional voice recognition and fall-detection feasibility.
+- Voice control beyond the check-in chat, and fall-detection feasibility.
 
 ## SDK Compatibility Note
 

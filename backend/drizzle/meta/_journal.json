@@ -106,6 +106,13 @@
       "when": 1791042316179,
       "tag": "0014_shocking_shockwave",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791064313322,
+      "tag": "0015_lame_the_fallen",
+      "breakpoints": true
     }
   ]
 }

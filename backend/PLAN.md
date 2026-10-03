@@ -24,7 +24,7 @@ Push Kit** (the DevEco Studio emulator supports push, per
 | Guardian alerts (P0) | Alert list/detail, `since` refresh, ack, push token registration, push send via Push Kit | Notification display, deep link |
 | Medication (P1) | Schedule CRUD (guardian-edited, versioned). Dose records (taken/skipped/snoozed, idempotent by occurrence ID). Optional "dose missed" event → alert. Small **synthetic** barcode catalog (`barcode → name, form, modelAssetKey`) | Local reminders, barcode scanning (camera), 3D rendering of bundled models |
 | Easy contacts (P1) | Contacts CRUD (guardian-managed, synced) | Dialing, voice call handoff, speech |
-| AI assistant (P1) | Stores **user-approved** reports only (structured fields plus summary, with `source: ai\|structured\|simulated`). Guardian reads them | All inference (on-device LLM), raw check-ins, prompts, history |
+| AI assistant (P1) | Wellbeing check-in chat (user decision 2026-10-03: OpenAI through the backend instead of an on-device model): relays the senior's text or voice to OpenAI, keeps the conversation only while the check-in is open, stores the summary report (`source: ai\|structured\|simulated`) and tells guardians. Guardian reads reports. Device-made reports can still be posted | Chat UI, microphone recording, playback of the spoken replies |
 | Planned trips v1 (P2) | Trip CRUD (destination circle plus time window). Accepts trip events. Raises "trip not completed" when the window ends with no arrival event. Stores an optional route and corridor | Route tracking, deviation detection |
 | Learned routines v2 (P2) | Stores device-computed routine suggestions (summary only, never raw history). Guardian accepts or rejects them into versioned routines. The watchdog turns each routine into daily planned trips | Learning routines from consented history on the device, suggesting them |
 | Fall detection (P2) | Accepts `fall_detected` events, which must declare their `source`. Raises an urgent `fall` alert, which can be cancelled | Sensor feasibility spike, detection, false-positive evaluation |
@@ -189,3 +189,19 @@ Not done: Push Kit click-through data and invalid-token cleanup, because the Har
 - Watch pairing: `POST /v1/pairing/watch-codes` (senior, 5 min) and `POST /v1/pairing/watch-claim` (public, shares the failed-claim limit). Codes carry a `purpose`, so a guardian code never adds a watch and a watch code never links a guardian.
 - The watch reports its own location through the existing per-device heartbeat (`measuredBy: "watch"`); no new endpoint.
 - Heart rate: `POST /v1/seniors/:id/vitals` batches and `GET .../vitals/heart-rate` (7-day retention, idempotent per device and instant). The watch decides when a reading is out of range and sends `heart_rate_out_of_range` / `heart_rate_in_range`; the server stores the reported values in the alert `details` and never evaluates readings itself, keeping the principle above. Pushes never include the reading, and readings are redacted from dev logs.
+
+## Wellbeing check-in chat (2026-10-03)
+
+User decision: the wellbeing assistant runs in the cloud through OpenAI, called only by the backend
+(the API key never reaches a device), and the report goes to guardians automatically when the
+check-in ends.
+
+- `wellbeing_sessions` and `wellbeing_messages` (migration 0015). One open check-in per senior; its
+  messages are deleted when it finishes, so only the summary report and session metadata remain.
+- `ASSISTANT_PROVIDER=openai` (default; Responses API with strict JSON schemas, `store: false`,
+  audio transcription and speech) or `simulated` (scripted, labelled, no voice). Without
+  `OPENAI_API_KEY` the endpoints answer 503 `assistant_unavailable` and the server still starts.
+- Alert kind `wellbeing` when a reply flags a possible emergency (the assistant tells the senior to
+  use SOS; it never sends one) or the summary rates attention `urgent`. Every report is pushed.
+- The watchdog finishes check-ins idle for `WELLBEING_IDLE_MINUTES`; per-senior hourly cap on paid
+  assistant calls.

@@ -46,20 +46,24 @@ const TITLES: Record<AlertKind, (name: string) => string> = {
   low_battery: (n) => `Low battery on ${n}'s device`,
   // Never put the reading in a push: lock screens and the push transport should not carry health values.
   heart_rate: (n) => `${n}'s watch: heart rate outside the set range`,
+  // Like heart rate: what the senior said never goes into a push.
+  wellbeing: (n) => `${n}'s wellbeing check-in needs attention`,
 };
 
 const DEFAULT_BODY = "Open the app for details.";
+export const WELLBEING_BODY = "AI summary, not a medical assessment. Open the app for details.";
 const BODIES: Partial<Record<AlertKind, string>> = {
   heart_rate: "Watch reading, not a medical assessment. Open the app for details.",
+  wellbeing: WELLBEING_BODY,
 };
 
-async function seniorName(deps: Deps, seniorId: string): Promise<string> {
+export async function seniorName(deps: Deps, seniorId: string): Promise<string> {
   const [u] = await deps.db.select({ name: users.displayName }).from(users).where(eq(users.id, seniorId));
   return u?.name ?? "Senior";
 }
 
 /** Sends one push to every device of the senior's guardians; "none" when no guardian device has a token. */
-async function pushToGuardians(
+export async function pushToGuardians(
   deps: Deps,
   seniorId: string,
   title: string,

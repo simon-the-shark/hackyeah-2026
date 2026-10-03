@@ -5,10 +5,12 @@ import { isUrgent, notifyGuardians, raiseServerAlert, URGENT_KINDS } from "./ale
 import { checkMissedDoses } from "./doses.js";
 import { materializeRoutines } from "./routines.js";
 import { pruneVitalSamples } from "./vitals.js";
+import { finishIdleWellbeingSessions } from "./wellbeing.js";
 
 /**
  * One pass: stale heartbeats -> monitoring_lost; routines -> upcoming trips; old heart-rate samples pruned;
- * elapsed trip windows -> trip_not_completed; overdue doses -> dose_missed; then push reminders and retries.
+ * elapsed trip windows -> trip_not_completed; overdue doses -> dose_missed; idle wellbeing check-ins
+ * finished; then push reminders and retries.
  */
 export async function runWatchdogOnce(deps: Deps) {
   const now = deps.clock();
@@ -58,6 +60,8 @@ export async function runWatchdogOnce(deps: Deps) {
   }
 
   raised += await checkMissedDoses(deps);
+  // A failing assistant must not stop reminders and retries below.
+  await finishIdleWellbeingSessions(deps).catch((err) => console.error("[watchdog] wellbeing pass failed", err));
   await repushAlerts(deps);
   return raised;
 }

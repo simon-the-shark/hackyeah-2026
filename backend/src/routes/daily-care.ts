@@ -174,6 +174,23 @@ export function dailyCareRoutes(deps: Deps) {
     },
   );
 
+  app.get(
+    "/seniors/:seniorId/reports/:reportId",
+    validate("param", z.object({ seniorId: uuid, reportId: uuid })),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "guardian");
+      const { seniorId, reportId } = c.req.valid("param");
+      await assertLinked(db, auth, seniorId);
+      const [row] = await db
+        .select()
+        .from(reports)
+        .where(and(eq(reports.id, reportId), eq(reports.seniorId, seniorId)));
+      if (!row) throw notFound("Report");
+      return c.json(row);
+    },
+  );
+
   /**
    * Sharing control: the senior withdraws a report they shared (its id comes from the POST response);
    * it disappears for guardians too. The senior's app keeps its own record of what it shared.

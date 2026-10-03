@@ -4,19 +4,38 @@ import { CareAlert, remoteAlertCopy } from '../models/Safety';
 import { apiSession, careApi } from '../services/CareApi';
 import { GuardianInboxAlert, sosCareAlert } from '../services/GuardianAlertWatcher';
 import { OPEN_ALERT_NAME_KEY } from '../platform/Notifications';
+import { WELLBEING_REPORT_ROUTE, WellbeingReportTarget } from '../pages/WellbeingReportsPage';
 
 /**
  * Invisible helper placed once in the root page. When a local alert
  * notification is tapped, it loads that alert and opens its detail page on top
  * of the guardian home. If the alert cannot be loaded it opens the inbox.
+ * A tapped wellbeing-report notification opens that report the same way.
  */
 @Component
 export struct AlertDeepLink {
   @Consume('navStack') navStack: NavPathStack;
   @StorageLink('carelyOpenAlertId') @Watch('onOpenRequest') private openAlertId: string = '';
+  @StorageLink('carelyOpenReportId') @Watch('onOpenReport') private openReportId: string = '';
 
   aboutToAppear(): void {
     this.onOpenRequest();
+    this.onOpenReport();
+  }
+
+  private onOpenReport(): void {
+    const reportId = this.openReportId;
+    if (reportId === '') {
+      return;
+    }
+    this.openReportId = '';
+    if (!apiSession.configured() || apiSession.role !== 'guardian') {
+      return;
+    }
+    if (!this.navStack.getAllPathName().includes(GUARDIAN_PROFILE.route)) {
+      this.navStack.pushPathByName(GUARDIAN_PROFILE.route, null);
+    }
+    this.navStack.pushPathByName(WELLBEING_REPORT_ROUTE, new WellbeingReportTarget(reportId));
   }
 
   private onOpenRequest(): void {
