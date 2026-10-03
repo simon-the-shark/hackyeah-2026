@@ -9,6 +9,7 @@ import { overviewRoutes } from "./routes/overview.js";
 import { routineRoutes } from "./routes/routines.js";
 import { vitalsRoutes } from "./routes/vitals.js";
 import { safetyRoutes } from "./routes/safety.js";
+import { wellbeingRoutes } from "./routes/wellbeing.js";
 import { redactBody } from "./log-redaction.js";
 import type { AppEnv, Deps } from "./types.js";
 
@@ -23,6 +24,11 @@ function headersForLog(headers: Headers): Record<string, string> {
 }
 
 async function bodyForLog(message: Request | Response): Promise<string | undefined> {
+  const contentType = message.headers.get("content-type");
+  // Audio and other binary bodies are unreadable in a log and may hold the senior's voice.
+  if (contentType && !/json|text\//i.test(contentType)) {
+    return message.body ? "[non-JSON body omitted]" : undefined;
+  }
   const body = await message.clone().text();
   if (body === "") return undefined;
   try {
@@ -71,6 +77,7 @@ export function createApp(deps: Deps) {
   v1.route("/", overviewRoutes(deps));
   v1.route("/", routineRoutes(deps));
   v1.route("/", vitalsRoutes(deps));
+  v1.route("/", wellbeingRoutes(deps));
   app.route("/v1", v1);
 
   app.notFound((c) => c.json({ error: { code: "not_found", message: "Route not found" } }, 404));

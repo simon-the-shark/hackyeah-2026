@@ -67,9 +67,12 @@ export function invalidResponse(what: string): ApiError {
 // maps failures to ApiError, so callers never see raw transport errors.
 export class BackendClient {
   private readonly config: BackendConfig;
+  private readonly readTimeoutMs: number;
 
-  constructor(config: BackendConfig) {
+  // Calls that wait for an AI model (wellbeing check-in) need a longer `readTimeoutMs`.
+  constructor(config: BackendConfig, readTimeoutMs: number = READ_TIMEOUT_MS) {
     this.config = config;
+    this.readTimeoutMs = readTimeoutMs;
   }
 
   async get<T>(path: string): Promise<T> {
@@ -136,7 +139,7 @@ export class BackendClient {
       expectDataType: http.HttpDataType.STRING,
       usingCache: false,
       connectTimeout: CONNECT_TIMEOUT_MS,
-      readTimeout: READ_TIMEOUT_MS
+      readTimeout: this.readTimeoutMs
     };
     // Each HttpRequest object serves exactly one request and must be destroyed afterwards.
     const request = http.createHttp();

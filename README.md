@@ -10,13 +10,15 @@ primary intended SOS surface; a phone provides the full companion experience.
 
 - Core: safe-area exit alerts, SOS on phone/watch, medication reminders,
   barcode-assisted medication entry, 3D medication references, and easy calling.
-- Planned intelligence: an on-device wellbeing assistant and guardian summaries.
+- Intelligence: a hands-free spoken wellbeing check-in with the OpenAI Realtime
+  model through the backend; when it ends, a summary goes to the guardian.
 - Stretch: guardian-defined trips, learned routine deviations, voice interaction,
   and fall detection.
 
 The repository currently contains the starter application and a verified API 24
 build, not these product features. Watch support, background monitoring, remote
-push delivery, and local LLM execution require feasibility verification.
+push delivery, and real OpenAI calls from the deployed backend require
+verification.
 The backend (Hono + Drizzle + PostgreSQL API, with HarmonyOS Push Kit for
 guardian alerts) lives in `backend/`; see `backend/README.md`.
 
@@ -109,6 +111,24 @@ To try it on the DevEco Studio emulator (team images use API 23):
 4. Set a heart rate in the emulator's Virtual Sensor panel and a position in
    its GPS panel.
 5. On the guardian phone: Home, Safety, Watch & vitals.
+
+### Wellbeing Check-in
+
+The senior's Wellbeing tab is a short spoken conversation with an AI assistant
+about how they feel. They tap Talk with Carely once (the phone asks for the
+microphone) and then just talk: the phone streams the microphone to the backend,
+which relays it to the OpenAI Realtime model and plays its spoken answers. The
+model notices when the senior has finished speaking, so nothing else is pressed.
+When Carely says goodbye, or the senior presses Finish, the backend writes a
+summary and sends it to the guardian, who reads it under Home, Insights,
+Wellbeing Reports (or from the notification while Carely is open). The guardian
+sees the summary, not the conversation; the senior sees what was shared and can
+remove it.
+
+The backend calls OpenAI and needs `OPENAI_API_KEY` in its runtime environment
+(never in the app or the repository). Without a key the check-in shows as
+unavailable. See `backend/README.md` for the configuration and the voice
+protocol.
 
 ## Project Documents
 

@@ -11,16 +11,18 @@ need timely notice of a safe-area exit or SOS and understandable wellbeing updat
 
 **Desired demonstration:** A senior leaves a designated home area, an alert
 reaches the guardian, and the guardian can contact them. A prominent SOS button
-provides a second route to help. Medication reminders and a local wellbeing
-check-in demonstrate everyday support.
+provides a second route to help. Medication reminders and a wellbeing check-in
+chat demonstrate everyday support.
 
 **Lead challenge theme:** Human-Centric Technology, supported by Intelligent
-Experiences through planned on-device AI. Medication 3D references provide a
-secondary Spatial Experiences element if implemented.
+Experiences through an AI wellbeing check-in chat (OpenAI models called by the
+backend). Medication 3D references provide a secondary Spatial Experiences
+element.
 
 **Distinctive platform capability:** Positioning and system notifications for
-safety and reminders; phone/watch interaction for accessible SOS. Local inference,
-camera scanning, calling, and 3D rendering are additional planned integrations.
+safety and reminders; phone/watch interaction for accessible SOS. Microphone
+recording and audio playback for the spoken check-in, camera scanning, calling,
+and 3D rendering are additional integrations.
 At least one real platform integration must be verified in the final demo.
 
 ## Target
@@ -43,8 +45,10 @@ At least one real platform integration must be verified in the final demo.
    and let the guardian open the alert and call the senior.
 5. Show a medication reminder, its reference model, and a taken/skipped action;
    demonstrate barcode-assisted entry with a known sample medication.
-6. Record a wellbeing check-in and, when local inference is verified, generate
-   an on-device summary for explicit sharing with the guardian.
+6. Have a short spoken wellbeing conversation with the assistant (hands-free:
+   no buttons while talking). When it ends, the backend writes a summary that
+   is sent to the guardian; the senior sees exactly what was shared and can
+   remove it.
 
 ## Acceptance Checks
 
@@ -56,26 +60,40 @@ At least one real platform integration must be verified in the final demo.
 - [ ] Barcode entry and a medication 3D reference are demonstrated or explicitly
   recorded as incomplete.
 - [ ] Watch SOS is verified on a compatible target or explicitly shown as simulated.
-- [ ] On-device AI execution is evidenced, or the unavailable/simulated state is disclosed.
+- [ ] The AI check-in is evidenced with a real model call on the target, or the
+  scripted demo assistant is disclosed as a simulation.
 - [ ] A working `.hap`, demo recording, architecture summary, and AI disclosure are supplied.
 
 ## Scope Boundaries
 
 - Core product: Safe-area monitoring on phone/watch, SOS (watch first as a UX
   goal), medication schedule/reminders, barcode scanning, medication 3D
-  references, trusted contacts with easy dialing, and a local wellbeing assistant
+  references, trusted contacts with easy dialing, and a wellbeing assistant
   with guardian reporting. `MOBILE_PLAN.md` stages delivery by feasibility.
+- Changed by user decision (2026-10-03): the wellbeing assistant is a chat with
+  OpenAI models through the backend instead of on-device inference. The senior
+  can write or speak (speech is transcribed by OpenAI and replies can be read
+  aloud). When the chat ends, a summary report goes to the guardian
+  automatically; the guardian sees the summary, not the conversation.
+- Changed by user decision (2026-10-04): the check-in is voice only and hands-free.
+  The phone streams the microphone to the backend, which relays it to the OpenAI
+  Realtime model (`gpt-realtime-2.1-mini`); the model's voice-activity detection
+  decides when the senior has finished speaking, so nothing has to be pressed.
+  Typing and push-to-talk were removed from the senior screen.
 - Added by user decision (2026-10-03): the guardian sees the watch's own
   location and the senior's heart rate from the watch, with an alert when it
   stays outside a set range. Informational only, never a diagnosis.
 - Nice to have: Guardian-defined trips (v1), learned frequent routes and
-  deviation warnings (v2), voice interaction, and fall detection.
+  deviation warnings (v2), voice interaction beyond the check-in chat, and fall
+  detection.
 - Separate ownership: Backend storage, event processing, and push infrastructure
   are handled by another agent. Mobile integration remains a dependency.
 - Out of scope for this hackathon: Clinical diagnosis, medication prescribing,
   and a guaranteed emergency-response service.
 - Planned simulations: Deterministic location traces, local guardian alert
-  fixtures, barcode fixtures, and watch input when hardware is unavailable.
+  fixtures, barcode fixtures, watch input when hardware is unavailable, and a
+  scripted wellbeing assistant (`ASSISTANT_PROVIDER=simulated`) when no OpenAI
+  key is configured.
   Every simulated source must be visibly labelled. A local alert fixture does
   not establish remote push delivery or background geofencing support.
 
@@ -85,5 +103,6 @@ At least one real platform integration must be verified in the final demo.
 guardian informed. Here is the senior's home screen. They leave the designated
 area: the guardian sees an alert and can call them. If they need help immediately,
 they use SOS, ideally on their wrist. The same companion helps with medication
-and a private daily wellbeing check-in.” Show any simulated inputs explicitly;
-extend the recording with medication and AI only when those flows are implemented.
+and a daily wellbeing chat whose summary reaches the guardian.” Show any
+simulated inputs explicitly, including the scripted assistant if no OpenAI key
+is configured.

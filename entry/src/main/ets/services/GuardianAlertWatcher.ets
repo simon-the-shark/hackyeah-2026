@@ -14,6 +14,10 @@ const INBOX_LIMIT = 50;
 /** On the first poll after pairing, only an SOS younger than this still notifies. */
 const FIRST_RUN_SOS_WINDOW_MS = 15 * 60 * 1000;
 const MAX_REMEMBERED_KEYS = 300;
+/** Newest wellbeing reports checked per poll; older ones were seen on earlier polls. */
+const REPORT_POLL_LIMIT = 5;
+/** A report older than this is recorded without a notification, e.g. after pairing or an update. */
+const REPORT_NOTIFY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** AppStorage keys read by the in-app SOS banner. An empty id means no open SOS. */
 export const SOS_ALERT_ID_KEY = 'guardianSosAlertId';
@@ -32,6 +36,34 @@ export interface GuardianInboxAlert {
 
 interface GuardianInbox {
   items: GuardianInboxAlert[];
+}
+
+/** Only what a notification needs from `GET /seniors/:id/reports`; never the summary itself. */
+interface GuardianReportItem {
+  id: string;
+  createdAt: string;
+  structured?: GuardianReportAttention | null;
+}
+
+interface GuardianReportAttention {
+  attention?: string;
+}
+
+interface GuardianReportList {
+  items: GuardianReportItem[];
+}
+
+interface LinkedSenior {
+  id?: string;
+  displayName?: string;
+}
+
+interface GuardianMe {
+  linked?: GuardianLinked;
+}
+
+interface GuardianLinked {
+  seniors?: LinkedSenior[];
 }
 
 function present(value: string | null | undefined): boolean {
@@ -66,6 +98,10 @@ export function sosCareAlert(alertId: string, seniorName: string, createdAt: num
  * notifications. On the first poll after pairing (no stored baseline) existing
  * alerts are recorded silently, except an open SOS younger than 15 minutes,
  * which still notifies because it may need action now.
+ *
+ * The same poll checks the paired senior's newest wellbeing reports and posts
+ * one notification per new check-in summary. The notification never contains
+ * the summary; tapping it opens the report.
  */
 export class GuardianAlertWatcher {
   private readonly store = new SafePreferences(STORE_NAME);
@@ -74,6 +110,9 @@ export class GuardianAlertWatcher {
   private polling: boolean = false;
   private loaded: boolean = false;
   private baselineSet: boolean = false;
+  private reportBaselineSet: boolean = false;
+  /** The paired senior's name for report notifications; looked up once per process. */
+  private seniorName: string = '';
   /** Alert ids already notified, plus `<id>:cancelled` once a cancellation was notified. */
   private notifiedKeys: string[] = [];
   /** Notifications posted by this process, so they can be withdrawn once acknowledged. */
@@ -100,6 +139,8 @@ export class GuardianAlertWatcher {
   async reset(context: common.Context): Promise<void> {
     this.notifiedKeys = [];
     this.baselineSet = false;
+    this.reportBaselineSet = false;
+    this.seniorName = '';
     this.loaded = true;
     this.shownKeys.clear();
     this.publishBanner(undefined);
@@ -135,6 +176,7 @@ export class GuardianAlertWatcher {
         http.RequestMethod.GET) as GuardianInbox;
       const items = Array.isArray(inbox.items) ? inbox.items : [];
       await this.process(context, items);
+      await this.pollReports(context);
     } catch (error) {
       // Network or server failure: keep the last known banner and try again on the next tick.
       hilog.warn(DOMAIN, TAG, 'Alert poll failed');
@@ -213,6 +255,60 @@ export class GuardianAlertWatcher {
     }
   }
 
+  private async pollReports(context: common.UIAbilityContext): Promise<void> {
+    const seniorId = apiSession.seniorId;
+    let list: GuardianReportList;
+    try {
+      list = await careApi.request(`/seniors/${encodeURIComponent(seniorId)}/reports?limit=${REPORT_POLL_LIMIT}`,
+        http.RequestMethod.GET) as GuardianReportList;
+    } catch (error) {
+      hilog.warn(DOMAIN, TAG, 'Report poll failed');
+      return;
+    }
+    const firstRun = !this.reportBaselineSet;
+    let changed = firstRun;
+    for (const item of Array.isArray(list.items) ? list.items : []) {
+      const key = `report:${item.id}`;
+      if (this.notifiedKeys.includes(key)) {
+        continue;
+      }
+      this.remember(key);
+      changed = true;
+      if (!firstRun && Date.now() - Date.parse(item.createdAt) < REPORT_NOTIFY_WINDOW_MS) {
+        await this.notifyReport(context, item);
+      }
+    }
+    this.reportBaselineSet = true;
+    if (changed) {
+      await this.save(context);
+    }
+  }
+
+  private async notifyReport(context: common.UIAbilityContext, item: GuardianReportItem): Promise<void> {
+    const name = await this.pairedSeniorName();
+    const attention = item.structured?.attention;
+    const needsAttention = attention === 'soon' || attention === 'urgent';
+    const notification = new LocalAlertNotification(`report:${item.id}`,
+      needsAttention ? `Please read: ${name}'s check-in` : `${name} finished a check-in`,
+      'Open Carely to read the summary of the wellbeing chat.', false);
+    notification.openReportId = item.id;
+    await notifications.publish(context, notification);
+  }
+
+  private async pairedSeniorName(): Promise<string> {
+    if (this.seniorName === '') {
+      try {
+        const me = await careApi.request('/me', http.RequestMethod.GET) as GuardianMe;
+        const seniors = me.linked?.seniors ?? [];
+        const senior = seniors.find((entry: LinkedSenior) => entry.id === apiSession.seniorId);
+        this.seniorName = typeof senior?.displayName === 'string' ? senior.displayName : '';
+      } catch (error) {
+        hilog.warn(DOMAIN, TAG, 'Senior name lookup failed');
+      }
+    }
+    return this.seniorName !== '' ? this.seniorName : 'Your senior';
+  }
+
   private publishBanner(item: GuardianInboxAlert | undefined): void {
     AppStorage.setOrCreate<string>(SOS_ALERT_ID_KEY, item === undefined ? '' : item.id);
     AppStorage.setOrCreate<string>(SOS_SENIOR_NAME_KEY, item === undefined ? '' : seniorNameOf(item));
@@ -232,6 +328,7 @@ export class GuardianAlertWatcher {
     }
     this.loaded = true;
     this.baselineSet = await this.store.getString(context, 'baseline', '') === '1';
+    this.reportBaselineSet = await this.store.getString(context, 'reportBaseline', '') === '1';
     const raw = await this.store.getString(context, 'notified', '[]');
     try {
       const parsed = JSON.parse(raw) as string[];
@@ -244,6 +341,7 @@ export class GuardianAlertWatcher {
   private async save(context: common.Context): Promise<void> {
     await this.store.putStrings(context, {
       'baseline': this.baselineSet ? '1' : '',
+      'reportBaseline': this.reportBaselineSet ? '1' : '',
       'notified': JSON.stringify(this.notifiedKeys)
     });
   }

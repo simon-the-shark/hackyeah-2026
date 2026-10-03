@@ -3,7 +3,9 @@
 Hono + Drizzle ORM + PostgreSQL API for the elder-care companion app. It stores
 configuration, relays safety events and delivers guardian alerts. It never
 evaluates raw location or health data: geofencing, medication reminders,
-barcode scanning, 3D models and AI inference stay on the device.
+barcode scanning and 3D models stay on the device. The one exception is the
+wellbeing check-in chat, which the backend relays to OpenAI (see
+[Wellbeing check-in](#wellbeing-check-in-openai)).
 See `PLAN.md` for scope and the backend/mobile split, and `../MOBILE_PLAN.md`
 for the mobile side.
 
@@ -102,8 +104,10 @@ bootstrap/pairing and stored only as a SHA-256 hash. Errors always look like
 `{"error":{"code","message","details?"}}` with codes `validation_error` (400),
 `unauthorized` (401), `forbidden` (403), `not_found` (404),
 `version_conflict` (409, `details.current` holds the stored entity),
-`pairing_expired` (410, also for unknown or used codes), `rate_limited` (429,
-`details.retryAfterSeconds`), `internal_error` (500).
+`session_closed` / `session_full` (409, wellbeing check-in),
+`pairing_expired` (410, also for unknown or used codes), `no_speech` (422),
+`rate_limited` (429, `details.retryAfterSeconds`), `internal_error` (500),
+`assistant_unavailable` (503).
 Timestamps are ISO 8601 with offset.
 
 | Method and path | Who | Notes |
@@ -139,10 +143,17 @@ Timestamps are ISO 8601 with offset.
 | `PUT /v1/seniors/:id/status` `{monitoringState, location?, battery?, source?}` | senior | Heartbeat. `reportedAt` is server receipt time. When **no** device of the senior has sent a heartbeat for `HEARTBEAT_STALE_SECONDS` (default 900), one `monitoring_lost` alert is raised per gap, with each device's last `reportedAt` in `details.devices`. A heartbeat from any device ends the gap. See the note below |
 | `GET /v1/seniors/:id/status` | linked | `{status, devices, serverTime}`. Heartbeats are stored per device, so phone and watch never overwrite each other: `devices` lists the latest heartbeat of each device (newest first, with `deviceKind`), and `status` is the newest of them (null before the first heartbeat). Show age, never an unqualified "safe" |
 | `POST /v1/seniors/:id/doses`, `GET .../doses?from=&to=` | senior / linked | Idempotent on `occurrenceId`, which must be `<medicationId>@<YYYY-MM-DD>T<HH:MM>` using the scheduled local date and time in the medication's time zone (otherwise 400). A `snoozed` record can later become `taken` or `skipped`, final records are not overwritten (200 with stored record). Each record keeps a `medicationName` snapshot; deleting or replacing a medication keeps the history and sets `medicationId` to null |
-| `GET /v1/seniors/:id/overview` | linked | One call for the guardian overview: `senior`, `status` and `devices` (as in `/status`), `alerts {unacknowledged, unresolved}` (uncancelled counts), `nextDoses` (up to 3 open occurrences from the dose schedule), `missedDosesLast24h`, `latestReportAt`, `safeAreaVersion`, `plannedOrActiveTrips`, `serverTime` |
+| `GET /v1/seniors/:id/overview` | linked | One call for the guardian overview: `senior`, `status` and `devices` (as in `/status`), `alerts {unacknowledged, unresolved}` (uncancelled counts), `nextDoses` (up to 3 open occurrences from the dose schedule), `missedDosesLast24h`, `latestReportAt`, `latestReport {id, createdAt, attention, source}` (null before the first report; `attention` is `none`, `soon`, `urgent`, or null for reports that are not wellbeing chats), `safeAreaVersion`, `plannedOrActiveTrips`, `serverTime` |
 | `GET /v1/seniors/:id/dose-schedule?from=&to=` | linked | Scheduled occurrences with `from < scheduledFor <= to` (default: 12 h ago to 24 h ahead, at most 7 days), oldest first. Each item: `occurrenceId, medicationId, medicationName, doseText, localTime, timezone, scheduledFor, status, recordedAt`. `status` is `pending`, `taken`, `skipped`, `snoozed` or `missed` (same rule as the alert). Occurrences before a medication's last schedule change are left out |
 | `POST /v1/seniors/:id/reports`, `GET .../reports?before=&limit=` | POST: senior, GET: guardian | Only user-approved content. `source` is `ai`, `structured` or `simulated`. The guardian list is newest first; page with `before` (an ISO time, exclusive) |
-| `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report (id from the POST response); guardians no longer see it and are not told (204). Seniors still cannot read reports back; the app keeps its own record of what it shared |
+| `GET /v1/seniors/:id/reports/:reportId` | guardian | One report (404 if unknown or withdrawn), e.g. from a `wellbeing` alert's `details.reportId` or a report push |
+| `DELETE /v1/seniors/:id/reports/:reportId` | senior | Withdraws a shared report (id from the POST response, or the wellbeing finish response); guardians no longer see it and are not told (204). Seniors still cannot read reports back; the app keeps its own record of what it shared |
+| `GET /v1/seniors/:id/wellbeing/session` | that senior | `{session, messages, assistant: {available, simulated, voice, live}, guardians: [{id, displayName}]}`. `live` says hands-free voice is available (see [Live voice](#live-voice-hands-free)). `session` is the open check-in (null if none) and `messages` its messages, oldest first. See [Wellbeing check-in](#wellbeing-check-in-openai) |
+| `POST /v1/seniors/:id/wellbeing/sessions` `{language?, timezone?, voice?}` | that senior | Starts a check-in: 201 `{session, messages}` with the assistant's greeting. With `voice: true` and `assistant.live`, the check-in starts with `messages: []` and the live connection speaks the greeting. `language` is a BCP 47 hint (max 35 characters), `timezone` an IANA zone. An open check-in is returned as is (200, no new greeting). 503 `assistant_unavailable`, with nothing stored, when no assistant is configured or it fails |
+| `POST .../wellbeing/sessions/:sessionId/messages` `{text}` or `{audio, audioFormat}` | that senior | Exactly one of `text` (1 to 1000 characters) or `audio` (base64, 1 byte to 2 MB decoded) with `audioFormat` `m4a`, `mp3`, `wav`, `webm` or `ogg`. Audio is transcribed first (422 `no_speech` when nothing was recognised). 201 `{message, reply, suggestFinish, safetyConcern}`. Nothing is stored unless the reply succeeded (503 otherwise). 404 for an unknown or someone else's check-in, 409 `session_closed` after it finished, 409 `session_full` at 40 senior messages; `suggestFinish` is always true from the 30th |
+| `POST .../wellbeing/sessions/:sessionId/finish` `{reason?}` | that senior | Body optional; `reason` is `senior` (default) or `assistant` (the app finishes after a reply with `suggestFinish`). 200 `{session, report}`: the summary report is stored and pushed, the conversation deleted. Idempotent (`report` is null once withdrawn). A check-in without senior messages is deleted: `{session: null, report: null}`. 503 when the summary fails; the check-in stays open |
+| `POST /v1/seniors/:id/wellbeing/speech` `{text}` | that senior | Reads a reply aloud: 200 `audio/mpeg` (MP3, 1 to 1000 characters of text). 503 when voice is unavailable |
+| `GET .../wellbeing/sessions/:sessionId/live` (WebSocket) | that senior | Hands-free voice: upgrade with the normal bearer header, then JSON frames. See [Live voice](#live-voice-hands-free) |
 | `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
 | `POST /v1/seniors/:id/vitals` `{source, heartRate: [{bpm, measuredAt}]}` | senior | Heart-rate readings from the watch, 1 to 500 per batch. `source` is required (`device`, `trace_replay` or `simulated`). `bpm` is an integer from 20 to 250. A reading more than 5 minutes ahead of server time or older than 7 days rejects the **whole** batch (400 with the offending `heartRate.<i>.measuredAt` paths). Idempotent per device and `measuredAt`: returns `{stored, duplicates, serverTime}`, 201 when anything was stored, 200 for a pure retry |
@@ -188,8 +199,9 @@ resolved by a heartbeat or dose record). `sos` is ended by cancellation
 (`cancelledAt`), not resolution.
 
 Alert `kind`: `sos`, `area_exit`, `dose_missed`, `trip_deviation`,
-`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`, `heart_rate`. Alert `pushStatus`: `none` (no guardian
-device had a push token), `sent`, `failed`, `simulated`.
+`trip_not_completed`, `monitoring_lost`, `fall`, `low_battery`, `heart_rate`, `wellbeing`. Alert `pushStatus`: `none` (no guardian
+device had a push token), `sent`, `failed`, `simulated`. `wellbeing` alerts are
+never resolved; guardians acknowledge them.
 
 ### Heart rate (watch)
 
@@ -220,6 +232,145 @@ watch reports. Readings are informational and **not a medical assessment**.
   must send `simulated`) gets the `[Simulation]` prefix like other events.
 - Readings are kept for 7 days (pruned by the watchdog) and are redacted from
   the development request log.
+
+## Wellbeing check-in (OpenAI)
+
+The senior talks or writes with Carely's assistant about how they feel. When
+the check-in ends, the guardians get a short summary; they never see the
+conversation itself. The assistant is informational: it does not diagnose, gives
+no medical or medication advice, and never sends an SOS itself.
+
+**Providers.** `ASSISTANT_PROVIDER=openai` (default) calls OpenAI from the
+backend only; the API key (`OPENAI_API_KEY`) never reaches a device. Without a
+key the server still starts, logs a warning, and the assistant endpoints answer
+503 `assistant_unavailable` (`GET .../wellbeing/session` reports
+`assistant.available: false`). `ASSISTANT_PROVIDER=simulated` is an explicit
+opt-in for development: scripted questions and keyword rules, no voice, every
+session `simulated: true`, reports `source: "simulated"` with a summary starting
+"Demo summary (scripted, not AI)", and pushes prefixed `[Simulation]`.
+
+| Variable | Default | Use |
+| --- | --- | --- |
+| `OPENAI_CHAT_MODEL` | `gpt-6-luna` | Replies (reasoning effort `low`) and the summary (`medium`), Responses API with strict JSON schemas |
+| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Voice messages (`/v1/audio/transcriptions`) |
+| `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | `gpt-4o-mini-tts`, `marin` | Reading replies aloud (`/v1/audio/speech`, MP3, asked to speak slowly and clearly) |
+| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1-mini`, `marin` | Hands-free voice (Realtime API over a WebSocket) |
+| `WELLBEING_IDLE_MINUTES` | 20 | Idle check-ins are finished by the watchdog |
+| `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (start, message, transcription, finish, speech, each live connection and each spoken turn) per senior; 429 above |
+
+**Data flow.** Each reply sends OpenAI the system instructions (in
+`src/assistant/prompts.ts`), the senior's display name, the guardians' display
+names, the phone's language and local time, and at most the last 40 messages of
+the open check-in. Voice messages are uploaded to OpenAI for transcription and
+only the transcript is stored. Requests use `store: false`. While a check-in is
+open its messages are stored in `wellbeing_messages`; **finishing deletes them**,
+keeping only the session metadata (times, message counts, finish reason, model)
+and the report. No other health data (heart rate, doses, location) is sent to
+OpenAI. Message text, recordings and summaries are redacted from the
+development request log, and audio responses are not logged.
+
+**Ending.** A check-in ends when the senior presses Finish, when the app
+finishes it after a reply with `suggestFinish` (`reason: "assistant"`), or when
+the watchdog finds it idle for `WELLBEING_IDLE_MINUTES` (`finishReason: "idle"`).
+An idle check-in the senior never answered is deleted without a report. If the
+summary fails, the check-in stays open: the app can retry, and the watchdog
+retries after each idle period; after 24 hours it is closed with a report that
+has no summary (`source: "structured"`, `structured.summaryUnavailable: true`).
+
+**Report.** `structured` holds `kind: "wellbeing_chat"`, `mood` and `energy`
+(`good`, `okay`, `low`, `unclear`), `sleep` (`good`, `okay`, `poor`, `unclear`),
+`pain` (`none`, `mild`, `strong`, `unclear`), `concerns` (up to 5 short facts in
+the senior's words), `attention` (`none`, `soon`, `urgent`), `attentionReason`,
+`language`, `sessionId`, `startedAt`, `finishedAt`, `finishReason`,
+`seniorMessages`, `voiceMessages` and `assistant` (e.g. `openai/gpt-6-luna`).
+`summary` is 2 to 4 plain sentences in the language of the conversation.
+`period` is the check-in's local date. The model is told to use only what the
+senior said and `unclear` for anything not discussed, but a summary can still
+be wrong: show it as an AI summary, not as fact.
+
+**Notifications.** Every report is pushed to the guardians: "<name> shared a
+wellbeing check-in", or "<name>'s wellbeing check-in: please read soon" when
+`attention` is `soon` or `urgent`, with data `{reportId, seniorId, kind:
+"wellbeing_report"}`. A `wellbeing` alert ("<name>'s wellbeing check-in needs
+attention", dedup key `wellbeing:<sessionId>`, at most one per check-in) is
+raised when a reply flags a possible emergency (`details {sessionId, attention:
+"urgent", during: "conversation"}`; the reply tells the senior to press SOS or
+call 112) or when the summary rates attention `urgent` (`details {sessionId,
+reportId, attention, reason}`). An alert raised during the conversation gains
+`details.reportId` when the report is made. Pushes never contain what the senior
+said. `wellbeing` is not an urgent kind: no reminders, no cancellation.
+
+**Unverified:** the OpenAI requests follow the current API reference; against
+the live API only a greeting has been received so far. The contract is covered
+by tests with a stubbed `fetch` and a fake assistant. Transcription, speech, the
+summary, the prompts and the attention rating have not been evaluated on real
+conversations.
+
+### Live voice (hands-free)
+
+The senior talks without pressing anything: the app streams the microphone to
+the backend over a WebSocket, the backend relays it to the OpenAI Realtime API
+(speech to speech), and the model's voice streams back. The model's semantic
+voice activity detection (eagerness `low`, so pauses are not cut off) decides
+when the senior has finished; the app holds no OpenAI logic or key. Available
+only with `ASSISTANT_PROVIDER=openai` and a key (`assistant.live`); the summary
+is still written by `OPENAI_CHAT_MODEL`.
+
+**Connecting.** `GET /v1/seniors/:id/wellbeing/sessions/:sessionId/live` with
+`Upgrade: websocket` and `Authorization: Bearer <device token>`. Only the senior,
+only an open check-in. A refused upgrade gets the usual status (401, 403, 404,
+409 `session_closed`/`session_full`, 429, 503 when live voice is not available,
+400 without the upgrade header); the WebSocket handshake carries no body, so only
+the status reaches the client. One live connection per check-in: a new one
+closes the older (1000). Start a voice check-in with `POST .../sessions
+{voice: true}` so the live connection greets; on a check-in that already has
+messages (for example after typing) the model continues the same conversation
+and waits for the senior.
+
+**Frames (JSON text).** Audio is base64 PCM16 little-endian mono at 24 kHz.
+
+| Direction | Frame | Meaning |
+| --- | --- | --- |
+| app → server | `{type: "audio", audio}` | About 100 ms of microphone audio. Dropped when malformed, over 256 KB, before `ready` or after the goodbye |
+| app → server | `{type: "interrupt"}` | Stop the current reply (the app also clears its own playback) |
+| server → app | `{type: "ready"}` | Upstream configured; start streaming. An empty check-in gets the spoken greeting right after |
+| server → app | `{type: "speech_started"}`, `{type: "speech_stopped"}` | Voice activity of the senior |
+| server → app | `{type: "audio", audio}` | Chunk of the assistant's voice, in order |
+| server → app | `{type: "audio_done"}` | The current reply's audio is complete |
+| server → app | `{type: "message", message}` | A stored message, same shape as the HTTP API: the senior's transcript (`inputMode: "voice"`) or the assistant's. Order is kept: an assistant transcript waits up to 3 s for the senior's transcript of that turn |
+| server → app | `{type: "safety_concern"}` | The model reported a possible emergency: the app should show SOS. The `wellbeing` alert is raised as for typed check-ins and the next assistant message has `safetyConcern: true` |
+| server → app | `{type: "finished", session, report}` | The model said goodbye and called `end_check_in`; after its audio, the check-in was finished exactly like `POST .../finish` with `reason: "assistant"`. Then the server closes (1000) |
+| server → app | `{type: "error", code, message}` | `assistant_unavailable` (upstream failed: close 1011; or the summary failed: close 1000 and the check-in stays open), `session_closed`, `session_full`, `rate_limited`, `time_limit`; then the server closes |
+
+Closing the socket only ends voice mode; the check-in stays open and can
+continue as text or with a new connection.
+
+**Model tools.** `report_safety_concern` (an emergency was described; the
+model keeps talking and tells the senior to press SOS or call 112; it never
+sends an SOS) and `end_check_in` (called after the goodbye). Instructions:
+`voiceInstructions` in `src/assistant/prompts.ts`.
+
+**Limits.** Each connection and each spoken turn count against
+`RATE_LIMIT_ASSISTANT_PER_HOUR`. At 40 senior messages the check-in is finished.
+A connection lasts at most 20 minutes (`time_limit`).
+
+**Privacy.** Audio passes through the backend to OpenAI and is never stored or
+logged; only the transcripts are stored, as messages of the open check-in, and
+finishing deletes them like typed ones. Each connection sends OpenAI the voice
+instructions, the senior's and guardians' display names, the language hint and
+local time, and the last 40 messages of the check-in.
+
+**Dependencies.** `ws` (with `@types/ws`): Node has no built-in WebSocket
+server, and the OpenAI connection needs an `Authorization` header, which the
+standard WebSocket client cannot send. `@hono/node-server` 2 handles the upgrade
+with `upgradeWebSocket` and a `ws` `WebSocketServer({ noServer: true })`; no
+extra Hono package is needed. Behind a reverse proxy (Coolify/Traefik), WebSocket
+upgrades must be allowed on the same host.
+
+**Verified:** one live connection against the real API: configured in about
+2 s, first greeting audio after about 3 s, the greeting stored as a message.
+Not verified: a full spoken conversation, the tools, and the safety and goodbye
+behaviour with real speech.
 
 ## Missed doses
 
@@ -281,6 +432,11 @@ device testing.
   configuration, and have not been validated for any individual. There is no
   per-guardian consent switch for heart-rate sharing yet, and no server-side
   downsampling.
+- The wellbeing assistant sends what the senior says to OpenAI (see above),
+  including the live audio stream in hands-free voice. Its per-senior call limit
+  is in memory like the other rate limits, and there is no spending cap beyond
+  it. The live relay and its one-connection-per-check-in rule assume a single
+  backend process.
 
 ## Breaking changes
 
@@ -312,3 +468,13 @@ here with a date so the mobile side can follow.
   Event `type` gains `heart_rate_out_of_range` and `heart_rate_in_range`, and
   alert `kind` gains `heart_rate` (exhaustive switches must handle it);
   event-backed `heart_rate` alerts carry `details`.
+- 2026-10-04: alert `kind` gains `wellbeing` (exhaustive switches must handle
+  it); its `details` hold `sessionId`, `attention` and, once the report exists,
+  `reportId`. `GET .../overview` adds `latestReport` (`latestReportAt` is
+  unchanged). New error codes `session_closed`, `session_full` (409), `no_speech`
+  (422) and `assistant_unavailable` (503) come only from the new wellbeing
+  endpoints.
+- 2026-10-04: `GET .../wellbeing/session` adds `assistant.live`, and
+  `POST .../wellbeing/sessions` accepts `voice` (a voice check-in starts without
+  a typed greeting when live voice is available). New WebSocket route
+  `GET .../wellbeing/sessions/:sessionId/live` (hands-free voice).

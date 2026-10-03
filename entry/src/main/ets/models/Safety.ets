@@ -13,7 +13,8 @@ export enum AlertType {
   MonitoringLost,
   Fall,
   LowBattery,
-  HeartRate
+  HeartRate,
+  Wellbeing
 }
 
 export interface RemoteAlertCopy {
@@ -65,6 +66,12 @@ export function remoteAlertCopy(kind: string): RemoteAlertCopy {
         type: AlertType.HeartRate,
         title: 'Heart rate outside the set range',
         detail: 'The watch reported a heart rate outside the set range. This is not a medical assessment; consider calling to check in.'
+      };
+    case 'wellbeing':
+      return {
+        type: AlertType.Wellbeing,
+        title: 'Wellbeing check-in needs attention',
+        detail: 'During a check-in chat, Carely\'s AI assistant noticed something that may need your attention, such as a fall, pain or feeling unwell. It is not a medical assessment; consider calling the senior.'
       };
     default:
       return {

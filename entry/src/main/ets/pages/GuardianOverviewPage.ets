@@ -15,6 +15,7 @@ import {
 import { describeOverviewError, guardianOverview } from '../services/GuardianOverview';
 import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
 import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
+import { WELLBEING_REPORTS_ROUTE } from './WellbeingReportsPage';
 
 export const GUARDIAN_OVERVIEW_ROUTE = 'guardian-overview';
 const REFRESH_MS = 30 * 1000;
@@ -149,7 +150,8 @@ export struct GuardianOverviewPage {
     if (age < 0) {
       return 'No report shared yet';
     }
-    return age < 60000 ? 'Last shared just now' : `Last shared ${formatDuration(age)} ago`;
+    const when = age < 60000 ? 'Last shared just now' : `Last shared ${formatDuration(age)} ago`;
+    return this.current().latestReportNeedsAttention ? `${when} · please read` : when;
   }
 
   @Builder
@@ -289,8 +291,10 @@ export struct GuardianOverviewPage {
       this.current().hasSafeArea ? $r('app.color.guardian_accent') : $r('app.color.warning'),
       this.current().hasSafeArea ? $r('app.color.guardian_tint') : $r('app.color.warning_tint'),
       'Safe Area', this.current().hasSafeArea ? 'Set up' : 'Not set up yet', 'safe-area-setup', true)
-    this.row($r('sys.symbol.doc_text_fill'), $r('app.color.guardian_accent'), $r('app.color.guardian_tint'),
-      'Wellbeing report', this.reportText(), '', false)
+    this.row($r('sys.symbol.doc_text_fill'),
+      this.current().latestReportNeedsAttention ? $r('app.color.warning') : $r('app.color.guardian_accent'),
+      this.current().latestReportNeedsAttention ? $r('app.color.warning_tint') : $r('app.color.guardian_tint'),
+      'Wellbeing report', this.reportText(), WELLBEING_REPORTS_ROUTE, false)
   }
 
   @Builder

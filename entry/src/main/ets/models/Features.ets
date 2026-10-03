@@ -85,7 +85,7 @@ export const SENIOR_PROFILE: RoleProfile = new RoleProfile(
     seniorFeature('medication', 'Medication', 'Doses, reminders and medicine scanning',
       $r('sys.symbol.cross_case')),
     seniorFeature('contacts', 'Contacts', 'Call trusted people quickly', $r('sys.symbol.phone_fill')),
-    seniorFeature('wellbeing', 'Wellbeing', 'Daily check-in and private assistant', $r('sys.symbol.heart_fill'))
+    seniorFeature('wellbeing', 'Wellbeing', 'Talk with Carely about how you feel today', $r('sys.symbol.heart_fill'))
   ]
 );
 
@@ -107,7 +107,7 @@ export const GUARDIAN_PROFILE: RoleProfile = new RoleProfile(
     new FeatureSection('Insights', [
       guardianFeature('dose-history', 'Dose History', 'Taken, skipped and snoozed doses',
         $r('sys.symbol.checkmark_clipboard_fill')),
-      guardianFeature('wellbeing-reports', 'Wellbeing Reports', 'Check-in summaries shared with you',
+      guardianFeature('wellbeing-reports', 'Wellbeing Reports', 'Summaries of the senior\'s check-in chats',
         $r('sys.symbol.doc_text_fill'))
     ]),
     new FeatureSection('Account', [

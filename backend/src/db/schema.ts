@@ -8,6 +8,7 @@ import {
   pgEnum,
   pgTable,
   primaryKey,
+  serial,
   text,
   timestamp,
   uniqueIndex,
@@ -40,6 +41,7 @@ export const alertKindEnum = pgEnum("alert_kind", [
   "fall",
   "low_battery",
   "heart_rate",
+  "wellbeing",
 ]);
 export const pushStatusEnum = pgEnum("push_status", ["none", "sent", "failed", "simulated"]);
 export const doseStatusEnum = pgEnum("dose_status", ["taken", "skipped", "snoozed"]);
@@ -57,6 +59,11 @@ export const eventSourceEnum = pgEnum("event_source", ["device", "trace_replay",
 /** What a pairing code is for: linking a guardian, or adding a watch to the senior's own account. */
 export const pairingPurposeEnum = pgEnum("pairing_purpose", ["guardian", "watch"]);
 export const vitalKindEnum = pgEnum("vital_kind", ["heart_rate"]);
+export const wellbeingSessionStatusEnum = pgEnum("wellbeing_session_status", ["open", "finished"]);
+/** Who ended a check-in: the senior's Finish, the app after the assistant said goodbye, or the idle watchdog. */
+export const wellbeingFinishReasonEnum = pgEnum("wellbeing_finish_reason", ["senior", "assistant", "idle"]);
+export const wellbeingRoleEnum = pgEnum("wellbeing_role", ["assistant", "senior"]);
+export const wellbeingInputModeEnum = pgEnum("wellbeing_input_mode", ["text", "voice"]);
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
@@ -293,6 +300,66 @@ export const reports = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index("reports_senior_idx").on(t.seniorId, t.createdAt)],
+);
+
+/**
+ * A wellbeing check-in chat between the senior and the assistant. Once it finishes, its messages are
+ * deleted and only this metadata and the summary report remain.
+ */
+export const wellbeingSessions = pgTable(
+  "wellbeing_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seniorId: uuid("senior_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceId: uuid("device_id").references(() => devices.id, { onDelete: "set null" }),
+    status: wellbeingSessionStatusEnum("status").notNull().default("open"),
+    /** BCP 47 hint from the senior's phone; the assistant answers in the language the senior uses. */
+    language: text("language"),
+    /** IANA zone of the senior's phone, so the assistant knows the local time of day. */
+    timezone: text("timezone"),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true }).notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    finishReason: wellbeingFinishReasonEnum("finish_reason"),
+    /** Null while open, and again after the senior withdraws the report. */
+    reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
+    /** Provider and model that answered, e.g. `openai/gpt-6-luna` or `simulated`. */
+    assistant: text("assistant").notNull(),
+    /** Scripted replies (ASSISTANT_PROVIDER=simulated); the report is labelled a simulation. */
+    simulated: boolean("simulated").notNull().default(false),
+    seniorMessages: integer("senior_messages").notNull().default(0),
+    voiceMessages: integer("voice_messages").notNull().default(0),
+    /** Set once a reply flagged a possible emergency, so one session raises at most one alert. */
+    safetyAlerted: boolean("safety_alerted").notNull().default(false),
+  },
+  (t) => [
+    index("wellbeing_sessions_senior_idx").on(t.seniorId, t.startedAt),
+    index("wellbeing_sessions_status_idx").on(t.status, t.lastActivityAt),
+    // At most one open check-in per senior.
+    uniqueIndex("wellbeing_sessions_open_idx").on(t.seniorId).where(sql`${t.status} = 'open'`),
+  ],
+);
+
+/** Messages of an open check-in; deleted when the check-in finishes. */
+export const wellbeingMessages = pgTable(
+  "wellbeing_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => wellbeingSessions.id, { onDelete: "cascade" }),
+    /** Insertion order; a senior message and its reply share the same timestamp. */
+    seq: serial("seq").notNull(),
+    role: wellbeingRoleEnum("role").notNull(),
+    text: text("text").notNull(),
+    /** How the senior answered; null for assistant messages. */
+    inputMode: wellbeingInputModeEnum("input_mode"),
+    safetyConcern: boolean("safety_concern").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull(),
+  },
+  (t) => [index("wellbeing_messages_session_idx").on(t.sessionId, t.seq)],
 );
 
 export const trips = pgTable(

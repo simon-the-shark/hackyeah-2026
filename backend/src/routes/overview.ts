@@ -9,6 +9,13 @@ import type { AppEnv, Deps } from "../types.js";
 import { validate } from "../validate.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const ATTENTION_LEVELS = ["none", "soon", "urgent"];
+
+/** Wellbeing chat reports carry an attention level; other reports have none (null). */
+function reportAttention(structured: Record<string, unknown>) {
+  const value = structured.attention;
+  return typeof value === "string" && ATTENTION_LEVELS.includes(value) ? value : null;
+}
 
 /** One call for the guardian overview screen. */
 export function overviewRoutes(deps: Deps) {
@@ -28,7 +35,7 @@ export function overviewRoutes(deps: Deps) {
         db.select({ n: count() }).from(alerts).where(and(open, isNull(alerts.resolvedAt))),
         doseSchedule(deps, seniorId, new Date(now.getTime() - DAY_MS), new Date(now.getTime() + DAY_MS)),
         db
-          .select({ createdAt: reports.createdAt })
+          .select({ id: reports.id, createdAt: reports.createdAt, structured: reports.structured, source: reports.source })
           .from(reports)
           .where(eq(reports.seniorId, seniorId))
           .orderBy(desc(reports.createdAt))
@@ -47,6 +54,9 @@ export function overviewRoutes(deps: Deps) {
       nextDoses: doses.filter((d) => d.status === "pending" || d.status === "snoozed").slice(0, 3),
       missedDosesLast24h: doses.filter((d) => d.status === "missed" && d.scheduledFor <= now).length,
       latestReportAt: report?.createdAt ?? null,
+      latestReport: report
+        ? { id: report.id, createdAt: report.createdAt, attention: reportAttention(report.structured), source: report.source }
+        : null,
       safeAreaVersion: safeArea?.version ?? null,
       plannedOrActiveTrips: activeTrips?.n ?? 0,
       serverTime: now,

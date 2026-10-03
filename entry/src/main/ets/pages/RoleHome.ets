@@ -12,6 +12,8 @@ import { SosBanner } from '../components/SosBanner';
 import { GUARDIAN_WATCH_ROUTE } from './GuardianWatchPage';
 import { GUARDIAN_OVERVIEW_ROUTE } from './GuardianOverviewPage';
 import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
+import { WellbeingCheckIn } from './WellbeingCheckIn';
+import { WELLBEING_REPORTS_ROUTE } from './WellbeingReportsPage';
 import { CareFocusStyle } from '../components/DesignSystem';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
@@ -52,6 +54,8 @@ export struct RoleHome {
       this.navStack.pushPathByName(GUARDIAN_OVERVIEW_ROUTE, null);
     } else if (feature.id === 'dose-history') {
       this.navStack.pushPathByName(DOSE_HISTORY_ROUTE, null);
+    } else if (feature.id === WELLBEING_REPORTS_ROUTE) {
+      this.navStack.pushPathByName(WELLBEING_REPORTS_ROUTE, null);
     } else {
       this.navStack.pushPathByName('feature', feature);
     }
@@ -215,6 +219,9 @@ export struct RoleHome {
     if (feature.id === 'contacts') {
       return 'My contacts';
     }
+    if (feature.id === 'wellbeing') {
+      return 'Daily check-in';
+    }
     return feature.title;
   }
 
@@ -255,6 +262,11 @@ export struct RoleHome {
       ContactsList()
     } else if (feature.id === 'trusted-contacts') {
       GuardianContactsList({ refreshKey: this.tabRefresh })
+    } else if (feature.id === 'wellbeing') {
+      WellbeingCheckIn({
+        refreshKey: this.tabRefresh,
+        visible: this.selectedTab > 0 && this.profile.tabs[this.selectedTab - 1].id === 'wellbeing'
+      })
     } else if (feature.id === 'location') {
       GuardianLocationView({
         refreshKey: this.tabRefresh,

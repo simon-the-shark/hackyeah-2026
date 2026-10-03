@@ -32,3 +32,27 @@ describe("redactBody", () => {
     });
   });
 });
+
+describe("redactBody for wellbeing check-ins", () => {
+  it("redacts what the senior said, recordings and summaries but keeps ids and flags", () => {
+    expect(
+      redactBody({
+        message: { id: "m1", role: "senior", text: "My knee hurts", inputMode: "voice" },
+        reply: { id: "m2", text: "I am sorry to hear that." },
+        audio: "AAAA",
+        audioFormat: "m4a",
+        report: { summary: "Halina's knee hurts.", structured: { mood: "low" }, source: "ai" },
+        suggestFinish: false,
+        safetyConcern: true,
+      }),
+    ).toEqual({
+      message: { id: "m1", role: "senior", text: "[REDACTED]", inputMode: "voice" },
+      reply: "[REDACTED]",
+      audio: "[REDACTED]",
+      audioFormat: "m4a",
+      report: { summary: "[REDACTED]", structured: "[REDACTED]", source: "ai" },
+      suggestFinish: false,
+      safetyConcern: true,
+    });
+  });
+});

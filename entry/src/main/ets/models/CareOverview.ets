@@ -33,6 +33,13 @@ interface RemoteOverviewSenior {
   displayName?: string;
 }
 
+/** `overview.latestReport`: the newest wellbeing summary, without its content. */
+interface RemoteLatestReport {
+  id?: string;
+  createdAt?: string;
+  attention?: string | null;
+}
+
 interface RemoteAlertCounts {
   unacknowledged?: number;
   unresolved?: number;
@@ -45,6 +52,7 @@ export interface RemoteOverview extends RemoteStatusResponse {
   nextDoses?: RemoteScheduledDose[];
   missedDosesLast24h?: number;
   latestReportAt?: string | null;
+  latestReport?: RemoteLatestReport | null;
   safeAreaVersion?: number | null;
 }
 
@@ -82,6 +90,8 @@ export class CareOverview {
   missedLast24h: number = 0;
   /** Negative when no wellbeing report was shared yet. */
   latestReportAgeMs: number = -1;
+  /** The newest report was marked "soon" or "urgent" by the assistant. */
+  latestReportNeedsAttention: boolean = false;
   hasSafeArea: boolean = false;
 }
 
@@ -213,6 +223,8 @@ export function overviewFrom(dto: RemoteOverview, fetchedAt: number): CareOvervi
   if (!isNaN(report) && !isNaN(serverNow)) {
     overview.latestReportAgeMs = Math.max(0, serverNow - report);
   }
+  const attention = dto.latestReport?.attention;
+  overview.latestReportNeedsAttention = attention === 'soon' || attention === 'urgent';
   overview.hasSafeArea = typeof dto.safeAreaVersion === 'number';
   return overview;
 }

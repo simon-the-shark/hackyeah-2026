@@ -23,6 +23,13 @@ import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
 import { SettingsPage } from './SettingsPage';
 import { SosPage } from './SosPage';
+import {
+  WELLBEING_REPORT_ROUTE,
+  WELLBEING_REPORTS_ROUTE,
+  WellbeingReportDetailPage,
+  WellbeingReportsPage,
+  WellbeingReportTarget
+} from './WellbeingReportsPage';
 
 @Entry
 @Component
@@ -85,6 +92,10 @@ struct Index {
       GuardianOverviewPage()
     } else if (name === DOSE_HISTORY_ROUTE) {
       DoseHistoryPage()
+    } else if (name === WELLBEING_REPORTS_ROUTE) {
+      WellbeingReportsPage()
+    } else if (name === WELLBEING_REPORT_ROUTE) {
+      WellbeingReportDetailPage({ target: param as WellbeingReportTarget })
     } else if (name === 'safe-area-setup') {
       SafeAreaSetupPage()
     } else if (name === 'settings') {

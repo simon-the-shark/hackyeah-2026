@@ -5,7 +5,14 @@ import { apiSession } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { locationSharing } from '../services/LocationSharing';
 import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
-import { OPEN_ALERT_ID_KEY, OPEN_ALERT_NAME_KEY, OPEN_ALERT_NAME_PARAM, OPEN_ALERT_PARAM } from '../platform/Notifications';
+import {
+  OPEN_ALERT_ID_KEY,
+  OPEN_ALERT_NAME_KEY,
+  OPEN_ALERT_NAME_PARAM,
+  OPEN_ALERT_PARAM,
+  OPEN_REPORT_ID_KEY,
+  OPEN_REPORT_PARAM
+} from '../platform/Notifications';
 
 const DOMAIN = 0x0000;
 
@@ -24,13 +31,17 @@ export default class EntryAbility extends UIAbility {
     this.routeAlertNotification(want);
   }
 
-  /** A tapped alert notification carries the alert id; AlertDeepLink opens it. */
+  /** A tapped alert or report notification carries its id; AlertDeepLink opens it. */
   private routeAlertNotification(want: Want): void {
     const alertId = want.parameters?.[OPEN_ALERT_PARAM];
     if (typeof alertId === 'string' && alertId !== '') {
       const seniorName = want.parameters?.[OPEN_ALERT_NAME_PARAM];
       AppStorage.setOrCreate<string>(OPEN_ALERT_NAME_KEY, typeof seniorName === 'string' ? seniorName : '');
       AppStorage.setOrCreate<string>(OPEN_ALERT_ID_KEY, alertId);
+    }
+    const reportId = want.parameters?.[OPEN_REPORT_PARAM];
+    if (typeof reportId === 'string' && reportId !== '') {
+      AppStorage.setOrCreate<string>(OPEN_REPORT_ID_KEY, reportId);
     }
   }
 
