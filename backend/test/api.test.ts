@@ -336,6 +336,19 @@ describe("review fixes", () => {
       expect(await status()).toBe("missed");
     });
 
+    it("records a late arrival as completed and keeps the earlier trip_not_completed alert", async () => {
+      const { seniorId, guardianToken, send, status } = await withTrip();
+      t.time.now = new Date("2026-10-03T13:30:00Z");
+      await runWatchdogOnce(t.deps);
+      expect(await status()).toBe("missed");
+      expect((await send("trip_arrived")).status).toBe(201);
+      expect(await status()).toBe("completed");
+      const kinds = (await t.call("GET", `/v1/seniors/${seniorId}/alerts`, guardianToken)).body.items.map(
+        (a: { kind: string }) => a.kind,
+      );
+      expect(kinds).toEqual(["trip_not_completed"]);
+    });
+
     it("does not revive a missed trip", async () => {
       const { send, status } = await withTrip();
       t.time.now = new Date("2026-10-03T13:30:00Z");

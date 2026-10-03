@@ -82,6 +82,8 @@ export function safetyRoutes(deps: Deps) {
         .set({ status: "active" })
         .where(and(eq(trips.id, body.tripId), eq(trips.seniorId, seniorId), eq(trips.status, "planned")));
     }
+    // Intentionally unguarded, unlike trip_started: arriving late is still arriving, and a guardian who
+    // already got a trip_not_completed alert should see the trip as completed. The alert is kept as history.
     if (result.created && body.type === "trip_arrived" && body.tripId) {
       await db
         .update(trips)

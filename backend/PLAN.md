@@ -68,19 +68,21 @@ backend/
 
 Idempotent inserts use `.onConflictDoNothing()` and then re-select the row. Version checks use `update … where id = ? and version = ?` with `.returning()`, and an empty result means 409.
 
-`users(id, role senior|guardian, display_name)`, `care_links(senior_id, guardian_id)`,
+`users(id, role senior|guardian, display_name, created_at)`, `care_links(senior_id, guardian_id, created_at)`,
 `pairing_codes(code, senior_id, expires_at, used_at)`,
-`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at)`,
-`safe_areas(senior_id PK, lat, lng, radius_m, version)`,
-`contacts(id, senior_id, name, phone, sort_order)`,
+`devices(id, user_id, kind phone|watch, push_token, token_hash, last_seen_at, created_at)`,
+`safe_areas(senior_id PK, lat, lng, radius_m, version, updated_at)`,
+`contacts(id, senior_id, name, phone, sort_order, version)`,
 `medications(id, senior_id, name, dose_text, instructions, barcode, model_asset_key, times jsonb, timezone, version)`,
-`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, status taken|skipped|snoozed, recorded_at)`,
-`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, occurred_at, received_at, location jsonb null)`,
-`alerts(id, event_id, senior_id, kind, created_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by)`,
-`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at)`,
+`dose_records(occurrence_id PK, medication_id nullable (set null on delete), medication_name snapshot, senior_id, status taken|skipped|snoozed, scheduled_for, recorded_at)`,
+`events(id uuid PK client-generated, senior_id, device_id, type sos|sos_cancel|area_exit|area_enter|dose_missed|trip_started|trip_arrived|trip_deviation, cancels_event_id, trip_id, occurred_at, received_at, location jsonb null)`,
+`alerts(id, event_id, senior_id, kind sos|area_exit|dose_missed|trip_deviation|trip_not_completed|monitoring_lost, created_at, cancelled_at, push_status none|sent|failed|simulated, acknowledged_at, acknowledged_by, dedup_key unique)`,
+`status_heartbeats(senior_id PK, device_id, monitoring_state inside|outside|unknown|unavailable, location jsonb, battery, reported_at (server receipt time), stale_alerted_at)`,
 `reports(id, senior_id, period, structured jsonb, summary text, source ai|structured|simulated, created_at)`,
-`trips(id, senior_id, dest_lat, dest_lng, radius_m, window_start, window_end, status)`,
-`medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic)`.
+`trips(id, senior_id, label, dest_lat, dest_lng, radius_m, window_start, window_end, status planned|active|completed|missed, version)`,
+`medication_catalog(barcode PK, name, form, model_asset_key, is_synthetic boolean)`.
+
+`src/db/schema.ts` is the source of truth; this list is a summary.
 
 ## API contract (`/v1`, JSON, `Authorization: Bearer <deviceToken>`)
 
