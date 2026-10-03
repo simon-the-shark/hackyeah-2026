@@ -20,11 +20,22 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
   }
 
-  onWindowStageCreate(windowStage: window.WindowStage): void {
-    // Main window is created, set main page for this ability
-    hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onWindowStageCreate');
+onWindowStageCreate(windowStage: window.WindowStage): void {
+    hilog.info(DOMAIN, 'testTag', 'Ability onWindowStageCreate');
+    this.restoreSessionAndLoad(windowStage);
+  }
 
-    apiSessionStore.restore(this.context);
+  /**
+   * Restores the saved pairing before the first page renders, so a returning
+   * senior does not see the setup screen. A storage failure must still leave a
+   * usable app, so the session is treated as empty instead of blocking startup.
+   */
+  private async restoreSessionAndLoad(windowStage: window.WindowStage): Promise<void> {
+    try {
+      await apiSessionStore.restore(this.context);
+    } catch (error) {
+      hilog.error(DOMAIN, 'testTag', 'Session restore failed. Cause: %{public}s', JSON.stringify(error));
+    }
     AppStorage.setOrCreate('paired', apiSession.configured());
 
     windowStage.loadContent('pages/Index', (err) => {
@@ -35,6 +46,7 @@ export default class EntryAbility extends UIAbility {
       hilog.info(DOMAIN, 'testTag', 'Succeeded in loading the content.');
     });
   }
+
 
   onWindowStageDestroy(): void {
     // Main window is destroyed, release UI related resources
