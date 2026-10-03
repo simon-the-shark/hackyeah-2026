@@ -49,6 +49,22 @@ Create and boot a compatible virtual device in DevEco Studio's Device Manager,
 then run the `entry` module on it. The starter screen displays `Hello World`
 and changes to `Welcome` when tapped.
 
+### Connect The App To The Backend
+
+Senior screens load their data (medicines, contacts) from the backend.
+Until pairing exists in the app, the server address and the senior device token
+come from a git-ignored development file bundled into the HAP:
+
+```zsh
+cp entry/backend.example.json entry/src/main/resources/rawfile/backend.json
+```
+
+Set `baseUrl` to the host's LAN address (an emulator cannot reach the host as
+`localhost`), for example `http://192.168.1.10:8787`, and `deviceToken` to the
+senior token printed by `pnpm db:seed` (see `backend/README.md`). Rebuild after
+editing. Without the file the tab explains that the phone is not connected.
+Never commit this file or put a real token in the example.
+
 ## Project Documents
 
 - `HACKATHON_BRIEF.md` records the agreed product scope and demo path.

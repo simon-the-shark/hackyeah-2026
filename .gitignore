@@ -10,3 +10,5 @@
 /.clang-tidy
 **/.test
 /.appanalyzer
+# Local backend address and device token for development (see entry/backend.example.json)
+/entry/src/main/resources/rawfile/backend.json

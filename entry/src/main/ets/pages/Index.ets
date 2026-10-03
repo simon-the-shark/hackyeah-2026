@@ -1,9 +1,17 @@
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { DoseRecord, Medication } from '../models/Medication';
 import { CareAlert } from '../models/Safety';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
 import { FeaturePage } from './FeaturePage';
+import {
+  GUARDIAN_MEDICATION_DETAIL_ROUTE,
+  GuardianMedicationDetail,
+  MEDICATION_FORM_ROUTE
+} from './GuardianMedication';
+import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
+import { MedicationFormPage, MedicationFormParams } from './MedicationFormPage';
 import { RoleHome } from './RoleHome';
 import { SafeAreaSetupPage } from './SafeAreaSetupPage';
 import { SafetyPage } from './SafetyPage';
@@ -15,6 +23,8 @@ import { WatchSafetyPage } from './WatchSafetyPage';
 @Component
 struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
+  // Today's dose answers by occurrence ID, shared by the medicine list and detail screens.
+  @Provide('doseRecords') doseRecords: Map<string, DoseRecord> = new Map<string, DoseRecord>();
   @StorageLink('paired') private paired: boolean = false;
 
   @Builder
@@ -25,6 +35,12 @@ struct Index {
       RoleHome({ profile: GUARDIAN_PROFILE })
     } else if (name === 'feature') {
       FeaturePage({ feature: param as Feature })
+    } else if (name === 'medication-detail') {
+      MedicationDetail({ params: param as MedicationDetailParams })
+    } else if (name === GUARDIAN_MEDICATION_DETAIL_ROUTE) {
+      GuardianMedicationDetail({ medication: param as Medication })
+    } else if (name === MEDICATION_FORM_ROUTE) {
+      MedicationFormPage({ params: param as MedicationFormParams })
     } else if (name === 'sos') {
       SosPage()
     } else if (name === 'safety') {
