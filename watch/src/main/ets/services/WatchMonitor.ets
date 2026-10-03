@@ -70,6 +70,8 @@ export class WatchMonitor {
   /** The home screen asked for monitoring; it resumes whenever the app returns to the foreground. */
   private wanted: boolean = false;
   private running: boolean = false;
+  /** Bumped on every resume and pause, so a start that was waiting on a permission prompt can tell it is stale. */
+  private generation: number = 0;
   private timer: number = -1;
   private readonly heartRate: HeartRateSensor = new HeartRateSensor();
   private readonly detector: HeartRateAlertDetector = new HeartRateAlertDetector();
@@ -99,12 +101,23 @@ export class WatchMonitor {
       return;
     }
     this.running = true;
+    const generation = ++this.generation;
     this.timer = setInterval(() => this.tick(), TICK_MS);
     this.keepScreenOn(true);
-    await this.startHeartRate();
-    await this.startLocation();
+    await this.startHeartRate(generation);
+    if (!this.isCurrent(generation)) {
+      return;
+    }
+    await this.startLocation(generation);
+    if (!this.isCurrent(generation)) {
+      return;
+    }
     this.loadSafeArea();
     this.tick();
+  }
+
+  private isCurrent(generation: number): boolean {
+    return this.running && generation === this.generation;
   }
 
   /** Stops sensors and location; pending samples and events stay queued for the next resume. */
@@ -113,6 +126,7 @@ export class WatchMonitor {
       return;
     }
     this.running = false;
+    this.generation++;
     if (this.timer >= 0) {
       clearInterval(this.timer);
       this.timer = -1;
@@ -157,10 +171,10 @@ export class WatchMonitor {
     return runningOnEmulator() ? 'simulated' : 'device';
   }
 
-  private async startHeartRate(): Promise<void> {
+  private async startHeartRate(generation: number): Promise<void> {
     AppStorage.set<string>(K_HR_STATE, MonitorState.STARTING);
     const granted = await requestPermissions(this.context as common.UIAbilityContext, HEALTH_PERMISSIONS);
-    if (!this.running) {
+    if (!this.isCurrent(generation)) {
       return;
     }
     if (!granted) {
@@ -228,10 +242,10 @@ export class WatchMonitor {
     this.flushEvents();
   }
 
-  private async startLocation(): Promise<void> {
+  private async startLocation(generation: number): Promise<void> {
     AppStorage.set<string>(K_LOC_STATE, MonitorState.STARTING);
     const granted = await requestPermissions(this.context as common.UIAbilityContext, LOCATION_PERMISSIONS);
-    if (!this.running) {
+    if (!this.isCurrent(generation)) {
       return;
     }
     if (!granted) {
