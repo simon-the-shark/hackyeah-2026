@@ -18,4 +18,4 @@ EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:8787/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 
-CMD ["pnpm", "start"]
+CMD ["node", "--import", "tsx", "--env-file-if-exists=.env", "src/index.ts"]

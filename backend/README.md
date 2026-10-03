@@ -39,6 +39,17 @@ and the push configuration through the runtime environment; do not copy an
 `.env` file or Push Kit key into the image. For local development without Push
 Kit credentials, set `PUSH_PROVIDER=log` explicitly.
 
+The build uses the pnpm version pinned in `package.json` and explicitly installs
+dev dependencies (`--prod=false`), including the `tsx` runtime. The container
+starts with `node --import tsx`, so it neither downloads pnpm nor reinstalls or
+prunes dependencies as the unprivileged user at startup.
+
+For Coolify, use `backend/` as the build context and its `Dockerfile`, expose
+port 8787, and provide application configuration at runtime. Set `NODE_ENV` to
+runtime-only in Coolify; the image already defaults to `production`. Keep the
+Dockerfile health check enabled: it uses Node's built-in `fetch`, so no curl or
+wget package is required. Rebuild and redeploy after updating the Dockerfile.
+
 Detailed HTTP request/response diagnostics are enabled only outside production
 and redact credential-like JSON fields. Set `NODE_ENV=production` to disable
 these per-request diagnostic logs.
