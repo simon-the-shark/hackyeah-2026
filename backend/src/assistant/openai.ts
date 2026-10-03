@@ -6,7 +6,6 @@ import {
   SUMMARY_SCHEMA,
   summaryInstructions,
   transcript,
-  TTS_INSTRUCTIONS,
 } from "./prompts.js";
 import {
   AssistantError,
@@ -35,8 +34,6 @@ export type OpenAiOptions = {
   apiKey: string;
   chatModel: string;
   transcribeModel: string;
-  ttsModel: string;
-  ttsVoice: string;
 };
 
 type InputMessage = { role: "user" | "assistant" | "developer"; content: string };
@@ -48,7 +45,7 @@ type ResponsesBody = {
 
 /**
  * OpenAI through its REST API (Responses for chat and summaries with strict JSON schemas, audio
- * transcriptions, and speech). `store: false`, so OpenAI keeps no retrievable copy of the responses.
+ * transcriptions). `store: false`, so OpenAI keeps no retrievable copy of the responses.
  * Errors never include the conversation, only the status and OpenAI's error code.
  */
 export class OpenAiAssistant implements Assistant {
@@ -93,28 +90,6 @@ export class OpenAiAssistant implements Assistant {
     const body = (await this.json(res)) as { text?: unknown };
     if (typeof body.text !== "string") throw new AssistantError("Transcription returned no text");
     return body.text.trim();
-  }
-
-  async speak(text: string) {
-    const res = await this.request(
-      "/audio/speech",
-      JSON.stringify({
-        model: this.opts.ttsModel,
-        voice: this.opts.ttsVoice,
-        input: text,
-        instructions: TTS_INSTRUCTIONS,
-        response_format: "mp3",
-      }),
-      AUDIO_TIMEOUT_MS,
-    );
-    try {
-      const audio = new Uint8Array(await res.arrayBuffer());
-      if (audio.length === 0) throw new AssistantError("Speech returned no audio");
-      return audio;
-    } catch (err) {
-      if (err instanceof AssistantError) throw err;
-      throw new AssistantError("Speech download failed", { cause: err });
-    }
   }
 
   private async structured<T>(

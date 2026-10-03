@@ -14,14 +14,10 @@ const schema = z
     LOW_BATTERY_PERCENT: z.coerce.number().int().min(1).max(90).default(15),
     RATE_LIMIT_BOOTSTRAP_PER_MINUTE: z.coerce.number().int().positive().default(10),
     RATE_LIMIT_CLAIM_FAILURES_PER_15MIN: z.coerce.number().int().positive().default(10),
-    /** Wellbeing check-in assistant: OpenAI (default) or scripted replies for development (explicit opt-in). */
-    ASSISTANT_PROVIDER: z.enum(["openai", "simulated"]).default("openai"),
-    /** Without a key the OpenAI assistant is unavailable (503), but the server still starts. */
+    /** Without a key the wellbeing check-in is unavailable (503), but the server still starts. */
     OPENAI_API_KEY: z.string().optional(),
     OPENAI_CHAT_MODEL: z.string().min(1).default("gpt-6-luna"),
     OPENAI_TRANSCRIBE_MODEL: z.string().min(1).default("gpt-transcribe"),
-    OPENAI_TTS_MODEL: z.string().min(1).default("gpt-4o-mini-tts"),
-    OPENAI_TTS_VOICE: z.string().min(1).default("marin"),
     /** Speech-to-speech model for the hands-free check-in (Realtime API). */
     OPENAI_REALTIME_MODEL: z.string().min(1).default("gpt-realtime-2.1-mini"),
     OPENAI_REALTIME_VOICE: z.string().min(1).default("marin"),

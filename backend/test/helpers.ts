@@ -74,12 +74,6 @@ export class FakeAssistant implements Assistant {
     this.check();
     return this.transcript;
   }
-
-  async speak(text: string) {
-    this.calls.push({ method: "speak", text });
-    this.check();
-    return new Uint8Array([0x49, 0x44, 0x33, 0x04]);
-  }
 }
 
 type Overrides = Partial<Omit<Deps, "rateLimits">> & { rateLimits?: Partial<Deps["rateLimits"]> };

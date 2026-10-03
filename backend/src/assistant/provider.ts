@@ -69,12 +69,10 @@ export interface Assistant {
   readonly name: string;
   /** Scripted replies; everything it produces is labelled a simulation. */
   readonly simulated: boolean;
-  /** Whether `transcribe` and `speak` work. */
+  /** Whether `transcribe` works. */
   readonly voice: boolean;
   /** Next assistant message; an empty history asks for the opening greeting and first question. */
   reply(ctx: ChatContext, history: ChatTurn[]): Promise<ChatReply>;
   summarize(ctx: ChatContext, history: ChatTurn[]): Promise<WellbeingSummary>;
   transcribe(audio: Uint8Array, format: AudioFormat): Promise<string>;
-  /** MP3 audio of the text. */
-  speak(text: string): Promise<Uint8Array>;
 }

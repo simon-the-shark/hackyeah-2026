@@ -50,7 +50,6 @@ const messageBody = z.union([
 ]);
 
 const finishBody = z.object({ reason: z.enum(["senior", "assistant"]).default("senior") });
-const speechBody = z.object({ text: z.string().trim().min(1).max(1000) });
 const sessionParam = z.object({ seniorId: uuid, sessionId: uuid });
 
 /**
@@ -275,23 +274,6 @@ export function wellbeingRoutes(deps: Deps) {
       const session = await ownSession(seniorId, sessionId);
       if (session.status === "open" && session.seniorMessages > 0) spendAssistantCall(deps, auth.userId);
       return c.json(await finishSession(deps, session, parsed.data.reason), 200);
-    },
-  );
-
-  /** Reads an assistant reply aloud (MP3). Any text works, since the reply may already be deleted after finishing. */
-  app.post(
-    "/seniors/:seniorId/wellbeing/speech",
-    validate("param", seniorParam),
-    validate("json", speechBody),
-    async (c) => {
-      const auth = c.get("auth");
-      const { seniorId } = c.req.valid("param");
-      await seniorOnly(auth, seniorId);
-      const assistant = requireAssistant(deps);
-      if (!assistant.voice) throw new ApiError(503, "assistant_unavailable", "Reading aloud is not available");
-      spendAssistantCall(deps, auth.userId);
-      const audio = await callAssistant(() => assistant.speak(c.req.valid("json").text));
-      return c.body(new Uint8Array(audio), 200, { "Content-Type": "audio/mpeg", "Cache-Control": "no-store" });
     },
   );
 

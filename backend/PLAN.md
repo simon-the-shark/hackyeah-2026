@@ -198,9 +198,9 @@ check-in ends.
 
 - `wellbeing_sessions` and `wellbeing_messages` (migration 0015). One open check-in per senior; its
   messages are deleted when it finishes, so only the summary report and session metadata remain.
-- `ASSISTANT_PROVIDER=openai` (default; Responses API with strict JSON schemas, `store: false`,
-  audio transcription and speech) or `simulated` (scripted, labelled, no voice). Without
-  `OPENAI_API_KEY` the endpoints answer 503 `assistant_unavailable` and the server still starts.
+- OpenAI only: the Realtime API for the spoken conversation, the Responses API (strict JSON
+  schema, `store: false`) for the summary. Without `OPENAI_API_KEY` the endpoints answer 503
+  `assistant_unavailable` and the server still starts.
 - Alert kind `wellbeing` when a reply flags a possible emergency (the assistant tells the senior to
   use SOS; it never sends one) or the summary rates attention `urgent`. Every report is pushed.
 - The watchdog finishes check-ins idle for `WELLBEING_IDLE_MINUTES`; per-senior hourly cap on paid

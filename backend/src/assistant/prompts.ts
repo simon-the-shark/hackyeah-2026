@@ -88,8 +88,6 @@ export const SUMMARY_SCHEMA = {
   additionalProperties: false,
 } as const;
 
-export const TTS_INSTRUCTIONS = "Speak slowly, warmly and clearly for an older listener.";
-
 /** Tools the live voice model may call; they replace the JSON flags of the text chat. */
 export const VOICE_TOOLS = [
   {

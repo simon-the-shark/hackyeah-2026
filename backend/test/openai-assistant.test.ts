@@ -3,7 +3,7 @@ import { OpenAiAssistant } from "../src/assistant/openai.js";
 import { AssistantError, type ChatContext } from "../src/assistant/provider.js";
 
 const ctx: ChatContext = { seniorName: "Halina", guardianNames: ["Marek", "Anna"], language: "pl", localTime: "Saturday 14:00" };
-const opts = { apiKey: "test-key", chatModel: "gpt-6-luna", transcribeModel: "gpt-transcribe", ttsModel: "gpt-4o-mini-tts", ttsVoice: "marin" };
+const opts = { apiKey: "test-key", chatModel: "gpt-6-luna", transcribeModel: "gpt-transcribe" };
 
 type Captured = { url: string; init: RequestInit };
 
@@ -109,13 +109,5 @@ describe("OpenAI assistant", () => {
     expect(file.type).toBe("audio/mp4");
     expect(file.size).toBe(3);
     expect(form.get("model")).toBe("gpt-transcribe");
-  });
-
-  it("speaks with the configured voice as MP3", async () => {
-    const { assistant, requests } = stub(new Response(new Uint8Array([9, 8, 7]), { headers: { "Content-Type": "audio/mpeg" } }));
-    expect(Array.from(await assistant.speak("Jak spałaś?"))).toEqual([9, 8, 7]);
-    const body = JSON.parse(requests[0]!.init.body as string);
-    expect(body).toMatchObject({ model: "gpt-4o-mini-tts", voice: "marin", input: "Jak spałaś?", response_format: "mp3" });
-    expect(body.instructions).toContain("older listener");
   });
 });

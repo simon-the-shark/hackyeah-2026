@@ -9,7 +9,6 @@ import type { LiveVoice } from "./assistant/live.js";
 import { OpenAiAssistant } from "./assistant/openai.js";
 import { OpenAiRealtime } from "./assistant/openai-realtime.js";
 import type { Assistant } from "./assistant/provider.js";
-import { SimulatedAssistant } from "./assistant/simulated.js";
 import { startWatchdog } from "./services/watchdog.js";
 
 const config = loadConfig();
@@ -19,10 +18,6 @@ const push =
 if (push.name === "log") console.warn("[push] PUSH_PROVIDER=log: notifications are SIMULATED, nothing is delivered");
 
 function createAssistant(): Assistant | null {
-  if (config.ASSISTANT_PROVIDER === "simulated") {
-    console.warn("[assistant] ASSISTANT_PROVIDER=simulated: wellbeing check-ins use SCRIPTED replies, not AI");
-    return new SimulatedAssistant();
-  }
   if (!config.OPENAI_API_KEY) {
     console.warn("[assistant] OPENAI_API_KEY is not set: the wellbeing assistant is unavailable (503)");
     return null;
@@ -31,14 +26,11 @@ function createAssistant(): Assistant | null {
     apiKey: config.OPENAI_API_KEY,
     chatModel: config.OPENAI_CHAT_MODEL,
     transcribeModel: config.OPENAI_TRANSCRIBE_MODEL,
-    ttsModel: config.OPENAI_TTS_MODEL,
-    ttsVoice: config.OPENAI_TTS_VOICE,
   });
 }
 
-/** Hands-free voice only with OpenAI: the scripted assistant has no voice. */
 function createLiveVoice(): LiveVoice | null {
-  if (config.ASSISTANT_PROVIDER !== "openai" || !config.OPENAI_API_KEY) return null;
+  if (!config.OPENAI_API_KEY) return null;
   return new OpenAiRealtime({
     apiKey: config.OPENAI_API_KEY,
     model: config.OPENAI_REALTIME_MODEL,

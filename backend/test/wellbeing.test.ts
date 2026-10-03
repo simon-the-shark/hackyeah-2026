@@ -1,20 +1,18 @@
 import { count, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { SimulatedAssistant } from "../src/assistant/simulated.js";
 import { alerts, reports, wellbeingMessages, wellbeingSessions } from "../src/db/schema.js";
 import { runWatchdogOnce } from "../src/services/watchdog.js";
 import { FakeAssistant, setup } from "./helpers.js";
 
 const t = setup();
 const off = setup({ assistant: null });
-const scripted = setup({ assistant: new SimulatedAssistant() });
 const limited = setup({ rateLimits: { assistantPerHour: 2 } });
-afterAll(() => Promise.all([t.close(), off.close(), scripted.close(), limited.close()]));
+afterAll(() => Promise.all([t.close(), off.close(), limited.close()]));
 
 const defaults = new FakeAssistant();
 beforeEach(async () => {
   await t.reset();
-  for (const s of [t, off, scripted, limited]) {
+  for (const s of [t, off, limited]) {
     s.push.calls = [];
     s.time.now = new Date("2026-10-03T12:00:00Z");
   }
@@ -331,57 +329,6 @@ describe("guardian reading", () => {
     const res = await t.call("GET", `/v1/seniors/${ctx.seniorId}/overview`, ctx.guardianToken);
     expect(res.body.latestReport).toEqual({ id: report.id, createdAt: report.createdAt, attention: "soon", source: "ai" });
     expect(res.body.latestReportAt).toBe(report.createdAt);
-  });
-});
-
-describe("reading aloud", () => {
-  it("returns MP3 audio for the senior", async () => {
-    const ctx = await t.pair();
-    const path = `${base(ctx)}/speech`;
-    const res = await t.call("POST", path, ctx.seniorToken, { text: "How did you sleep?" });
-    expect(res.status).toBe(200);
-    expect(res.contentType).toBe("audio/mpeg");
-    expect(Array.from(res.body as Uint8Array)).toEqual([0x49, 0x44, 0x33, 0x04]);
-    expect((await t.call("POST", path, ctx.guardianToken, { text: "Hi" })).status).toBe(403);
-    expect((await t.call("POST", path, ctx.seniorToken, { text: "" })).status).toBe(400);
-    t.assistant.failing = true;
-    expect((await t.call("POST", path, ctx.seniorToken, { text: "Hi" })).status).toBe(503);
-  });
-});
-
-describe("simulated assistant", () => {
-  it("runs a scripted check-in labelled as a simulation", async () => {
-    const ctx = await scripted.pair();
-    const started = await start(ctx, {}, scripted);
-    expect(started.body.session.simulated).toBe(true);
-    expect(started.body.messages[0].text).toContain("Hello Halina");
-    const sessionId = started.body.session.id;
-    const state = await scripted.call("GET", `${base(ctx)}/session`, ctx.seniorToken);
-    expect(state.body.assistant).toEqual({ available: true, simulated: true, voice: false, live: false });
-
-    expect((await say(ctx, sessionId, { text: "I feel good" }, scripted)).body.reply.text).toContain("sleep");
-    expect((await say(ctx, sessionId, { text: "Badly, I am tired" }, scripted)).body.reply.text).toContain("pain");
-    expect((await say(ctx, sessionId, { text: "No" }, scripted)).body.reply.text).toContain("worries");
-    const last = await say(ctx, sessionId, { text: "Nothing, thanks" }, scripted);
-    expect(last.body.suggestFinish).toBe(true);
-    expect((await say(ctx, sessionId, { audio: audio("x"), audioFormat: "m4a" }, scripted)).status).toBe(503);
-
-    const done = await finish(ctx, sessionId, { reason: "assistant" }, scripted);
-    expect(done.body.report).toMatchObject({
-      source: "simulated",
-      structured: { mood: "good", sleep: "poor", pain: "none", concerns: [], attention: "none" },
-    });
-    expect(done.body.report.summary).toMatch(/^Demo summary \(scripted, not AI\)/);
-    expect(scripted.push.calls[0]!.message.title).toBe("[Simulation] Halina shared a wellbeing check-in");
-    expect((await scripted.call("POST", `${base(ctx)}/speech`, ctx.seniorToken, { text: "Hi" })).status).toBe(503);
-  });
-
-  it("flags danger words", async () => {
-    const ctx = await scripted.pair();
-    const sessionId = (await start(ctx, {}, scripted)).body.session.id;
-    const res = await say(ctx, sessionId, { text: "Upadłam i nie mogę wstać" }, scripted);
-    expect(res.body.safetyConcern).toBe(true);
-    expect(res.body.reply.text).toContain("SOS");
   });
 });
 

@@ -152,7 +152,6 @@ Timestamps are ISO 8601 with offset.
 | `POST /v1/seniors/:id/wellbeing/sessions` `{language?, timezone?, voice?}` | that senior | Starts a check-in: 201 `{session, messages}` with the assistant's greeting. With `voice: true` and `assistant.live`, the check-in starts with `messages: []` and the live connection speaks the greeting. `language` is a BCP 47 hint (max 35 characters), `timezone` an IANA zone. An open check-in is returned as is (200, no new greeting). 503 `assistant_unavailable`, with nothing stored, when no assistant is configured or it fails |
 | `POST .../wellbeing/sessions/:sessionId/messages` `{text}` or `{audio, audioFormat}` | that senior | Exactly one of `text` (1 to 1000 characters) or `audio` (base64, 1 byte to 2 MB decoded) with `audioFormat` `m4a`, `mp3`, `wav`, `webm` or `ogg`. Audio is transcribed first (422 `no_speech` when nothing was recognised). 201 `{message, reply, suggestFinish, safetyConcern}`. Nothing is stored unless the reply succeeded (503 otherwise). 404 for an unknown or someone else's check-in, 409 `session_closed` after it finished, 409 `session_full` at 40 senior messages; `suggestFinish` is always true from the 30th |
 | `POST .../wellbeing/sessions/:sessionId/finish` `{reason?}` | that senior | Body optional; `reason` is `senior` (default) or `assistant` (the app finishes after a reply with `suggestFinish`). 200 `{session, report}`: the summary report is stored and pushed, the conversation deleted. Idempotent (`report` is null once withdrawn). A check-in without senior messages is deleted: `{session: null, report: null}`. 503 when the summary fails; the check-in stays open |
-| `POST /v1/seniors/:id/wellbeing/speech` `{text}` | that senior | Reads a reply aloud: 200 `audio/mpeg` (MP3, 1 to 1000 characters of text). 503 when voice is unavailable |
 | `GET .../wellbeing/sessions/:sessionId/live` (WebSocket) | that senior | Hands-free voice: upgrade with the normal bearer header, then JSON frames. See [Live voice](#live-voice-hands-free) |
 | `GET /v1/catalog?q=` | any | Case-insensitive name search (2 to 64 characters, `%` and `_` match literally), up to 10 entries. Helps manual entry after an unknown barcode |
 | `GET /v1/catalog/:barcode` | any | Synthetic demo catalog. 404 means unknown: fall back to manual entry. A barcode is a candidate, not a prescription |
@@ -235,28 +234,26 @@ watch reports. Readings are informational and **not a medical assessment**.
 
 ## Wellbeing check-in (OpenAI)
 
-The senior talks or writes with Carely's assistant about how they feel. When
+The senior talks with Carely's assistant about how they feel (the app uses
+[Live voice](#live-voice-hands-free); the typed and push-to-talk endpoints above
+remain in the API but the app no longer calls them). When
 the check-in ends, the guardians get a short summary; they never see the
 conversation itself. The assistant is informational: it does not diagnose, gives
 no medical or medication advice, and never sends an SOS itself.
 
-**Providers.** `ASSISTANT_PROVIDER=openai` (default) calls OpenAI from the
-backend only; the API key (`OPENAI_API_KEY`) never reaches a device. Without a
-key the server still starts, logs a warning, and the assistant endpoints answer
-503 `assistant_unavailable` (`GET .../wellbeing/session` reports
-`assistant.available: false`). `ASSISTANT_PROVIDER=simulated` is an explicit
-opt-in for development: scripted questions and keyword rules, no voice, every
-session `simulated: true`, reports `source: "simulated"` with a summary starting
-"Demo summary (scripted, not AI)", and pushes prefixed `[Simulation]`.
+**Provider.** OpenAI, called from the backend only; the API key
+(`OPENAI_API_KEY`) never reaches a device. Without a key the server still
+starts, logs a warning, and the assistant endpoints answer 503
+`assistant_unavailable` (`GET .../wellbeing/session` reports
+`assistant.available: false` and `assistant.live: false`).
 
 | Variable | Default | Use |
 | --- | --- | --- |
-| `OPENAI_CHAT_MODEL` | `gpt-6-luna` | Replies (reasoning effort `low`) and the summary (`medium`), Responses API with strict JSON schemas |
-| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Voice messages (`/v1/audio/transcriptions`) |
-| `OPENAI_TTS_MODEL`, `OPENAI_TTS_VOICE` | `gpt-4o-mini-tts`, `marin` | Reading replies aloud (`/v1/audio/speech`, MP3, asked to speak slowly and clearly) |
-| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1-mini`, `marin` | Hands-free voice (Realtime API over a WebSocket) |
+| `OPENAI_REALTIME_MODEL`, `OPENAI_REALTIME_VOICE` | `gpt-realtime-2.1-mini`, `marin` | The spoken conversation (Realtime API over a WebSocket) |
+| `OPENAI_TRANSCRIBE_MODEL` | `gpt-transcribe` | Transcript of the senior's speech (Realtime input transcription; also the unused push-to-talk endpoint) |
+| `OPENAI_CHAT_MODEL` | `gpt-6-luna` | The guardian summary (reasoning effort `medium`, strict JSON schema); also the unused typed replies |
 | `WELLBEING_IDLE_MINUTES` | 20 | Idle check-ins are finished by the watchdog |
-| `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (start, message, transcription, finish, speech, each live connection and each spoken turn) per senior; 429 above |
+| `RATE_LIMIT_ASSISTANT_PER_HOUR` | 120 | Paid calls (each live connection, each spoken turn, the summary, and the unused typed endpoints) per senior; 429 above |
 
 **Data flow.** Each reply sends OpenAI the system instructions (in
 `src/assistant/prompts.ts`), the senior's display name, the guardians' display
@@ -302,7 +299,7 @@ said. `wellbeing` is not an urgent kind: no reminders, no cancellation.
 
 **Unverified:** the OpenAI requests follow the current API reference; against
 the live API only a greeting has been received so far. The contract is covered
-by tests with a stubbed `fetch` and a fake assistant. Transcription, speech, the
+by tests with a stubbed `fetch` and a fake assistant. Transcription, the
 summary, the prompts and the attention rating have not been evaluated on real
 conversations.
 
@@ -313,7 +310,7 @@ the backend over a WebSocket, the backend relays it to the OpenAI Realtime API
 (speech to speech), and the model's voice streams back. The model's semantic
 voice activity detection (eagerness `low`, so pauses are not cut off) decides
 when the senior has finished; the app holds no OpenAI logic or key. Available
-only with `ASSISTANT_PROVIDER=openai` and a key (`assistant.live`); the summary
+only with `OPENAI_API_KEY` set (`assistant.live`); the summary
 is still written by `OPENAI_CHAT_MODEL`.
 
 **Connecting.** `GET /v1/seniors/:id/wellbeing/sessions/:sessionId/live` with
@@ -478,3 +475,8 @@ here with a date so the mobile side can follow.
   `POST .../wellbeing/sessions` accepts `voice` (a voice check-in starts without
   a typed greeting when live voice is available). New WebSocket route
   `GET .../wellbeing/sessions/:sessionId/live` (hands-free voice).
+
+- 2026-10-04: `POST /v1/seniors/:id/wellbeing/speech` (read-aloud) and the
+  `ASSISTANT_PROVIDER` / `OPENAI_TTS_*` settings are removed: the Realtime model
+  speaks itself, and the scripted assistant had no voice. Its reports
+  (`source: "simulated"`) can no longer be created.

@@ -187,9 +187,8 @@ on the server; the app never talks to OpenAI directly.
   describes an emergency it tells them to press SOS or call 112 and the app
   shows a large SOS button; it never sends an SOS itself. A possible emergency
   raises one informational `wellbeing` alert for the guardian.
-- Without an OpenAI key the voice check-in is shown as unavailable. The scripted
-  demo assistant (`ASSISTANT_PROVIDER=simulated`) has no voice, so the senior
-  screen cannot use it; it remains for backend tests and HTTP demos.
+- Without an OpenAI key the voice check-in is shown as unavailable; there is no
+  scripted fallback.
 - Guardian: Wellbeing reports list and detail (summary, ratings in words,
   attention, how the senior answered), a local notification for each new
   report while the app is open, and an Overview row. AI-written content is

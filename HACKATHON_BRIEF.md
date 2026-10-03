@@ -60,8 +60,8 @@ At least one real platform integration must be verified in the final demo.
 - [ ] Barcode entry and a medication 3D reference are demonstrated or explicitly
   recorded as incomplete.
 - [ ] Watch SOS is verified on a compatible target or explicitly shown as simulated.
-- [ ] The AI check-in is evidenced with a real model call on the target, or the
-  scripted demo assistant is disclosed as a simulation.
+- [ ] The AI check-in is evidenced with a real spoken conversation on the target,
+  or its absence is disclosed.
 - [ ] A working `.hap`, demo recording, architecture summary, and AI disclosure are supplied.
 
 ## Scope Boundaries
@@ -91,9 +91,9 @@ At least one real platform integration must be verified in the final demo.
 - Out of scope for this hackathon: Clinical diagnosis, medication prescribing,
   and a guaranteed emergency-response service.
 - Planned simulations: Deterministic location traces, local guardian alert
-  fixtures, barcode fixtures, watch input when hardware is unavailable, and a
-  scripted wellbeing assistant (`ASSISTANT_PROVIDER=simulated`) when no OpenAI
-  key is configured.
+  fixtures, barcode fixtures, and watch input when hardware is unavailable. The
+  wellbeing check-in has no simulation: without an OpenAI key it shows as
+  unavailable.
   Every simulated source must be visibly labelled. A local alert fixture does
   not establish remote push delivery or background geofencing support.
 
@@ -104,5 +104,4 @@ guardian informed. Here is the senior's home screen. They leave the designated
 area: the guardian sees an alert and can call them. If they need help immediately,
 they use SOS, ideally on their wrist. The same companion helps with medication
 and a daily wellbeing chat whose summary reaches the guardian.” Show any
-simulated inputs explicitly, including the scripted assistant if no OpenAI key
-is configured.
+simulated inputs explicitly.

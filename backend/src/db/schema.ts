@@ -327,7 +327,7 @@ export const wellbeingSessions = pgTable(
     reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
     /** Provider and model that answered, e.g. `openai/gpt-6-luna` or `simulated`. */
     assistant: text("assistant").notNull(),
-    /** Scripted replies (ASSISTANT_PROVIDER=simulated); the report is labelled a simulation. */
+    /** Scripted (non-AI) replies, e.g. a test assistant; the report is labelled a simulation. */
     simulated: boolean("simulated").notNull().default(false),
     seniorMessages: integer("senior_messages").notNull().default(0),
     voiceMessages: integer("voice_messages").notNull().default(0),
