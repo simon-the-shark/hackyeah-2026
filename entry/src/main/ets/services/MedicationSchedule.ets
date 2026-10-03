@@ -1,4 +1,4 @@
-import { DoseOccurrence, Medication } from '../models/Medication';
+import { DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
 
 function pad(value: number): string {
   return value < 10 ? `0${value}` : `${value}`;
@@ -12,43 +12,106 @@ export function timeKey(date: Date): string {
   return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+export function startOfDay(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+// Times are interpreted in the device's time zone; see Medication.timezone.
 export function todaysDoses(medications: Medication[], today: Date): DoseOccurrence[] {
   const day = dateKey(today);
   const doses: DoseOccurrence[] = [];
   medications.forEach((medication: Medication) => {
     medication.times.forEach((time: string) => {
-      doses.push(new DoseOccurrence(`${medication.id}@${day}T${time}`, medication, time));
+      const hours = Number(time.substring(0, 2));
+      const minutes = Number(time.substring(3, 5));
+      const scheduledFor = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
+      doses.push(new DoseOccurrence(`${medication.id}@${day}T${time}`, medication, time, scheduledFor));
     });
   });
   return doses.sort((a: DoseOccurrence, b: DoseOccurrence) => a.time.localeCompare(b.time));
 }
 
-// The first dose not yet taken at or after the current time, or undefined once none remain.
-export function nextDose(doses: DoseOccurrence[], now: Date, taken: Map<string, number>): DoseOccurrence | undefined {
+export function dosesOf(doses: DoseOccurrence[], medicationId: string): DoseOccurrence[] {
+  return doses.filter((dose: DoseOccurrence) => dose.medication.id === medicationId);
+}
+
+// The first dose still waiting for an answer, including overdue ones, or undefined once all are answered.
+export function openDose(doses: DoseOccurrence[], records: Map<string, DoseRecord>): DoseOccurrence | undefined {
+  return doses.find((dose: DoseOccurrence) => !records.has(dose.occurrenceId));
+}
+
+// The first unanswered dose at or after the current time, or undefined once none remain.
+export function nextDose(doses: DoseOccurrence[], now: Date, records: Map<string, DoseRecord>):
+  DoseOccurrence | undefined {
   const current = timeKey(now);
-  return doses.find((dose: DoseOccurrence) => dose.time >= current && !taken.has(dose.occurrenceId));
+  return doses.find((dose: DoseOccurrence) => dose.time >= current && !records.has(dose.occurrenceId));
 }
 
-// Entries are stored as "occurrenceId|takenAtMillis"; only the given day's records are kept.
-export function encodeTakenDoses(taken: Map<string, number>): string[] {
-  const entries: string[] = [];
-  taken.forEach((takenAt: number, occurrenceId: string) => {
-    entries.push(`${occurrenceId}|${takenAt}`);
+// Medicines ordered by their first unanswered dose; fully answered medicines go last.
+export function sortByOpenDose(medications: Medication[], doses: DoseOccurrence[],
+  records: Map<string, DoseRecord>): Medication[] {
+  const rank = (medication: Medication): string =>
+    openDose(dosesOf(doses, medication.id), records)?.time ?? '99:99';
+  return medications.slice().sort((a: Medication, b: Medication) => {
+    const byTime = rank(a).localeCompare(rank(b));
+    return byTime !== 0 ? byTime : a.name.localeCompare(b.name);
   });
-  return entries;
 }
 
-export function decodeTakenDoses(entries: string[], day: string): Map<string, number> {
-  const taken = new Map<string, number>();
+// The backend keeps the first final answer for an occurrence, so its record wins over a local one.
+export function mergeDoseRecords(server: DoseRecord[], pending: DoseRecord[]): Map<string, DoseRecord> {
+  const merged = new Map<string, DoseRecord>();
+  pending.forEach((record: DoseRecord) => merged.set(record.occurrenceId, record));
+  server.forEach((record: DoseRecord) => merged.set(record.occurrenceId, record));
+  return merged;
+}
+
+interface PendingDoseEntry {
+  occurrenceId?: string;
+  medicationId?: string;
+  status?: string;
+  scheduledFor?: number;
+  recordedAt?: number;
+}
+
+class PendingDoseJson {
+  occurrenceId: string;
+  medicationId: string;
+  status: string;
+  scheduledFor: number;
+  recordedAt: number;
+
+  constructor(record: DoseRecord) {
+    this.occurrenceId = record.occurrenceId;
+    this.medicationId = record.medicationId;
+    this.status = record.status;
+    this.scheduledFor = record.scheduledFor;
+    this.recordedAt = record.recordedAt;
+  }
+}
+
+export function encodePendingDoses(records: DoseRecord[]): string[] {
+  return records.map((record: DoseRecord) => JSON.stringify(new PendingDoseJson(record)));
+}
+
+// Malformed entries are dropped instead of blocking the rest of the queue.
+export function decodePendingDoses(entries: string[]): DoseRecord[] {
+  const records: DoseRecord[] = [];
   entries.forEach((entry: string) => {
-    const separator = entry.lastIndexOf('|');
-    const occurrenceId = entry.substring(0, separator);
-    const takenAt = Number(entry.substring(separator + 1));
-    if (separator > 0 && occurrenceId.includes(`@${day}T`) && !isNaN(takenAt)) {
-      taken.set(occurrenceId, takenAt);
+    try {
+      const value = JSON.parse(entry) as PendingDoseEntry;
+      const status = value.status === DoseStatus.Taken ? DoseStatus.Taken :
+        value.status === DoseStatus.Skipped ? DoseStatus.Skipped : undefined;
+      if (typeof value.occurrenceId === 'string' && typeof value.medicationId === 'string' &&
+        status !== undefined && typeof value.scheduledFor === 'number' && typeof value.recordedAt === 'number') {
+        records.push(new DoseRecord(value.occurrenceId, value.medicationId, status, value.scheduledFor,
+          value.recordedAt, false));
+      }
+    } catch (err) {
+      // Not JSON; skip it.
     }
   });
-  return taken;
+  return records;
 }
 
 // GS1 DataMatrix on medicine packs encodes the product number after Application Identifier "01".
@@ -67,6 +130,6 @@ export function barcodesMatch(expected: string, scanned: string): boolean {
   return expectedCode.length > 0 && expectedCode === normalizeProductCode(scanned);
 }
 
-export function findScheduledMedication(doses: DoseOccurrence[], scanned: string): Medication | undefined {
-  return doses.find((dose: DoseOccurrence) => barcodesMatch(dose.medication.barcode, scanned))?.medication;
+export function findMedicationByBarcode(medications: Medication[], scanned: string): Medication | undefined {
+  return medications.find((medication: Medication) => barcodesMatch(medication.barcode, scanned));
 }

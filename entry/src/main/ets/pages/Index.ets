@@ -1,11 +1,9 @@
-import { common } from '@kit.AbilityKit';
 import { Feature, GUARDIAN_PROFILE, ROLE_PROFILES, RoleProfile, SENIOR_PROFILE } from '../models/Features';
 import { CareAlert } from '../models/Safety';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
-import { loadTakenDoses } from '../platform/DoseLogStore';
-import { dateKey } from '../services/MedicationSchedule';
+import { DoseRecord } from '../models/Medication';
 import { FeaturePage } from './FeaturePage';
 import { MedicationDetail, MedicationDetailParams } from './MedicationDetail';
 import { RoleHome } from './RoleHome';
@@ -20,12 +18,8 @@ import { WatchSafetyPage } from './WatchSafetyPage';
 struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
   @StorageLink('paired') private paired: boolean = false;
-  // Today's taken doses (occurrence ID to time taken), shared by the schedule and detail screens.
-  @Provide('takenDoses') takenDoses: Map<string, number> = new Map<string, number>();
-
-  aboutToAppear(): void {
-    this.takenDoses = loadTakenDoses(this.getUIContext().getHostContext() as common.Context, dateKey(new Date()));
-  }
+  // Today's dose answers by occurrence ID, shared by the medicine list and detail screens.
+  @Provide('doseRecords') doseRecords: Map<string, DoseRecord> = new Map<string, DoseRecord>();
 
   @Builder
   routes(name: string, param: Object) {

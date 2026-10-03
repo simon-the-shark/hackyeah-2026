@@ -1,9 +1,10 @@
 import { DoseAction } from '../components/DoseAction';
-import { DEMO_MEDICATIONS, DoseOccurrence, Medication } from '../models/Medication';
+import { DoseOccurrence, DoseRecord, Medication } from '../models/Medication';
 import { nextDose, todaysDoses } from '../services/MedicationSchedule';
 
 export class MedicationDetailParams {
   readonly medication: Medication;
+  // Code that led here from the scanner; empty when the senior opened the medicine from the list.
   readonly scannedCode: string;
   readonly simulated: boolean;
 
@@ -16,8 +17,8 @@ export class MedicationDetailParams {
 
 @Component
 export struct MedicationDetail {
-  params: MedicationDetailParams = new MedicationDetailParams(DEMO_MEDICATIONS[0], '', false);
-  @Consume('takenDoses') takenDoses: Map<string, number>;
+  @Require params: MedicationDetailParams;
+  @Consume('doseRecords') doseRecords: Map<string, DoseRecord>;
   private now: Date = new Date();
   private doses: DoseOccurrence[] = [];
 
@@ -26,7 +27,7 @@ export struct MedicationDetail {
   }
 
   private isNext(dose: DoseOccurrence): boolean {
-    return nextDose(this.doses, this.now, this.takenDoses)?.occurrenceId === dose.occurrenceId;
+    return nextDose(this.doses, this.now, this.doseRecords)?.occurrenceId === dose.occurrenceId;
   }
 
   @Builder
@@ -36,7 +37,7 @@ export struct MedicationDetail {
         .fontSize(30)
         .fontColor([$r('app.color.success')])
       Column({ space: 2 }) {
-        Text('On today\'s list')
+        Text('On your medicine list')
           .fontSize(20)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.success'))
@@ -95,44 +96,39 @@ export struct MedicationDetail {
             this.matchBanner()
           }
 
-          Column({ space: 6 }) {
-            if (this.params.medication.photo !== undefined) {
-              Image(this.params.medication.photo)
-                .width('100%')
-                .aspectRatio(4 / 3)
-                .objectFit(ImageFit.Cover)
-                .borderRadius(24)
-                .accessibilityText(`Picture of the ${this.params.medication.name} box`)
-            } else {
-              Row() {
-                SymbolGlyph($r('sys.symbol.cross_case'))
-                  .fontSize(72)
-                  .fontColor([$r('app.color.senior_accent')])
-              }
-              .width('100%')
-              .aspectRatio(4 / 3)
-              .borderRadius(24)
-              .justifyContent(FlexAlign.Center)
-              .backgroundColor($r('app.color.senior_tint'))
-            }
-            Text('Illustration of a demo medicine')
-              .fontSize(13)
-              .fontColor($r('app.color.text_secondary'))
+          Row() {
+            SymbolGlyph($r('sys.symbol.cross_case'))
+              .fontSize(72)
+              .fontColor([$r('app.color.senior_accent')])
           }
           .width('100%')
-          .alignItems(HorizontalAlign.Start)
+          .height(160)
+          .borderRadius(24)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor($r('app.color.senior_tint'))
+          .accessibilityText('Medicine')
 
           Column({ space: 4 }) {
             Text(this.params.medication.name)
               .fontSize(32)
               .fontWeight(FontWeight.Bold)
               .fontColor($r('app.color.text_primary'))
-            Text(this.params.medication.doseText)
-              .fontSize(20)
-              .fontColor($r('app.color.text_primary'))
-            Text(this.params.medication.instructions)
-              .fontSize(17)
-              .fontColor($r('app.color.text_secondary'))
+            if (this.params.medication.doseText.length > 0) {
+              Text(this.params.medication.doseText)
+                .fontSize(20)
+                .fontColor($r('app.color.text_primary'))
+            }
+            if (this.params.medication.instructions.length > 0) {
+              Text(this.params.medication.instructions)
+                .fontSize(17)
+                .fontColor($r('app.color.text_secondary'))
+            }
+            if (this.params.medication.barcode.length > 0) {
+              Text(`Box code ${this.params.medication.barcode}`)
+                .fontSize(14)
+                .fontColor($r('app.color.text_secondary'))
+                .margin({ top: 4 })
+            }
           }
           .width('100%')
           .alignItems(HorizontalAlign.Start)
@@ -142,6 +138,12 @@ export struct MedicationDetail {
             .fontSize(20)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
+
+          if (this.doses.length === 0) {
+            Text('No doses scheduled for today.')
+              .fontSize(17)
+              .fontColor($r('app.color.text_secondary'))
+          }
 
           ForEach(this.doses, (dose: DoseOccurrence) => {
             this.doseRow(dose)
