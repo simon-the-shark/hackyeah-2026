@@ -2,6 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { apiSession } from './CareApi';
 import { SafePreferences } from './SafePreferences';
 import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
+import { guardianAlertWatcher } from './GuardianAlertWatcher';
 
 const STORE_NAME = 'carely_api_session';
 /**
@@ -36,6 +37,7 @@ export class ApiSessionStore {
   async clear(context: common.Context): Promise<void> {
     apiSession.clear();
     await this.store.clear(context);
+    await guardianAlertWatcher.reset(context);
   }
 }
 

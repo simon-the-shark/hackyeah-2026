@@ -2,6 +2,7 @@ import { Feature, GUARDIAN_PROFILE, SENIOR_PROFILE } from '../models/Features';
 import { DoseRecord, Medication } from '../models/Medication';
 import { CareAlert } from '../models/Safety';
 import { apiSession } from '../services/CareApi';
+import { AlertDeepLink } from '../components/AlertDeepLink';
 import { ConnectionPage } from './ConnectionPage';
 import { AlertDetailPage, AlertsPage } from './AlertsPage';
 import { DeveloperToolsPage } from './DeveloperToolsPage';
@@ -140,6 +141,7 @@ struct Index {
           .width('100%')
         }
 
+        AlertDeepLink()
         Blank()
       }
       .width('100%')

@@ -8,6 +8,7 @@ import {
 } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
 import { apiSession, careApi } from '../services/CareApi';
+import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
 
 interface RemoteAlert {
   id: string;
@@ -204,7 +205,7 @@ export struct AlertsList {
         if (this.loadError !== '') {
           NoticeBanner({ text: this.loadError })
         }
-        Text('Alerts are shown from the care service.')
+        Text('Alerts come from the care service. Carely checks for new ones about every 20 s while it is open and shows a local notification; there is no remote push yet.')
           .fontSize(13)
           .fontColor($r('app.color.text_secondary'))
           .width('100%')
@@ -372,6 +373,7 @@ export struct AlertDetailPage {
     try {
       if (this.alert.remote && apiSession.configured() && apiSession.role === 'guardian') {
         await careApi.request(`/alerts/${this.alert.id}/ack`, http.RequestMethod.POST);
+        guardianAlertWatcher.onAcknowledged(this.alert.id);
       }
       this.acknowledged = true;
     } catch (error) {
