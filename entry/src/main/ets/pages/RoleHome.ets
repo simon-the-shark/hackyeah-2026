@@ -1,9 +1,11 @@
 import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/Features';
+import { FeaturePlaceholder } from './FeaturePage';
 
 @Component
 export struct RoleHome {
   @Consume('navStack') navStack: NavPathStack;
   profile: RoleProfile = SENIOR_PROFILE;
+  @State selectedTab: number = 0;
 
   private open(feature: Feature): void {
     this.navStack.pushPathByName('feature', feature);
@@ -126,29 +128,74 @@ export struct RoleHome {
     .alignItems(HorizontalAlign.Start)
   }
 
-  build() {
-    NavDestination() {
-      Scroll() {
-        Column({ space: 24 }) {
-          Text(this.profile.headline)
-            .fontSize(28)
-            .fontWeight(FontWeight.Bold)
-            .fontColor($r('app.color.text_primary'))
+  @Builder
+  homeContent() {
+    Scroll() {
+      Column({ space: 24 }) {
+        Text(this.profile.headline)
+          .fontSize(28)
+          .fontWeight(FontWeight.Bold)
+          .fontColor($r('app.color.text_primary'))
 
-          this.hero()
+        this.hero()
 
-          ForEach(this.profile.sections, (section: FeatureSection) => {
-            this.section(section)
-          }, (section: FeatureSection) => section.title)
-        }
-        .width('100%')
-        .alignItems(HorizontalAlign.Start)
-        .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+        ForEach(this.profile.sections, (section: FeatureSection) => {
+          this.section(section)
+        }, (section: FeatureSection) => section.title)
       }
       .width('100%')
-      .height('100%')
-      .align(Alignment.Top)
-      .scrollBar(BarState.Off)
+      .alignItems(HorizontalAlign.Start)
+      .padding({ left: 20, right: 20, top: 8, bottom: 32 })
+    }
+    .width('100%')
+    .height('100%')
+    .align(Alignment.Top)
+    .scrollBar(BarState.Off)
+  }
+
+  @Builder
+  tabItem(icon: Resource, label: string, index: number) {
+    Column({ space: 4 }) {
+      SymbolGlyph(icon)
+        .fontSize(26)
+        .fontColor([this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary')])
+      Text(label)
+        .fontSize(14)
+        .fontWeight(this.selectedTab === index ? FontWeight.Bold : FontWeight.Medium)
+        .fontColor(this.selectedTab === index ? this.profile.accent : $r('app.color.text_secondary'))
+    }
+    .width('100%')
+    .height('100%')
+    .justifyContent(FlexAlign.Center)
+    .accessibilityGroup(true)
+  }
+
+  build() {
+    NavDestination() {
+      if (this.profile.tabs.length > 0) {
+        Tabs({ barPosition: BarPosition.End, index: this.selectedTab }) {
+          TabContent() {
+            this.homeContent()
+          }
+          .tabBar(this.tabItem($r('sys.symbol.house_fill'), 'Home', 0))
+
+          ForEach(this.profile.tabs, (feature: Feature, index: number) => {
+            TabContent() {
+              FeaturePlaceholder({ feature: feature })
+            }
+            .tabBar(this.tabItem(feature.icon, feature.title, index + 1))
+          }, (feature: Feature) => feature.id)
+        }
+        .scrollable(false)
+        .barHeight(76)
+        .barBackgroundColor($r('app.color.surface'))
+        .divider({ strokeWidth: 1, color: $r('app.color.divider') })
+        .onChange((index: number) => {
+          this.selectedTab = index;
+        })
+      } else {
+        this.homeContent()
+      }
     }
     .title(this.profile.label)
     .backgroundColor($r('app.color.page_background'))

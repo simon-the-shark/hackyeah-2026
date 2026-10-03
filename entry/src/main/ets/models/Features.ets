@@ -37,9 +37,11 @@ export class RoleProfile {
   readonly hero: Feature;
   readonly heroColor: Resource;
   readonly sections: FeatureSection[];
+  readonly tabs: Feature[];
 
   constructor(route: string, label: string, description: string, headline: string, icon: Resource,
-    accent: Resource, tint: Resource, hero: Feature, heroColor: Resource, sections: FeatureSection[]) {
+    accent: Resource, tint: Resource, hero: Feature, heroColor: Resource, sections: FeatureSection[],
+    tabs: Feature[] = []) {
     this.route = route;
     this.label = label;
     this.description = description;
@@ -50,6 +52,7 @@ export class RoleProfile {
     this.hero = hero;
     this.heroColor = heroColor;
     this.sections = sections;
+    this.tabs = tabs;
   }
 }
 
@@ -73,16 +76,16 @@ export const SENIOR_PROFILE: RoleProfile = new RoleProfile(
     $r('sys.symbol.exclamationmark_shield_fill'), $r('app.color.sos'), $r('app.color.sos_tint')),
   $r('app.color.sos'),
   [
-    new FeatureSection('Daily care', [
-      seniorFeature('medication', 'Medication', 'Doses, reminders and medicine scanning',
-        $r('sys.symbol.cross_case')),
-      seniorFeature('contacts', 'Contacts', 'Call trusted people quickly', $r('sys.symbol.phone_fill')),
-      seniorFeature('wellbeing', 'Wellbeing', 'Daily check-in and private assistant', $r('sys.symbol.heart_fill'))
-    ]),
     new FeatureSection('Safety and setup', [
       seniorFeature('safe-area', 'Safe Area', 'Home area monitoring status', $r('sys.symbol.house_shield_fill')),
       seniorFeature('settings', 'Settings', 'Pairing, permissions and preferences', $r('sys.symbol.gearshape_fill'))
     ])
+  ],
+  [
+    seniorFeature('medication', 'Medication', 'Doses, reminders and medicine scanning',
+      $r('sys.symbol.cross_case')),
+    seniorFeature('contacts', 'Contacts', 'Call trusted people quickly', $r('sys.symbol.phone_fill')),
+    seniorFeature('wellbeing', 'Wellbeing', 'Daily check-in and private assistant', $r('sys.symbol.heart_fill'))
   ]
 );
 
