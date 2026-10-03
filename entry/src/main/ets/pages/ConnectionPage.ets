@@ -1,4 +1,5 @@
 import { http } from '@kit.NetworkKit';
+import { pasteboard } from '@kit.BasicServicesKit';
 import common from '@ohos.app.ability.common';
 import { apiSession, BootstrapRequest, careApi } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
@@ -32,6 +33,18 @@ export struct ConnectionPage {
     }
   }
 
+  private copyPairingCode(): void {
+    if (this.pairingCode === '') {
+      return;
+    }
+    const pasteData = pasteboard.createData(pasteboard.MIMETYPE_TEXT_PLAIN, this.pairingCode);
+    pasteboard.getSystemPasteboard().setData(pasteData).then(() => {
+      this.message = 'Pairing code copied. Share it with your guardian.';
+    }).catch(() => {
+      this.message = 'Could not copy the pairing code. Please share it manually.';
+    });
+  }
+
   build() {
     NavDestination() {
       Column({ space: 16 }) {
@@ -42,6 +55,10 @@ export struct ConnectionPage {
           if (!this.guardian) {
             Text(this.pairingCode).fontSize(42).fontWeight(FontWeight.Bold).width('100%').textAlign(TextAlign.Center)
             Text('Give this six-digit code to your guardian.').fontSize(16).width('100%').textAlign(TextAlign.Center)
+            Button('Copy code')
+              .width('100%')
+              .enabled(this.pairingCode !== '')
+              .onClick(() => this.copyPairingCode())
           }
           Button('Continue').width('100%').onClick(() => this.onConnected(apiSession.role))
         } else {
