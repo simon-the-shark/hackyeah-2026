@@ -1,8 +1,7 @@
 import { common } from '@kit.AbilityKit';
-import { http } from '@kit.NetworkKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
-import { apiSession, careApi } from '../services/CareApi';
+import { apiSession } from '../services/CareApi';
 import { locationSharing } from '../services/LocationSharing';
 import { pendingSafetyEvents } from '../services/PendingSafetyEvents';
 import { CareButtonStyle } from '../components/DesignSystem';
@@ -16,28 +15,11 @@ export struct SafetyPage {
   @State private locationPermissionDenied: boolean = locationSharing.permissionDenied;
   @State private locationSwitchOff: boolean = locationSharing.locationSwitchOff;
   @State private errorMessage: string = locationSharing.errorMessage;
+  @State private configMessage: string = locationSharing.configMessage;
   private readonly locationStateListener: () => void = () => this.syncFromStore();
 
   private hostContext(): common.UIAbilityContext {
     return this.getUIContext().getHostContext() as common.UIAbilityContext;
-  }
-
-  /**
-   * The guardian owns the safe area, so the senior's phone must monitor the same
-   * boundary the backend raises alerts against. Without this the app geofences
-   * against its local default while the backend uses the configured area, which
-   * produces false exits.
-   */
-  private async loadSafeAreaFromBackend(): Promise<void> {
-    try {
-      const result = await careApi.request(`/seniors/${apiSession.seniorId}/safe-area`, http.RequestMethod.GET) as Record<string, Object>;
-      if (safetyStore.configureHomeCircle(result['lat'] as number, result['lng'] as number, result['radiusM'] as number)) {
-        this.syncFromStore();
-      }
-    } catch (error) {
-      // No stored area yet, or the service is unreachable: keep the current boundary.
-      console.error(`[SafetyPage] safe area load failed: ${JSON.stringify(error)}`);
-    }
   }
 
   private syncFromStore(): void {
@@ -48,6 +30,7 @@ export struct SafetyPage {
     this.locationPermissionDenied = locationSharing.permissionDenied;
     this.locationSwitchOff = locationSharing.locationSwitchOff;
     this.errorMessage = locationSharing.errorMessage;
+    this.configMessage = locationSharing.configMessage;
   }
 
   private startLocationMonitoring(): void {
@@ -77,17 +60,17 @@ export struct SafetyPage {
 
   private statusTitle(): string {
     if (this.status === GeofenceStatus.Inside) {
-      return 'You are at home';
+      return 'Last confirmed inside your safe area';
     }
     if (this.status === GeofenceStatus.Outside) {
-      return 'You are outside your safe area';
+      return 'Last confirmed outside your safe area';
     }
     return this.monitoringEnabled ? 'Finding your location' : 'Location not checked';
   }
 
   private statusDetail(): string {
     if (this.status === GeofenceStatus.Outside) {
-      return `${this.locationMessage} An alert was created for your guardian.`;
+      return `${this.locationMessage} Check sharing status below for delivery problems.`;
     }
     if (this.status === GeofenceStatus.Unknown && !this.monitoringEnabled) {
       return 'Turn on location sharing below to check.';
@@ -148,7 +131,7 @@ export struct SafetyPage {
       Divider()
         .color($r('app.color.divider'))
 
-      Text(`Safe area: ${safetyStore.homeRadiusMeters} m around home`)
+      Text(safetyStore.safeAreaConfigured ? `Safe area: ${safetyStore.homeRadiusMeters} m around home` : 'Safe area not available')
         .fontSize(15)
         .fontColor($r('app.color.text_secondary'))
     }
@@ -181,7 +164,7 @@ export struct SafetyPage {
       }
       .width('100%')
 
-      Text('When on, your guardian is alerted if you leave the safe area. Active only while this app is open on screen.')
+      Text('When on, this phone shares location and checks your safe area even with the screen locked or another app open. A system notification shows that sharing is active. You can turn it off here.')
         .fontSize(19)
         .fontColor($r('app.color.text_secondary'))
 
@@ -208,6 +191,10 @@ export struct SafetyPage {
           accent: $r('app.color.sos'),
           tint: $r('app.color.sos_tint')
         })
+      }
+
+      if (this.configMessage !== '') {
+        NoticeBanner({ icon: $r('sys.symbol.exclamationmark_circle_fill'), text: this.configMessage })
       }
 
       Button(this.starting ? 'Starting…'
@@ -259,8 +246,9 @@ export struct SafetyPage {
     .onShown(() => {
       this.syncFromStore();
       if (apiSession.configured() && apiSession.role === 'senior') {
-        this.loadSafeAreaFromBackend();
-        pendingSafetyEvents.flush(this.hostContext());
+        pendingSafetyEvents.flush(this.hostContext()).catch(() => {
+          this.errorMessage = 'Saved safe-area events could not be sent. They will retry while sharing is on.';
+        });
       }
     })
   }

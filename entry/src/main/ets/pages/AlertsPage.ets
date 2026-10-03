@@ -260,13 +260,6 @@ export struct AlertsList {
             this.refreshing = true;
             this.reload();
           })
-
-        Text('Pull down or use Refresh alerts to check again. Carely also checks for new alerts about every 20 seconds while it is open; there is no remote push yet.')
-          .fontSize(17)
-          .fontColor($r('app.color.text_secondary'))
-          .width('100%')
-          .textAlign(TextAlign.Center)
-          .padding({ left: 8, right: 8 })
       }
       .width('100%')
       .padding({ left: 20, right: 20, top: 8, bottom: 32 })
