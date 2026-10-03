@@ -2,6 +2,7 @@ import { http } from '@kit.NetworkKit';
 import { formatClockTime } from '../models/Safety';
 import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
 import { CareButtonStyle } from '../components/DesignSystem';
+import { locationSharing } from '../services/LocationSharing';
 
 const COUNTDOWN_SECONDS: number = 5;
 
@@ -11,6 +12,8 @@ export struct SosPage {
   @State private secondsLeft: number = COUNTDOWN_SECONDS;
   @State private sentAt: number = 0;
   @State private sendState: string = '';
+  /** Fix time of the location attached to the SOS; 0 when none was available. */
+  @State private locationAt: number = 0;
   private timerId: number = -1;
   private sosEventId: string = '';
 
@@ -46,7 +49,12 @@ export struct SosPage {
     }
     try {
       const event = new SafetyEventRequest(this.sosEventId, 'sos');
+      const location = locationSharing.lastKnownLocation();
+      if (location !== undefined) {
+        event.location = location;
+      }
       await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+      this.locationAt = location !== undefined ? Date.parse(location.sampledAt) : 0;
       this.sendState = 'sent';
     } catch (error) {
       this.sendState = 'failed';
@@ -61,7 +69,7 @@ export struct SosPage {
           .fontSize(30)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
-        Text('We will send an SOS to the care service when the countdown ends. This does not call emergency services.')
+        Text('We will send an SOS with your last known location, if available, to the care service when the countdown ends. This does not call emergency services.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
           .textAlign(TextAlign.Center)
@@ -139,6 +147,13 @@ export struct SosPage {
           this.sendState === 'sending' ? 'Please wait while we contact the care service.' : 'Could not send your SOS. Check your connection and try again.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
+        if (this.sendState === 'sent') {
+          Text(this.locationAt > 0 ? `Your location from ${formatClockTime(this.locationAt)} was included.`
+            : 'Your location was not available, so it was not included.')
+            .fontSize(18)
+            .fontColor($r('app.color.text_secondary'))
+            .textAlign(TextAlign.Center)
+        }
       }
 
       Button(this.sendState === 'failed' ? 'Retry SOS' : this.sendState === 'sending' ? 'Sending SOS…' : 'Return home')
