@@ -1,29 +1,6 @@
 import { http } from '@kit.NetworkKit';
-import { SeniorSnapshot } from '../models/SeniorLocation';
+import { RemoteStatusResponse, SeniorSnapshot, snapshotFromStatus } from '../models/SeniorLocation';
 import { apiSession, careApi } from './CareApi';
-
-interface RemoteGeoPoint {
-  lat: number;
-  lng: number;
-  accuracyM?: number;
-  sampledAt?: string;
-}
-
-interface RemoteStatus {
-  monitoringState: string;
-  location?: RemoteGeoPoint | null;
-  battery?: number | null;
-  reportedAt: string;
-  staleAlertedAt?: string | null;
-  deviceKind?: string;
-}
-
-interface RemoteStatusResponse {
-  status: RemoteStatus | null;
-  /** Latest heartbeat per device, newest first. */
-  devices?: RemoteStatus[];
-  serverTime: string;
-}
 
 interface RemoteSafeArea {
   lat: number;
@@ -49,48 +26,18 @@ function isNumber(value: number | null | undefined): boolean {
 }
 
 /**
- * Reads the senior's last heartbeat (`GET /seniors/:id/status`), the configured
- * safe area and the senior's display name for the guardian Location tab.
+ * Reads the last heartbeat of the senior's phone and watch
+ * (`GET /seniors/:id/status`), the configured safe area and the senior's
+ * display name for the guardian Location tab.
  */
 export class SeniorStatusApi {
   private seniorName: string = '';
   private nameSeniorId: string = '';
 
   async load(): Promise<SeniorSnapshot> {
-    const snapshot = new SeniorSnapshot();
     const response = await careApi.request(`/seniors/${apiSession.seniorId}/status`,
       http.RequestMethod.GET) as RemoteStatusResponse;
-    snapshot.fetchedAt = Date.now();
-
-    // This tab describes the senior's phone; the watch has its own screen (Watch & vitals), so a watch
-    // heartbeat must never appear here as the phone's. Only a backend without `devices` falls back to `status`.
-    const devices = response.devices;
-    const status: RemoteStatus | null | undefined = devices !== undefined
-      ? devices.find((device: RemoteStatus) => device.deviceKind === 'phone')
-      : response.status;
-    if (status !== null && status !== undefined) {
-      snapshot.hasStatus = true;
-      snapshot.monitoringState = status.monitoringState;
-      const serverNow = Date.parse(response.serverTime);
-      const reportedAt = Date.parse(status.reportedAt);
-      snapshot.reportedAgeMs = isFinite(serverNow) && isFinite(reportedAt) ? Math.max(0, serverNow - reportedAt) : 0;
-      snapshot.monitoringLostRaised = status.staleAlertedAt !== null && status.staleAlertedAt !== undefined;
-      const battery = status.battery;
-      if (battery !== null && battery !== undefined && isNumber(battery)) {
-        snapshot.battery = battery;
-      }
-      const location = status.location;
-      if (location !== null && location !== undefined && isNumber(location.lat) && isNumber(location.lng)) {
-        snapshot.hasLocation = true;
-        snapshot.lat = location.lat;
-        snapshot.lng = location.lng;
-        const accuracy = location.accuracyM;
-        if (accuracy !== undefined && isNumber(accuracy)) {
-          snapshot.accuracyM = accuracy;
-        }
-      }
-    }
-
+    const snapshot = snapshotFromStatus(response, Date.now());
     await this.loadSafeArea(snapshot);
     snapshot.seniorName = await this.loadSeniorName();
     return snapshot;

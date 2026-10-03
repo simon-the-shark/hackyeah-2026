@@ -1,17 +1,10 @@
-import {
-  ageMs,
-  distanceMeters,
-  HeartRateAlertSummary,
-  WatchLocation,
-  WatchVitalsSnapshot
-} from '../models/WatchVitals';
+import { ageMs, HeartRateAlertSummary, WatchVitalsSnapshot } from '../models/WatchVitals';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
 import { BackendConfig } from '../providers/backend/BackendConfig';
 import {
   RemoteDeviceStatus,
   RemoteHeartRateAlert,
   RemoteHeartRateSample,
-  RemoteSafeArea,
   WatchVitalsApi
 } from '../providers/backend/WatchVitalsApi';
 import { apiSession } from './CareApi';
@@ -24,7 +17,10 @@ function finite(value: number | null | undefined): boolean {
   return typeof value === 'number' && isFinite(value);
 }
 
-/** Builds the guardian's view of the senior's watch: its own location, battery and heart rate. */
+/**
+ * Builds the guardian's view of the senior's watch: battery, last update and
+ * heart rate. The watch's position is drawn with the phone's on the Location tab.
+ */
 export class GuardianWatchVitals {
   async load(): Promise<WatchVitalsSnapshot> {
     const api = this.api();
@@ -32,32 +28,15 @@ export class GuardianWatchVitals {
     const snapshot = new WatchVitalsSnapshot();
 
     const status = await api.status(seniorId);
-    // `devices` is newest first; only a heartbeat from the watch itself counts as the watch's location.
+    // `devices` is newest first; only a heartbeat from the watch itself describes the watch.
     const watch = (status.devices ?? []).find((device: RemoteDeviceStatus) => device.deviceKind === 'watch');
     if (watch !== undefined) {
       snapshot.hasWatch = true;
       snapshot.heartbeatAgeMs = ageMs(status.serverTime, watch.reportedAt);
-      snapshot.monitoringState = watch.monitoringState;
-      snapshot.locationSimulated = watch.source !== undefined && watch.source !== 'device';
+      snapshot.statusSimulated = watch.source !== undefined && watch.source !== 'device';
       const battery = watch.battery;
       if (battery !== null && battery !== undefined && finite(battery)) {
         snapshot.battery = battery;
-      }
-      const point = watch.location;
-      if (point !== null && point !== undefined && finite(point.lat) && finite(point.lng) &&
-        point.measuredBy !== 'phone') {
-        const location = new WatchLocation();
-        location.lat = point.lat;
-        location.lng = point.lng;
-        const accuracy = point.accuracyM;
-        if (accuracy !== undefined && finite(accuracy)) {
-          location.accuracyM = accuracy;
-        }
-        const area = await this.safeArea(api, seniorId);
-        if (area !== undefined) {
-          location.distanceFromHomeM = distanceMeters(area.lat, area.lng, location.lat, location.lng);
-        }
-        snapshot.location = location;
       }
     }
 
@@ -98,15 +77,6 @@ export class GuardianWatchVitals {
     const event = alert.event;
     summary.simulated = event !== null && event !== undefined && event.source !== undefined && event.source !== 'device';
     return summary;
-  }
-
-  /** 404 means the guardian has not set a safe area yet, so there is no distance to show. */
-  private async safeArea(api: WatchVitalsApi, seniorId: string): Promise<RemoteSafeArea | undefined> {
-    try {
-      return await api.safeArea(seniorId);
-    } catch (error) {
-      return undefined;
-    }
   }
 
   // Built per call so pairing again or signing out takes effect immediately.
