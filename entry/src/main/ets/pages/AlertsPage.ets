@@ -40,6 +40,9 @@ function alertIcon(alert: CareAlert): Resource {
   if (alert.type === AlertType.TripDeviation || alert.type === AlertType.TripNotCompleted) {
     return $r('sys.symbol.figure_walk');
   }
+  if (alert.type === AlertType.HeartRate) {
+    return $r('sys.symbol.heart_fill');
+  }
   return $r('sys.symbol.house_shield_fill');
 }
 
