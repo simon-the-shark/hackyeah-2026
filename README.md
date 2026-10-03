@@ -51,7 +51,7 @@ and changes to `Welcome` when tapped.
 
 ### Connect The App To The Backend
 
-The senior Medication tab loads medicines and dose answers from the backend.
+Senior screens load their data (medicines, contacts) from the backend.
 Until pairing exists in the app, the server address and the senior device token
 come from a git-ignored development file bundled into the HAP:
 
