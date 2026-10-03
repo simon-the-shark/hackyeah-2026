@@ -1,27 +1,21 @@
-import { abilityAccessCtrl, common } from '@kit.AbilityKit';
-import { BusinessError } from '@kit.BasicServicesKit';
-import { geoLocationManager } from '@kit.LocationKit';
+import { common } from '@kit.AbilityKit';
 import { http } from '@kit.NetworkKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { GeofenceStatus, safetyStore } from '../models/Safety';
-import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
+import { apiSession, careApi } from '../services/CareApi';
+import { locationSharing } from '../services/LocationSharing';
 import { pendingSafetyEvents } from '../services/PendingSafetyEvents';
 
 @Component
 export struct SafetyPage {
   @State private status: GeofenceStatus = safetyStore.geofenceStatus;
   @State private locationMessage: string = safetyStore.lastLocationMessage;
-  @State private monitoringEnabled: boolean = false;
-  @State private starting: boolean = false;
-  @State private locationPermissionDenied: boolean = false;
-  @State private locationSwitchOff: boolean = false;
-  @State private errorMessage: string = '';
-  private readonly locationCallback: (location: geoLocationManager.Location) => void =
-    (location: geoLocationManager.Location): void => {
-      safetyStore.recordLiveLocation(location.latitude, location.longitude, location.accuracy, false);
-      this.syncFromStore();
-      this.reportLocation(location.latitude, location.longitude, location.accuracy, safetyStore.didLeaveSafeArea);
-    };
+  @State private monitoringEnabled: boolean = locationSharing.enabled;
+  @State private starting: boolean = locationSharing.starting;
+  @State private locationPermissionDenied: boolean = locationSharing.permissionDenied;
+  @State private locationSwitchOff: boolean = locationSharing.locationSwitchOff;
+  @State private errorMessage: string = locationSharing.errorMessage;
+  private readonly locationStateListener: () => void = () => this.syncFromStore();
 
   private hostContext(): common.UIAbilityContext {
     return this.getUIContext().getHostContext() as common.UIAbilityContext;
@@ -45,147 +39,39 @@ export struct SafetyPage {
     }
   }
 
-  private async reportLocation(latitude: number, longitude: number, accuracy: number, exited: boolean): Promise<void> {
-    if (!apiSession.configured() || apiSession.role !== 'senior') {
-      return;
-    }
-    const point = new LocationPoint(latitude, longitude, accuracy);
-    const context = this.hostContext();
-    try {
-      await careApi.request(`/seniors/${apiSession.seniorId}/status`, http.RequestMethod.PUT,
-        new StatusReport(this.backendStatus(), point));
-      await pendingSafetyEvents.flush(context);
-      if (exited) {
-        const event = new SafetyEventRequest(generateEventId(), 'area_exit');
-        event.location = point;
-        try {
-          await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
-        } catch (postError) {
-          await pendingSafetyEvents.enqueue(context, event);
-          this.errorMessage = 'Left the safe area, but the alert is queued until the care service is reachable.';
-        }
-      } else {
-        this.errorMessage = '';
-      }
-    } catch (error) {
-      if (exited) {
-        const event = new SafetyEventRequest(generateEventId(), 'area_exit');
-        event.location = point;
-        await pendingSafetyEvents.enqueue(context, event);
-        this.errorMessage = 'Left the safe area. The alert is saved and will be sent when connection returns.';
-      } else {
-        this.errorMessage = 'Location was checked, but could not reach the care service.';
-      }
-    }
-  }
-
-  private backendStatus(): string {
-    if (this.status === GeofenceStatus.Inside) return 'inside';
-    if (this.status === GeofenceStatus.Outside) return 'outside';
-    return 'unknown';
-  }
-
   private syncFromStore(): void {
     this.status = safetyStore.geofenceStatus;
     this.locationMessage = safetyStore.lastLocationMessage;
+    this.monitoringEnabled = locationSharing.enabled;
+    this.starting = locationSharing.starting;
+    this.locationPermissionDenied = locationSharing.permissionDenied;
+    this.locationSwitchOff = locationSharing.locationSwitchOff;
+    this.errorMessage = locationSharing.errorMessage;
   }
 
   private startLocationMonitoring(): void {
-    this.starting = true;
-    this.errorMessage = '';
-    this.locationSwitchOff = false;
-    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    const atManager = abilityAccessCtrl.createAtManager();
-    atManager.requestPermissionsFromUser(context, [
-      'ohos.permission.APPROXIMATELY_LOCATION',
-      'ohos.permission.LOCATION'
-    ]).then((result) => {
-      this.starting = false;
-      if (result.authResults[0] !== 0 || result.authResults[1] !== 0) {
-        this.locationPermissionDenied = true;
-        return;
-      }
-      this.locationPermissionDenied = false;
-      const request: geoLocationManager.LocationRequest = {
-        priority: geoLocationManager.LocationRequestPriority.FIRST_FIX,
-        scenario: geoLocationManager.LocationRequestScenario.UNSET,
-        timeInterval: 10,
-        distanceInterval: 20,
-        maxAccuracy: 300
-      };
-      try {
-        geoLocationManager.on('locationChange', request, this.locationCallback);
-        this.monitoringEnabled = true;
-        this.locationMessage = 'Checking where you are…';
-      } catch (error) {
-        const businessError = error as BusinessError;
-        if (businessError.code === 3301100) {
-          this.locationSwitchOff = true;
-          this.errorMessage = 'Location is turned off on this phone. Turn it on to share your location.';
-        } else {
-          this.errorMessage = `Location sharing could not start (error ${businessError.code}).`;
-        }
-      }
-    }).catch((error: BusinessError) => {
-      this.starting = false;
-      this.errorMessage = `Location permission request failed (error ${error.code}).`;
-    });
+    locationSharing.start(this.hostContext());
   }
 
   private requestLocationSwitch(): void {
-    this.starting = true;
-    this.errorMessage = '';
-    const atManager = abilityAccessCtrl.createAtManager();
-    atManager.requestGlobalSwitch(this.hostContext(), abilityAccessCtrl.SwitchType.LOCATION).then((enabled: boolean) => {
-      this.starting = false;
-      if (!enabled) {
-        this.errorMessage = 'Location needs to be turned on before sharing can start.';
-        return;
-      }
-      this.locationSwitchOff = false;
-      this.startLocationMonitoring();
-    }).catch((error: BusinessError) => {
-      this.starting = false;
-      if (error.code === 12100013) {
-        this.locationSwitchOff = false;
-        this.startLocationMonitoring();
-        return;
-      }
-      this.errorMessage = `Could not open the location switch (error ${error.code}).`;
-    });
+    locationSharing.requestLocationSwitch(this.hostContext());
   }
 
   private openLocationSettings(): void {
-    const context = this.getUIContext().getHostContext() as common.UIAbilityContext;
-    const atManager = abilityAccessCtrl.createAtManager();
-    atManager.requestPermissionOnSetting(context, [
-      'ohos.permission.APPROXIMATELY_LOCATION',
-      'ohos.permission.LOCATION'
-    ]).then((result) => {
-      if (result[0] === abilityAccessCtrl.GrantStatus.PERMISSION_GRANTED) {
-        this.locationPermissionDenied = false;
-        this.startLocationMonitoring();
-      }
-    }).catch((error: BusinessError) => {
-      this.errorMessage = `Could not open location settings (error ${error.code}).`;
-    });
+    locationSharing.openPermissionSettings(this.hostContext());
   }
 
   private stopLocationMonitoring(): void {
-    try {
-      geoLocationManager.off('locationChange', this.locationCallback);
-    } catch (error) {
-      const businessError = error as BusinessError;
-      this.errorMessage = `Location sharing could not stop (error ${businessError.code}).`;
-      return;
-    }
-    this.monitoringEnabled = false;
+    locationSharing.stop();
+  }
+
+  aboutToAppear(): void {
+    locationSharing.subscribe(this.locationStateListener);
+    this.syncFromStore();
   }
 
   aboutToDisappear(): void {
-    if (this.monitoringEnabled) {
-      this.stopLocationMonitoring();
-    }
+    locationSharing.unsubscribe(this.locationStateListener);
   }
 
   private statusTitle(): string {
@@ -376,31 +262,5 @@ export struct SafetyPage {
         pendingSafetyEvents.flush(this.hostContext());
       }
     })
-  }
-}
-
-class LocationPoint {
-  lat: number;
-  lng: number;
-  accuracyM: number;
-  sampledAt: string;
-  // This fix comes from the phone's own LocationKit, never from a watch.
-  measuredBy: string = 'phone';
-
-  constructor(lat: number, lng: number, accuracyM: number) {
-    this.lat = lat;
-    this.lng = lng;
-    this.accuracyM = accuracyM;
-    this.sampledAt = new Date().toISOString();
-  }
-}
-
-class StatusReport {
-  monitoringState: string;
-  location: LocationPoint;
-
-  constructor(monitoringState: string, location: LocationPoint) {
-    this.monitoringState = monitoringState;
-    this.location = location;
   }
 }

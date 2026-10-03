@@ -3,6 +3,7 @@ import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
 import { apiSession } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
+import { locationSharing } from '../services/LocationSharing';
 
 const DOMAIN = 0x0000;
 
@@ -56,10 +57,12 @@ onWindowStageCreate(windowStage: window.WindowStage): void {
   onForeground(): void {
     // Ability has brought to foreground
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
+    locationSharing.resume(this.context);
   }
 
   onBackground(): void {
     // Ability has back to background
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+    locationSharing.pause();
   }
 }
