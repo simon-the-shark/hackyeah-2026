@@ -1,0 +1,72 @@
+{
+  "module": {
+    "name": "watch",
+    "type": "entry",
+    "description": "$string:module_desc",
+    "mainElement": "WatchAbility",
+    // A separate entry for the watch: device types must not overlap with the phone/tablet entry.
+    "deviceTypes": [
+      "wearable"
+    ],
+    "deliveryWithInstall": true,
+    "installationFree": false,
+    "pages": "$profile:main_pages",
+    "requestPermissions": [
+      {
+        "name": "ohos.permission.INTERNET"
+      },
+      {
+        "name": "ohos.permission.APPROXIMATELY_LOCATION",
+        "reason": "$string:location_permission_reason",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.LOCATION",
+        "reason": "$string:location_permission_reason",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      },
+      {
+        "name": "ohos.permission.READ_HEALTH_DATA",
+        "reason": "$string:health_permission_reason",
+        "usedScene": {
+          "abilities": [
+            "WatchAbility"
+          ],
+          "when": "inuse"
+        }
+      }
+    ],
+    "abilities": [
+      {
+        "name": "WatchAbility",
+        "srcEntry": "./ets/watchability/WatchAbility.ets",
+        "description": "$string:WatchAbility_desc",
+        "icon": "$media:layered_image",
+        "label": "$string:WatchAbility_label",
+        "startWindowIcon": "$media:startIcon",
+        "startWindowBackground": "$color:start_window_background",
+        "exported": true,
+        "skills": [
+          {
+            "entities": [
+              "entity.system.home"
+            ],
+            "actions": [
+              "ohos.want.action.home"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
