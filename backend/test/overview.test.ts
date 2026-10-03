@@ -78,3 +78,22 @@ describe("config sync", () => {
     expect(changed.status).toBe(200);
   });
 });
+
+describe("report sharing controls", () => {
+  it("lets the senior list and withdraw their shared reports", async () => {
+    const ctx = await t.pair();
+    const base = `/v1/seniors/${ctx.seniorId}/reports`;
+    const r1 = (await t.call("POST", base, ctx.seniorToken, { structured: { mood: 3 }, source: "structured" })).body;
+    t.time.now = new Date("2026-10-03T06:00:00Z");
+    await t.call("POST", base, ctx.seniorToken, { structured: { mood: 4 }, summary: "Good day", source: "simulated" });
+
+    expect((await t.call("GET", "/v1/me/reports", ctx.seniorToken)).body.items).toHaveLength(2);
+    expect((await t.call("GET", "/v1/me/reports", ctx.guardianToken)).status).toBe(403);
+    expect((await t.call("GET", `${base}?before=2026-10-03T05:30:00Z`, ctx.guardianToken)).body.items).toHaveLength(1);
+
+    expect((await t.call("DELETE", `${base}/${r1.id}`, ctx.guardianToken)).status).toBe(403);
+    expect((await t.call("DELETE", `${base}/${r1.id}`, ctx.seniorToken)).status).toBe(204);
+    expect((await t.call("DELETE", `${base}/${r1.id}`, ctx.seniorToken)).status).toBe(404);
+    expect((await t.call("GET", base, ctx.guardianToken)).body.items).toHaveLength(1);
+  });
+});

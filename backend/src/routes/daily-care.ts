@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, lt, lte, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import { assertLinked, requireRole } from "../auth/middleware.js";
@@ -153,20 +153,57 @@ export function dailyCareRoutes(deps: Deps) {
     return c.json(row, 201);
   });
 
-  // Guardian-only: the senior submits reports but does not read them back.
-  app.get("/seniors/:seniorId/reports", validate("param", seniorParam), async (c) => {
+  // Guardian list. The senior reads their own shared reports through /me/reports instead.
+  app.get(
+    "/seniors/:seniorId/reports",
+    validate("param", seniorParam),
+    validate("query", z.object({ before: isoDate.optional(), limit: z.coerce.number().int().min(1).max(100).default(50) })),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "guardian");
+      const { seniorId } = c.req.valid("param");
+      await assertLinked(db, auth, seniorId);
+      const { before, limit } = c.req.valid("query");
+      const items = await db
+        .select()
+        .from(reports)
+        .where(and(eq(reports.seniorId, seniorId), before ? lt(reports.createdAt, before) : undefined))
+        .orderBy(desc(reports.createdAt))
+        .limit(limit);
+      return c.json({ items });
+    },
+  );
+
+  /** Sharing controls: the senior can see exactly what was shared with guardians. */
+  app.get("/me/reports", async (c) => {
     const auth = c.get("auth");
-    requireRole(auth, "guardian");
-    const { seniorId } = c.req.valid("param");
-    await assertLinked(db, auth, seniorId);
+    requireRole(auth, "senior");
     const items = await db
       .select()
       .from(reports)
-      .where(eq(reports.seniorId, seniorId))
+      .where(eq(reports.seniorId, auth.userId))
       .orderBy(desc(reports.createdAt))
-      .limit(50);
+      .limit(100);
     return c.json({ items });
   });
+
+  /** ...and withdraw a report; it disappears for guardians too. */
+  app.delete(
+    "/seniors/:seniorId/reports/:id",
+    validate("param", z.object({ seniorId: uuid, id: uuid })),
+    async (c) => {
+      const auth = c.get("auth");
+      requireRole(auth, "senior");
+      const { seniorId, id } = c.req.valid("param");
+      await assertLinked(db, auth, seniorId);
+      const deleted = await db
+        .delete(reports)
+        .where(and(eq(reports.id, id), eq(reports.seniorId, seniorId)))
+        .returning({ id: reports.id });
+      if (deleted.length === 0) throw notFound("Report");
+      return c.body(null, 204);
+    },
+  );
 
   app.get("/catalog/:barcode", validate("param", z.object({ barcode: z.string().min(1).max(64) })), async (c) => {
     const [row] = await db
