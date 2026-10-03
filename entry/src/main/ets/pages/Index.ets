@@ -12,11 +12,13 @@ import { SettingsPage } from './SettingsPage';
 import { SosPage } from './SosPage';
 import { WatchSafetyPage } from './WatchSafetyPage';
 
+AppStorage.setOrCreate('paired', apiSession.configured());
+
 @Entry
 @Component
 struct Index {
   @Provide('navStack') navStack: NavPathStack = new NavPathStack();
-  @State private paired: boolean = apiSession.configured();
+  @StorageLink('paired') private paired: boolean = false;
 
   @Builder
   routes(name: string, param: Object) {
