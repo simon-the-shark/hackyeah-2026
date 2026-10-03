@@ -17,6 +17,7 @@ export interface HeartbeatPoint {
   lng: number;
   accuracyM?: number | null;
   measuredBy?: string | null;
+  sampledAt?: string | null;
 }
 
 /** One device's latest heartbeat from `GET /seniors/:id/status`. */
@@ -55,6 +56,8 @@ export class DeviceReport {
   battery: number = -1;
   /** Age of the heartbeat when it was fetched, on the server clock. */
   reportedAgeMs: number = 0;
+  /** Original fix time on the measuring device, distinct from server heartbeat receipt. */
+  sampledAt: string = '';
   /** Sent by a trace replay or an emulator, not measured by a real device. */
   simulated: boolean = false;
 }
@@ -118,6 +121,9 @@ function deviceReport(heartbeat: RemoteHeartbeat | null | undefined, kind: strin
     report.hasLocation = true;
     report.lat = location.lat;
     report.lng = location.lng;
+    if (typeof location.sampledAt === 'string' && isFinite(Date.parse(location.sampledAt))) {
+      report.sampledAt = location.sampledAt;
+    }
     const accuracy = location.accuracyM;
     if (accuracy !== null && accuracy !== undefined && isNumber(accuracy)) {
       report.accuracyM = accuracy;

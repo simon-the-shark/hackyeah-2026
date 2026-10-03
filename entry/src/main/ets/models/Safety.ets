@@ -1,3 +1,5 @@
+import { BoundaryState, GeofenceTracker } from './GeofenceTracker';
+
 export enum GeofenceStatus {
   Inside,
   Outside,
@@ -125,6 +127,9 @@ export function deliveryLabel(state: DeliveryState): string {
 }
 
 export class SafetyStore {
+  private readonly tracker: GeofenceTracker = new GeofenceTracker();
+  safeAreaConfigured: boolean = false;
+  lastTransition: string = '';
   private nextId: number = 1;
   homeLatitude: number = 52.2297;
   homeLongitude: number = 21.0122;
@@ -145,12 +150,22 @@ export class SafetyStore {
     return alert;
   }
 
-  private recordGeofenceStatus(status: GeofenceStatus, message: string, createLocalAlert: boolean = true): CareAlert | undefined {
-    const previousStatus = this.geofenceStatus;
-    this.geofenceStatus = status;
-    this.lastLocationMessage = message;
-    this.didLeaveSafeArea = status === GeofenceStatus.Outside && previousStatus !== GeofenceStatus.Outside;
-
+  recordLiveLocation(latitude: number, longitude: number, accuracy: number, createLocalAlert: boolean = true,
+    sampledAt: number = Date.now()): CareAlert | undefined {
+    this.lastTransition = '';
+    this.didLeaveSafeArea = false;
+    if (!this.safeAreaConfigured) {
+      this.geofenceStatus = GeofenceStatus.Unknown;
+      this.lastLocationMessage = 'No safe area is available. Ask your guardian to set one.';
+      return undefined;
+    }
+    const distance = this.distanceMeters(this.homeLatitude, this.homeLongitude, latitude, longitude);
+    this.lastTransition = this.tracker.observe(distance, this.homeRadiusMeters, accuracy, sampledAt, Date.now());
+    this.geofenceStatus = this.tracker.confirmed === BoundaryState.Inside ? GeofenceStatus.Inside
+      : this.tracker.confirmed === BoundaryState.Outside ? GeofenceStatus.Outside : GeofenceStatus.Unknown;
+    this.didLeaveSafeArea = this.lastTransition === 'area_exit';
+    this.lastLocationMessage = accuracy > this.homeRadiusMeters ? 'Location is not precise enough to confirm a crossing.'
+      : `About ${Math.round(distance)} m from home. Boundary changes need two clear readings.`;
     if (this.didLeaveSafeArea && createLocalAlert) {
       const alert = new CareAlert(`area-${this.nextId++}`, AlertType.SafeAreaExit, 'Safe area exit',
         'The senior moved outside the configured home circle.', 'Phone location');
@@ -160,25 +175,33 @@ export class SafetyStore {
     return undefined;
   }
 
-  recordLiveLocation(latitude: number, longitude: number, accuracy: number, createLocalAlert: boolean = true): CareAlert | undefined {
-    if (accuracy > this.homeRadiusMeters) {
-      return this.recordGeofenceStatus(GeofenceStatus.Unknown, 'Location is not precise enough yet.');
-    }
-
-    const distance = this.distanceMeters(this.homeLatitude, this.homeLongitude, latitude, longitude);
-    const message = `About ${Math.round(distance)} m from home.`;
-    return this.recordGeofenceStatus(distance <= this.homeRadiusMeters ? GeofenceStatus.Inside : GeofenceStatus.Outside, message, createLocalAlert);
-  }
-
   configureHomeCircle(latitude: number, longitude: number, radiusMeters: number): boolean {
     if (!isFinite(latitude) || !isFinite(longitude) || !isFinite(radiusMeters) ||
       latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180 || radiusMeters < 50) {
       return false;
     }
+    if (!this.safeAreaConfigured || this.homeLatitude !== latitude || this.homeLongitude !== longitude ||
+      this.homeRadiusMeters !== radiusMeters) {
+      this.resetBoundary();
+    }
+    this.safeAreaConfigured = true;
     this.homeLatitude = latitude;
     this.homeLongitude = longitude;
     this.homeRadiusMeters = radiusMeters;
     return true;
+  }
+
+  resetBoundary(): void {
+    this.tracker.reset();
+    this.geofenceStatus = GeofenceStatus.Unknown;
+    this.didLeaveSafeArea = false;
+    this.lastTransition = '';
+    this.lastLocationMessage = 'Waiting for fresh location readings.';
+  }
+
+  clearSafeArea(): void {
+    this.safeAreaConfigured = false;
+    this.resetBoundary();
   }
 
   setSending(alert: CareAlert): void {

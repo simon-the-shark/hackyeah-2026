@@ -259,6 +259,7 @@ export struct GuardianLocationView {
       stale: deviceIsStale(this.device(kind), this.current(), this.now),
       hasLocation: this.device(kind).hasLocation,
       lastUpdate: deviceClockTime(this.device(kind), this.current(), this.now),
+      sampledAt: this.device(kind).sampledAt,
       accuracy: this.accuracyText(this.device(kind)),
       distance: this.distanceText(this.device(kind)),
       battery: this.batteryText(this.device(kind)),
@@ -432,6 +433,7 @@ struct DeviceLocationCard {
   @Prop stale: boolean = false;
   @Prop hasLocation: boolean = false;
   @Prop lastUpdate: string = '';
+  @Prop sampledAt: string = '';
   @Prop accuracy: string = '';
   @Prop distance: string = '';
   @Prop battery: string = '';
@@ -467,7 +469,11 @@ struct DeviceLocationCard {
       .padding({ left: 16, right: 16, top: 14, bottom: 6 })
       .accessibilityGroup(true)
 
-      LocationInfoRow({ label: 'Last update', value: this.lastUpdate, showDivider: true })
+      LocationInfoRow({ label: 'Last check-in', value: this.lastUpdate, showDivider: true })
+      if (this.hasLocation) {
+        LocationInfoRow({ label: 'Position time (device clock)',
+          value: this.sampledAt === '' ? 'Not reported' : new Date(this.sampledAt).toLocaleString(), showDivider: true })
+      }
       LocationInfoRow({ label: 'Accuracy', value: this.accuracy, showDivider: true })
       LocationInfoRow({ label: 'From home centre', value: this.distance, showDivider: true })
       LocationInfoRow({ label: 'Battery', value: this.battery, showDivider: this.hasLocation })

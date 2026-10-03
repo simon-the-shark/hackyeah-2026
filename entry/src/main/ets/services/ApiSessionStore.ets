@@ -3,6 +3,7 @@ import { apiSession } from './CareApi';
 import { SafePreferences } from './SafePreferences';
 import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 import { guardianAlertWatcher } from './GuardianAlertWatcher';
+import { locationSharing } from './LocationSharing';
 
 const STORE_NAME = 'carely_api_session';
 /**
@@ -38,7 +39,10 @@ export class ApiSessionStore {
    */
   async clear(context: common.Context): Promise<void> {
     apiSession.clear();
+    const locationCleanup = locationSharing.reset(context as common.UIAbilityContext);
+    // Erase the saved session without waiting for an in-flight location request.
     await this.store.clear(context);
+    await locationCleanup;
     await guardianAlertWatcher.reset(context);
   }
 }

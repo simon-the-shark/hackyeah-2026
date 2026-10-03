@@ -19,6 +19,17 @@ function heartbeat(kind: string, reportedAt: string, state: string): RemoteHeart
 
 export default function seniorLocationTest() {
   describe('seniorLocation', () => {
+    it('keepsThePositionTimeSeparateFromTheHeartbeat', 0, () => {
+      const phone = heartbeat('phone', '2026-10-03T12:10:00Z', 'inside');
+      phone.location = { lat: 52.23, lng: 21.01, sampledAt: '2026-10-03T12:08:30Z' };
+      const snapshot = snapshotFromStatus({ status: phone, devices: [phone], serverTime: SERVER_TIME }, 0);
+      expect((snapshot.phone as DeviceReport).reportedAgeMs).assertEqual(0);
+      expect((snapshot.phone as DeviceReport).sampledAt).assertEqual('2026-10-03T12:08:30Z');
+      phone.location.sampledAt = 'invalid';
+      const invalid = snapshotFromStatus({ status: phone, devices: [phone], serverTime: SERVER_TIME }, 0);
+      expect((invalid.phone as DeviceReport).sampledAt).assertEqual('');
+    });
+
     it('keepsThePhoneAndTheWatchApart', 0, () => {
       const watch = heartbeat('watch', '2026-10-03T12:09:00Z', 'outside');
       watch.location = { lat: 52.24, lng: 21.03, accuracyM: 12, measuredBy: 'watch' };

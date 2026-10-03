@@ -55,6 +55,20 @@ The Carely production backend address is built into the app. Create a senior
 account and pair the guardian in the Connection screen; both phones then retain
 their own authenticated session.
 
+### Phone Background Location
+
+On the paired senior phone, open **Safe Area → Turn on sharing** and grant
+precise location and notifications. Sharing uses a HarmonyOS location continuous
+task so it can continue with another app open or the screen locked, with a system
+notification. The requested update interval is 30 seconds. Explicit stop or a
+system cancellation ends monitoring; force-stop/reboot do not self-restart it.
+
+See [background location behavior and runtime checks](docs/BACKGROUND_LOCATION.md)
+for configuration caching, confirmed exit/re-entry detection, offline retries,
+build/test commands, and validation limits. Background execution still needs
+verification with a signed build on the target device. Guardian background push
+delivery is a separate integration; its current local polling is foreground-only.
+
 ### Smartwatch App
 
 The `watch` module is a separate HarmonyOS app entry for a wearable

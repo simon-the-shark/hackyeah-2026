@@ -35,6 +35,7 @@ export default class EntryAbility extends UIAbility {
   }
 
   onDestroy(): void {
+    locationSharing.destroy();
     guardianAlertWatcher.stop();
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onDestroy');
   }
@@ -56,6 +57,7 @@ onWindowStageCreate(windowStage: window.WindowStage): void {
       hilog.error(DOMAIN, 'testTag', 'Session restore failed. Cause: %{public}s', JSON.stringify(error));
     }
     AppStorage.setOrCreate('paired', apiSession.configured());
+    locationSharing.restore(this.context);
     guardianAlertWatcher.pollNow();
 
     windowStage.loadContent('pages/Index', (err) => {
