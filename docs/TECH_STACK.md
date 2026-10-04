@@ -6,7 +6,8 @@
 - UI: ArkUI
 - Application model: Stage
 - Platform: HarmonyOS (`runtimeOS: "HarmonyOS"`)
-- Development API: API 24
+- Compile API: API 24
+- Target API: API 23
 - IDE: DevEco Studio
 - Build: hvigor
 - Device tooling: HDC
@@ -50,8 +51,8 @@
 
 ## SDK Compatibility Note
 
-The project compiles and targets the HarmonyOS SDK `6.1.1(24)` bundled with
-DevEco Studio and declares `6.0.0(20)` (API 20, the hackathon minimum) as its
+The project compiles with the HarmonyOS SDK `6.1.1(24)` bundled with
+DevEco Studio, targets `6.1.0(23)`, and declares `6.0.0(20)` (API 20, the hackathon minimum) as its
 compatible SDK.
 
 ## Deferred unless needed

@@ -33,8 +33,8 @@ Use:
 - Empty Ability project structure
 
 The product targets HarmonyOS (`runtimeOS: "HarmonyOS"` in
-`build-profile.json5`). Compile and target the HarmonyOS SDK `6.1.1(24)` bundled
-with DevEco Studio, with `6.0.0(20)` as the compatible SDK, unless a documented
+`build-profile.json5`). Compile with the HarmonyOS SDK `6.1.1(24)` bundled
+with DevEco Studio and target `6.1.0(23)`, with `6.0.0(20)` as the compatible SDK, unless a documented
 compatibility reason requires another API level.
 
 The hackathon requires API 20 or later.
@@ -116,7 +116,7 @@ Context7 library IDs for ArkTS/ArkUI/HarmonyOS APIs:
 - `/websites/developer_huawei_consumer_cn_doc_harmonyos-guides`
 - `/websites/developer_huawei_consumer_cn_doc_harmonyos-references`
 
-Project: HarmonyOS, `compatibleSdkVersion` 6.0.0(20), target 6.1.1(24).
+Project: HarmonyOS, `compatibleSdkVersion` 6.0.0(20), target 6.1.0(23).
 
 ---
 

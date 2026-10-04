@@ -9,7 +9,8 @@ AI-written wellbeing summary from a hands-free spoken check-in.
   (voice check-in through the OpenAI Realtime model)
 - **Demo video:** TODO link
 - **Ready-built `.hap` files (phone and watch):** TODO Google Drive link
-- **Stack:** ArkTS, ArkUI, Stage model; HarmonyOS SDK `6.1.1(24)`, compatible
+- **Stack:** ArkTS, ArkUI, Stage model; compile SDK `6.1.1(24)`, target SDK
+  `6.1.0(23)`, compatible
   with API 20; Hono + PostgreSQL backend in [`backend/`](backend/)
 
 ## Quickstart

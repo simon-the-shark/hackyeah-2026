@@ -7,7 +7,7 @@ ArkUI, and the Stage model. The senior uses a phone and, where supported, a
 smartwatch; the guardian uses a phone. Human-Centric Technology leads the pitch.
 
 This is a plan, not an implementation report. The current application is a
-starter. The recorded successful build uses compile/target API 24 with API 20
+starter. The project uses compile API 24 and target API 23 with API 20
 compatibility; API 23 installation and a subsequent build remain unverified.
 No new platform API or dependency is selected by this document.
 
