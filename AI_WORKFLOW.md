@@ -38,22 +38,55 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 
 ## Workflow
 
-1. **Agent setup:** every agent reads `AGENTS.md` (stack, verification and
-   honesty rules) and `AI_WORKFLOW.md` first. Context7 MCP and the challenge's
-   HarmonyOS Agent Skills give them current platform documentation.
-2. **Planning:** agents drafted `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and
-   `backend/PLAN.md` from the team's prompts; the team made the product
-   decisions, recorded as dated user decisions in the brief.
-3. **Implementation:** agents wrote the app and the backend in parallel
-   workstreams, sometimes as forked subagents working to a fixed API contract.
-   Before using a platform API, an agent checked it against the official docs
-   and the installed SDK declarations (API level, permissions, Public SDK).
-4. **Self-validation:** after each change the agent ran the phone and watch
-   HAP build (`./scripts/build-hap.sh`), the ArkTS unit tests (`hvigorw test`)
-   and the backend `pnpm typecheck` and `pnpm test` (PostgreSQL, with fake push
-   and OpenAI providers), and recorded what was and was not verified in the
-   work log.
-5. **End-to-end testing on the emulator:** Claude Code drove the app on the
+### Context For The Agents
+
+- Every agent reads `AGENTS.md` (stack, verification and honesty rules) and
+  `AI_WORKFLOW.md` before starting.
+- **MCP servers bring current documentation into the agent's context**, so
+  agents do not rely on outdated training data for a fast-moving platform:
+  - Context7 MCP serves the official HarmonyOS guides and API references
+    (library IDs listed in `AGENTS.md`). Agents used it, for example, for
+    continuous tasks and location permissions, notification slots, safe areas,
+    the `Refresh` component, ArkGraphics 3D, Map Kit and Pasteboard Kit, and
+    for the current pnpm configuration docs.
+  - TypeUI MCP gave design-system guidance during the accessibility audit.
+- The challenge's HarmonyOS Agent Skills (`hackathon-skills/`) add ArkUI
+  coding rules.
+- Agents also checked every platform API against the installed SDK
+  declarations (API level, permissions, Public SDK), and the OpenAI
+  integration against OpenAI's official docs and pricing pages.
+
+### Planning
+
+1. The team described the product and the constraints in prompts.
+2. Agents drafted `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and `backend/PLAN.md`,
+   including feasibility checks for each platform capability.
+3. The team made the product decisions, recorded as dated user decisions in the
+   brief (for example, moving the wellbeing assistant from on-device AI to the
+   OpenAI Realtime model).
+
+### Implementation, Testing And Lint
+
+1. Agents wrote the app and the backend in parallel workstreams, sometimes as
+   forked subagents working to a fixed API contract.
+2. After each change the agent ran:
+   - the phone and watch HAP build (`./scripts/build-hap.sh`), whose ArkTS
+     static checks must pass with no new warnings;
+   - the ArkTS unit tests (`hvigorw test`);
+   - backend `pnpm typecheck` and `pnpm test` (PostgreSQL, with fake push and
+     OpenAI providers);
+   - `git diff --check`.
+3. The agent recorded what was and was not verified in the work log.
+4. **Prelint (AI review):** changes went to a pull request, where the
+   Prelint GitHub app ran two checks: code findings as inline comments, and a
+   product-decision review with a verdict such as "Ship with changes". The
+   agent checked each finding against the code, fixed the valid ones and
+   re-ran the tests. Findings and outcomes are listed at the end of
+   `docs/AI_WORK_LOG.md`.
+
+### Final Verification
+
+1. **End-to-end testing on the emulator:** Claude Code drove the app on the
    DevEco HarmonyOS phone emulator through `hdc` and `uitest`:
    - installed the unsigned HAP and set up synthetic test accounts;
    - walked the senior and guardian flows (pairing, SOS, medication, contacts,
@@ -63,9 +96,7 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
      and re-tested it on the emulator. It found 8 defects, for example a
      cancelled SOS still shown as New and a disabled Location switch with no
      recovery path.
-6. **AI review:** Prelint reviewed each pull request (code findings and product
-   decisions). The agent checked each finding against the code and fixed the
-   valid ones. A human merged every pull request.
+2. **Human merge:** a team member merged every pull request.
 
 ## Known Limitations
 
