@@ -38,23 +38,34 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 
 ## Workflow
 
-1. **Concept:** an elderly-care companion with senior phone/watch and guardian
-   phone experiences. Lead theme: Human-Centric Technology, supported by
-   Intelligent Experiences through the AI wellbeing check-in.
-2. **Planning:** agents proposed plans; the team decided scope, recorded as
-   dated user decisions in `HACKATHON_BRIEF.md`.
-3. **Implementation:** agents implemented the app and the backend; the team
-   reviewed each change against the challenge statement and the project
-   configuration before accepting it.
-4. **Validation** (recorded per change in the work log):
-   - phone and watch HAP build (`./scripts/build-hap.sh`);
-   - ArkTS unit tests (`hvigorw test`);
-   - backend `pnpm typecheck` and `pnpm test` (integration tests against
-     PostgreSQL with a fake push provider and a fake OpenAI socket);
-   - emulator runs.
-5. **Review:** Prelint reviewed each pull request before a human merged it;
-   its findings and how they were handled are at the end of
-   `docs/AI_WORK_LOG.md`.
+1. **Agent setup:** every agent reads `AGENTS.md` (stack, verification and
+   honesty rules) and `AI_WORKFLOW.md` first. Context7 MCP and the challenge's
+   HarmonyOS Agent Skills give them current platform documentation.
+2. **Planning:** agents drafted `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and
+   `backend/PLAN.md` from the team's prompts; the team made the product
+   decisions, recorded as dated user decisions in the brief.
+3. **Implementation:** agents wrote the app and the backend in parallel
+   workstreams, sometimes as forked subagents working to a fixed API contract.
+   Before using a platform API, an agent checked it against the official docs
+   and the installed SDK declarations (API level, permissions, Public SDK).
+4. **Self-validation:** after each change the agent ran the phone and watch
+   HAP build (`./scripts/build-hap.sh`), the ArkTS unit tests (`hvigorw test`)
+   and the backend `pnpm typecheck` and `pnpm test` (PostgreSQL, with fake push
+   and OpenAI providers), and recorded what was and was not verified in the
+   work log.
+5. **End-to-end testing on the emulator:** Claude Code drove the app on the
+   DevEco HarmonyOS phone emulator through `hdc` and `uitest`:
+   - installed the unsigned HAP and set up synthetic test accounts;
+   - walked the senior and guardian flows (pairing, SOS, medication, contacts,
+     safe area, wellbeing), acting as the second role through the backend API;
+   - used screenshots and UI layout dumps to check each screen;
+   - reported findings first; after the team approved them, fixed each one
+     and re-tested it on the emulator. It found 8 defects, for example a
+     cancelled SOS still shown as New and a disabled Location switch with no
+     recovery path.
+6. **AI review:** Prelint reviewed each pull request (code findings and product
+   decisions). The agent checked each finding against the code and fixed the
+   valid ones. A human merged every pull request.
 
 ## Known Limitations
 
