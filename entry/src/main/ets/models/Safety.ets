@@ -1,3 +1,4 @@
+import { distanceMeters } from './Geo';
 import { BoundaryState, GeofenceTracker } from './GeofenceTracker';
 
 export enum GeofenceStatus {
@@ -182,7 +183,7 @@ export class SafetyStore {
       this.lastLocationMessage = 'No safe area is available. Ask your guardian to set one.';
       return undefined;
     }
-    const distance = this.distanceMeters(this.homeLatitude, this.homeLongitude, latitude, longitude);
+    const distance = distanceMeters(this.homeLatitude, this.homeLongitude, latitude, longitude);
     this.lastTransition = this.tracker.observe(distance, this.homeRadiusMeters, accuracy, sampledAt, Date.now());
     this.geofenceStatus = this.tracker.confirmed === BoundaryState.Inside ? GeofenceStatus.Inside
       : this.tracker.confirmed === BoundaryState.Outside ? GeofenceStatus.Outside : GeofenceStatus.Unknown;
@@ -237,17 +238,6 @@ export class SafetyStore {
 
   acknowledge(alert: CareAlert): void {
     alert.acknowledged = true;
-  }
-
-  private distanceMeters(latitudeA: number, longitudeA: number, latitudeB: number, longitudeB: number): number {
-    const earthRadiusMeters = 6371000;
-    const toRadians = Math.PI / 180;
-    const latitudeDifference = (latitudeB - latitudeA) * toRadians;
-    const longitudeDifference = (longitudeB - longitudeA) * toRadians;
-    const value = Math.sin(latitudeDifference / 2) * Math.sin(latitudeDifference / 2) +
-      Math.cos(latitudeA * toRadians) * Math.cos(latitudeB * toRadians) *
-      Math.sin(longitudeDifference / 2) * Math.sin(longitudeDifference / 2);
-    return earthRadiusMeters * 2 * Math.atan2(Math.sqrt(value), Math.sqrt(1 - value));
   }
 }
 

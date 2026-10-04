@@ -1,9 +1,8 @@
 import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { Contact } from '../models/Contact';
-import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
 import { ContactsApi } from '../providers/backend/ContactsApi';
-import { apiSession } from './CareApi';
+import { apiSession, sessionClient } from './CareApi';
 import { sortContacts } from './ContactList';
 
 export const NOT_GUARDIAN_MESSAGE = 'This phone is not paired as a guardian. Sign out and set it up again as a guardian.';
@@ -37,7 +36,7 @@ export class GuardianContactsService {
     if (!guardianSessionReady()) {
       throw new ApiError(ApiErrorKind.Http, 403, 'forbidden', NOT_GUARDIAN_MESSAGE);
     }
-    return new ContactsApi(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
+    return new ContactsApi(sessionClient());
   }
 }
 

@@ -47,6 +47,9 @@ struct Index {
   private onPairedChanged(): void {
     if (this.paired) {
       this.ensureRoleHome();
+    } else {
+      // Forget the signed-out senior's dose answers so the next pairing starts clean.
+      this.doseRecords = new Map<string, DoseRecord>();
     }
   }
 

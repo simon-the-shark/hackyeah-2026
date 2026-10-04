@@ -1,4 +1,5 @@
-import { PHONE, WATCH, distanceMeters } from '../models/SeniorLocation';
+import { distanceMeters } from '../models/Geo';
+import { PHONE, WATCH } from '../models/SeniorLocation';
 import { MAX_ZOOM, MIN_ZOOM, MapViewport, fitZoom, metersPerVp, worldX, worldY } from '../services/MapTiles';
 import { MapScaleBar, MapTileLayer, mapAttribution, mapTilesUnavailable, mapZoomButton } from './MapLayers';
 

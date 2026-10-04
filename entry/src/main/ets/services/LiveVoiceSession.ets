@@ -97,11 +97,22 @@ export class LiveVoiceSession {
   async start(seniorId: string, sessionId: string): Promise<void> {
     this.setState(LiveState.Connecting);
     await this.speaker.start(() => this.onSpeakerDrained());
+    if (this.closed) {
+      // `stop()` ran while the speaker was starting and found nothing to release yet.
+      await this.speaker.stop();
+      return;
+    }
     try {
       await this.mic.start((pcm: Uint8Array) => this.onMicPcm(pcm));
     } catch (error) {
       await this.speaker.stop();
       throw error as Error;
+    }
+    if (this.closed) {
+      // Never leave the microphone open for a conversation the screen has already left.
+      await this.mic.stop();
+      await this.speaker.stop();
+      return;
     }
     const socket = webSocket.createWebSocket();
     this.socket = socket;
@@ -126,7 +137,10 @@ export class LiveVoiceSession {
     try {
       const connected = await socket.connect(socketUrl(path),
         { header: { 'Authorization': `Bearer ${apiSession.token}` } });
-      if (!connected) {
+      if (this.closed) {
+        // Stopped while connecting; the close `stop()` sent may have raced the handshake.
+        await socket.close().catch(() => {});
+      } else if (!connected) {
         this.end('connection_failed', 'Could not start the voice conversation.');
       }
     } catch (error) {

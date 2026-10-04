@@ -5,6 +5,7 @@ import { apiSession } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { locationSharing } from '../services/LocationSharing';
 import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
+import { sosService } from '../services/SosService';
 import {
   OPEN_ALERT_ID_KEY,
   OPEN_ALERT_NAME_KEY,
@@ -89,7 +90,10 @@ onWindowStageCreate(windowStage: window.WindowStage): void {
   onForeground(): void {
     // Ability has brought to foreground
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onForeground');
+    AppStorage.setOrCreate<boolean>('appForeground', true);
     locationSharing.resume(this.context);
+    // An SOS saved while offline is resent as soon as Carely is back in the foreground.
+    sosService.resend(this.context);
     // Guardian alerts are polled only while Carely is in the foreground; there is no remote push.
     guardianAlertWatcher.start(this.context);
   }
@@ -97,6 +101,8 @@ onWindowStageCreate(windowStage: window.WindowStage): void {
   onBackground(): void {
     // Ability has back to background
     hilog.info(DOMAIN, 'testTag', '%{public}s', 'Ability onBackground');
+    // Pauses the voice check-in: the microphone must not keep streaming while Carely is not on screen.
+    AppStorage.setOrCreate<boolean>('appForeground', false);
     locationSharing.pause();
     guardianAlertWatcher.stop();
   }

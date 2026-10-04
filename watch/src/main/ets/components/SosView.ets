@@ -9,6 +9,8 @@ enum SosPhase {
   Counting,
   Sending,
   Sent,
+  /** Not reachable now; the watch keeps resending it in the background. */
+  Queued,
   Failed
 }
 
@@ -44,7 +46,7 @@ export struct SosView {
       this.startCountdown();
     } else if (this.phase === SosPhase.Counting) {
       this.cancel();
-    } else if (this.phase === SosPhase.Failed) {
+    } else if (this.phase === SosPhase.Failed || this.phase === SosPhase.Queued) {
       this.send();
     }
   }
@@ -71,9 +73,12 @@ export struct SosView {
   private async send(): Promise<void> {
     this.phase = SosPhase.Sending;
     try {
-      await watchMonitor.sendSos(this.eventId, this.pressedAt);
-      this.sentAt = Date.now();
-      this.phase = SosPhase.Sent;
+      if (await watchMonitor.sendSos(this.eventId, this.pressedAt)) {
+        this.sentAt = Date.now();
+        this.phase = SosPhase.Sent;
+      } else {
+        this.phase = SosPhase.Queued;
+      }
     } catch (error) {
       const status = error instanceof WatchApiError ? error.status : 0;
       this.failure = status === 0 ? 'Not sent. Check your connection.' : 'Not sent. Please try again.';
@@ -88,7 +93,7 @@ export struct SosView {
     if (this.phase === SosPhase.Sending) {
       return '…';
     }
-    if (this.phase === SosPhase.Failed) {
+    if (this.phase === SosPhase.Failed || this.phase === SosPhase.Queued) {
       return 'Retry';
     }
     return 'SOS';
@@ -102,6 +107,8 @@ export struct SosView {
         return 'Sending SOS to the care service…';
       case SosPhase.Sent:
         return `Accepted by care service at ${formatClock(this.sentAt)}. This does not confirm your guardian has seen it.`;
+      case SosPhase.Queued:
+        return 'No connection. SOS saved; it will be sent automatically.';
       case SosPhase.Failed:
         return `${this.failure} Tap Retry.`;
       default:
@@ -113,7 +120,7 @@ export struct SosView {
     Column({ space: 10 }) {
       Column() {
         Text(this.circleLabel())
-          .fontSize(this.phase === SosPhase.Failed ? 26 : 38)
+          .fontSize(this.phase === SosPhase.Failed || this.phase === SosPhase.Queued ? 26 : 38)
           .fontWeight(FontWeight.Bold)
           .fontColor(Color.White)
       }

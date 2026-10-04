@@ -55,6 +55,7 @@ const DISPLAY_UPDATE_MS = 5 * 1000;
 /** Location Kit error when the device-wide location switch is off. */
 const LOCATION_SWITCH_OFF = 3301100;
 
+// Same haversine as entry/src/main/ets/models/Geo.ets; the watch module does not share sources with the phone.
 function distanceMeters(latA: number, lngA: number, latB: number, lngB: number): number {
   const earthRadiusMeters = 6371000;
   const toRadians = Math.PI / 180;
@@ -165,13 +166,29 @@ export class WatchMonitor {
    * last known location. Unlike heartbeats, an older fix is still attached:
    * its `sampledAt` lets the guardian judge how old it is.
    */
-  async sendSos(id: string, occurredAt: number): Promise<void> {
+  /**
+   * Returns true when the care service accepted the SOS and false when it could not be reached: the SOS is
+   * then queued with the other events and resent on every tick under the same id. A rejected SOS throws.
+   */
+  async sendSos(id: string, occurredAt: number): Promise<boolean> {
     const request = new WatchEventRequest(id, 'sos', occurredAt, 'device');
     const fix = this.lastKnownFix();
     if (fix !== undefined) {
       request.location = fix;
     }
-    await watchApi.request(`/seniors/${watchSession.seniorId}/events`, http.RequestMethod.POST, request);
+    try {
+      await watchApi.request(`/seniors/${watchSession.seniorId}/events`, http.RequestMethod.POST, request);
+      return true;
+    } catch (error) {
+      if (error instanceof WatchApiError && error.isRejected()) {
+        throw error as Error;
+      }
+      if (!this.pendingEvents.some((queued: WatchEventRequest) => queued.id === id)) {
+        // An SOS goes ahead of heart-rate episodes, which only order among themselves.
+        this.pendingEvents.unshift(request);
+      }
+      return false;
+    }
   }
 
   private source(): string {

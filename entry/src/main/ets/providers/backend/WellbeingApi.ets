@@ -83,11 +83,6 @@ export class WellbeingApi {
     return wellbeingReportFrom(dto.report);
   }
 
-  /** The senior withdraws a shared summary; guardians no longer see it. */
-  async withdraw(seniorId: string, reportId: string): Promise<void> {
-    await this.client.delete(`${this.base(seniorId)}/reports/${encodeURIComponent(reportId)}`);
-  }
-
   async reports(seniorId: string, limit: number): Promise<WellbeingReport[]> {
     const list = await this.client.get<RemoteReportList>(`${this.base(seniorId)}/reports?limit=${limit}`);
     if (!Array.isArray(list.items)) {

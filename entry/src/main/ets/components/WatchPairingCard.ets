@@ -1,9 +1,8 @@
 import { formatClockTime } from '../models/Safety';
 import { formatAge } from '../models/WatchVitals';
-import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
 import { RemoteDevice, WatchVitalsApi } from '../providers/backend/WatchVitalsApi';
-import { apiSession } from '../services/CareApi';
+import { apiSession, sessionClient } from '../services/CareApi';
 import { CareButtonStyle } from './DesignSystem';
 import { sectionTitle } from './Common';
 
@@ -24,7 +23,7 @@ export struct WatchPairingCard {
   }
 
   private api(): WatchVitalsApi {
-    return new WatchVitalsApi(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
+    return new WatchVitalsApi(sessionClient());
   }
 
   private describe(error: Object, fallback: string): string {

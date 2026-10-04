@@ -62,6 +62,12 @@ export class ApiSession {
 
 export const apiSession: ApiSession = new ApiSession();
 
+// A client bound to the current pairing. Built per call, so pairing again or signing out takes effect immediately.
+export function sessionClient(readTimeoutMs?: number): BackendClient {
+  const config = new BackendConfig(apiSession.baseUrl, apiSession.token);
+  return readTimeoutMs === undefined ? new BackendClient(config) : new BackendClient(config, readTimeoutMs);
+}
+
 // Compatibility facade for endpoints not yet moved to typed provider APIs.
 // All transport, serialization, status handling and cleanup live in BackendClient.
 export class CareApi {
@@ -73,8 +79,7 @@ export class CareApi {
     if (!apiSession.configured()) {
       throw new Error('Connect this app to the care service first.');
     }
-    return new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token))
-      .request<Object>(method, `/v1${path}`, body);
+    return sessionClient().request<Object>(method, `/v1${path}`, body);
   }
 }
 

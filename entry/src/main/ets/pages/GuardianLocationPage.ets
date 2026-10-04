@@ -13,12 +13,12 @@ import {
   deviceClockTime,
   deviceIsStale,
   deviceName,
-  distanceMeters,
   formatDistance,
   freshnessOf,
   hasAnyLocation,
   stateSentence
 } from '../models/SeniorLocation';
+import { distanceMeters } from '../models/Geo';
 import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';

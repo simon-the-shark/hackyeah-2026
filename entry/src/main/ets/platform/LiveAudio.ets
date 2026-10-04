@@ -25,6 +25,7 @@ export class MicStream {
     await this.stop();
     let lastError: Object | undefined = undefined;
     for (const rate of CAPTURE_RATES) {
+      let created: audio.AudioCapturer | undefined = undefined;
       try {
         const capturer = await audio.createAudioCapturer({
           streamInfo: {
@@ -38,6 +39,7 @@ export class MicStream {
             capturerFlags: 0
           }
         });
+        created = capturer;
         this.rate = rate;
         capturer.on('readData', (buffer: ArrayBuffer) => {
           const samples = pcm16Samples(new Uint8Array(buffer));
@@ -50,6 +52,15 @@ export class MicStream {
       } catch (error) {
         lastError = error as Object;
         hilog.warn(DOMAIN, TAG, 'Capture at %{public}d Hz failed: %{public}d', rate, (error as BusinessError).code);
+        // A capturer that was created but did not start still holds the microphone until it is released.
+        if (created !== undefined) {
+          try {
+            created.off('readData');
+            await created.release();
+          } catch (releaseError) {
+            hilog.warn(DOMAIN, TAG, 'Capturer release failed: %{public}d', (releaseError as BusinessError).code);
+          }
+        }
       }
     }
     throw lastError as Error;

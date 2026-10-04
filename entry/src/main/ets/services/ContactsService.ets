@@ -30,6 +30,10 @@ export class ContactsService {
     this.cache = cache;
   }
 
+  belongsTo(account: SeniorAccount): boolean {
+    return this.account === account;
+  }
+
   async load(): Promise<ContactListResult> {
     try {
       const seniorId = await this.account.currentSeniorId();
@@ -37,7 +41,7 @@ export class ContactsService {
       await this.cache.save(contacts, Date.now());
       return new ContactListResult(contacts, undefined);
     } catch (err) {
-      const cached = err instanceof ApiError && err.kind === ApiErrorKind.Network ? this.cache.load() : undefined;
+      const cached = err instanceof ApiError && err.kind === ApiErrorKind.Network ? await this.cache.load() : undefined;
       if (cached === undefined) {
         throw err as Error;
       }
@@ -48,13 +52,13 @@ export class ContactsService {
 
 let sharedService: ContactsService | undefined = undefined;
 
-// Undefined until this phone is paired with a Carely care plan.
+// Undefined until this phone is paired with a Carely care plan; rebuilt when the pairing changes.
 export function contactsService(context: common.Context): ContactsService | undefined {
-  if (sharedService === undefined) {
-    const account = seniorAccount();
-    if (account !== undefined) {
-      sharedService = new ContactsService(account, new ContactsCacheStore(context));
-    }
+  const account = seniorAccount();
+  if (account === undefined) {
+    sharedService = undefined;
+  } else if (sharedService === undefined || !sharedService.belongsTo(account)) {
+    sharedService = new ContactsService(account, new ContactsCacheStore(context));
   }
   return sharedService;
 }
