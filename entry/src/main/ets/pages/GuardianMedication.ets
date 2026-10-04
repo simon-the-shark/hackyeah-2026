@@ -28,9 +28,20 @@ function showToast(context: UIContext, message: string): void {
 }
 
 function formatRecordedAt(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('en-GB', {
-    weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
-  });
+  return new Date(timestamp).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+function formatClock(timestamp: number): string {
+  const date = new Date(timestamp);
+  return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+}
+
+const OCCURRENCE_TIME = new RegExp('T(\\d{2}:\\d{2})$');
+
+/** "06:30 dose · " from the occurrence id, so an answer names the dose it belongs to. */
+function scheduledTime(record: DoseRecord): string {
+  const match = OCCURRENCE_TIME.exec(record.occurrenceId);
+  return match !== null ? `${match[1]} dose · ` : '';
 }
 
 // Changes whenever anything shown on a row changes, so ForEach rebuilds it.
@@ -253,7 +264,7 @@ export struct GuardianMedicationList {
             }
           }
 
-          if (this.phase !== LoadPhase.Loading) {
+          if (this.phase === LoadPhase.Ready) {
             this.addButton()
           }
         }
@@ -411,15 +422,16 @@ export struct GuardianMedicationDetail {
           $r('sys.symbol.xmark_circle_fill'))
           .fontSize(22)
           .fontColor([record.status === DoseStatus.Taken ? $r('app.color.success') : $r('app.color.warning')])
-        Text(record.status === DoseStatus.Taken ? 'Taken' : 'Skipped')
+        Text(`${scheduledTime(record)}${record.status === DoseStatus.Taken ?
+          `Taken at ${formatClock(record.recordedAt)}` : 'Skipped'}`)
           .fontSize(17)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
+          .layoutWeight(1)
         Text(formatRecordedAt(record.recordedAt))
           .fontSize(15)
           .fontColor($r('app.color.text_secondary'))
-          .layoutWeight(1)
-          .textAlign(TextAlign.End)
+          .maxLines(1)
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 12, bottom: 12 })
@@ -524,10 +536,9 @@ export struct GuardianMedicationDetail {
           .alignItems(HorizontalAlign.Start)
 
           Column() {
-            this.infoRow('Dose', this.current.doseText === '' ? 'Not entered' : this.current.doseText, true)
+            // The dose is already the header; the edit version is internal and stays out of view.
             this.infoRow('Instructions', this.current.instructions === '' ? 'None' : this.current.instructions, true)
-            this.infoRow('Package barcode', this.current.barcode === '' ? 'Not recorded' : this.current.barcode, true)
-            this.infoRow('Version', `${this.current.version}`, false)
+            this.infoRow('Package barcode', this.current.barcode === '' ? 'Not recorded' : this.current.barcode, false)
           }
           .width('100%')
           .borderRadius(20)

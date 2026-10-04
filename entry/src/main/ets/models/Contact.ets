@@ -7,12 +7,17 @@ export class Contact {
   readonly sortOrder: number;
   // Optimistic-locking version from the backend; edits must send the version they started from.
   readonly version: number;
+  // The person to offer first when an SOS cannot be delivered. Edits must send it back, because the
+  // backend resets an omitted value to false.
+  readonly isEmergency: boolean;
 
-  constructor(id: string, name: string, phone: string, sortOrder: number, version: number = 1) {
+  constructor(id: string, name: string, phone: string, sortOrder: number, version: number = 1,
+    isEmergency: boolean = false) {
     this.id = id;
     this.name = name;
     this.phone = phone;
     this.sortOrder = sortOrder;
     this.version = version;
+    this.isEmergency = isEmergency;
   }
 }

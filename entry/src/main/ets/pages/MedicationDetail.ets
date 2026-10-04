@@ -1,7 +1,7 @@
-import { DoseAction } from '../components/DoseAction';
+import { DoseAction, doseTimingBadge } from '../components/DoseAction';
 import { MedicineModelViewer } from '../components/MedicineModelViewer';
 import { DoseOccurrence, DoseRecord, Medication } from '../models/Medication';
-import { nextDose, todaysDoses } from '../services/MedicationSchedule';
+import { nextDose, timeKey, todaysDoses } from '../services/MedicationSchedule';
 
 export class MedicationDetailParams {
   readonly medication: Medication;
@@ -25,6 +25,10 @@ export struct MedicationDetail {
 
   aboutToAppear(): void {
     this.doses = todaysDoses([this.params.medication], this.now);
+  }
+
+  private isLate(dose: DoseOccurrence): boolean {
+    return !this.doseRecords.has(dose.occurrenceId) && dose.time < timeKey(new Date());
   }
 
   private isNext(dose: DoseOccurrence): boolean {
@@ -69,14 +73,10 @@ export struct MedicationDetail {
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
           .layoutWeight(1)
-        if (this.isNext(dose)) {
-          Text('Next')
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.senior_accent'))
-            .padding({ left: 12, right: 12, top: 4, bottom: 4 })
-            .borderRadius(12)
-            .backgroundColor($r('app.color.senior_tint'))
+        if (this.isLate(dose)) {
+          doseTimingBadge(true)
+        } else if (this.isNext(dose)) {
+          doseTimingBadge(false)
         }
       }
       .width('100%')

@@ -31,6 +31,8 @@ export class SafetyEventRequest {
   type: string;
   occurredAt: string;
   location?: Object;
+  /** For `cancel`: the id of the SOS or fall event being called off. */
+  cancelsEventId?: string;
 
   constructor(id: string, type: string, occurredAt?: string) {
     this.id = id;

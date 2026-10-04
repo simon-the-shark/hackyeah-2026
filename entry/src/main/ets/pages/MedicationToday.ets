@@ -1,6 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
-import { DoseAction } from '../components/DoseAction';
+import { DoseAction, doseTimingBadge } from '../components/DoseAction';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
 import { CatalogProduct, DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
 import { isBarcodeScanSupported, scanProductBarcode, ScanOutcome, ScanStatus } from '../platform/BarcodeScanner';
@@ -12,6 +12,7 @@ import {
   nextDose,
   openDose,
   sortByOpenDose,
+  timeKey,
   todaysDoses
 } from '../services/MedicationSchedule';
 import { medicationService, MedicationService } from '../services/MedicationService';
@@ -38,6 +39,8 @@ struct MedicationCard {
   @Require medication: Medication;
   @Require doses: DoseOccurrence[];
   @Prop isNext: boolean = false;
+  /** The open dose's time has already passed. */
+  @Prop isLate: boolean = false;
   @Consume('doseRecords') doseRecords: Map<string, DoseRecord>;
   onOpen: () => void = () => {};
 
@@ -112,19 +115,17 @@ struct MedicationCard {
               .fontWeight(FontWeight.Bold)
               .fontColor($r('app.color.senior_accent'))
               .layoutWeight(1)
-            if (this.isNext) {
-              Text('Next')
-                .fontSize(15)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.senior_accent'))
-                .padding({ left: 12, right: 12, top: 4, bottom: 4 })
-                .borderRadius(12)
-                .backgroundColor($r('app.color.senior_tint'))
+            if (this.isLate || this.isNext) {
+              doseTimingBadge(this.isLate)
             }
           }
           .width('100%')
 
-          DoseAction({ dose: openDose(this.doses, this.doseRecords) as DoseOccurrence })
+          // Keyed by occurrence, so answering one dose rebuilds the action for the next one instead of
+          // reusing the previous instance (and its "Taken" state).
+          ForEach([openDose(this.doses, this.doseRecords) as DoseOccurrence], (dose: DoseOccurrence) => {
+            DoseAction({ dose: dose })
+          }, (dose: DoseOccurrence) => dose.occurrenceId)
         }
         .width('100%')
       } else if (this.doses.length > 0) {
@@ -197,6 +198,11 @@ export struct MedicationToday {
     } finally {
       this.refreshing = false;
     }
+  }
+
+  private isLate(medication: Medication): boolean {
+    const open = openDose(dosesOf(this.doses, medication.id), this.doseRecords);
+    return open !== undefined && open.time < timeKey(new Date());
   }
 
   private isNext(medication: Medication): boolean {
@@ -298,6 +304,7 @@ export struct MedicationToday {
               medication: medication,
               doses: dosesOf(this.doses, medication.id),
               isNext: this.isNext(medication),
+              isLate: this.isLate(medication),
               onOpen: () => this.openDetail(medication, '', false)
             })
           }, (medication: Medication) => medicationKey(medication, dateKey(this.now)))

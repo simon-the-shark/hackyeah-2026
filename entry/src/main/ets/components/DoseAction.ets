@@ -4,6 +4,18 @@ import { timeKey } from '../services/MedicationSchedule';
 import { medicationService } from '../services/MedicationService';
 import { CareButtonStyle } from './DesignSystem';
 
+/** "Late" for an unanswered dose whose time has passed, otherwise "Next". Text, not only colour. */
+@Builder
+export function doseTimingBadge(late: boolean) {
+  Text(late ? 'Late' : 'Next')
+    .fontSize(15)
+    .fontWeight(FontWeight.Medium)
+    .fontColor(late ? $r('app.color.warning') : $r('app.color.senior_accent'))
+    .padding({ left: 12, right: 12, top: 4, bottom: 4 })
+    .borderRadius(12)
+    .backgroundColor(late ? $r('app.color.warning_tint') : $r('app.color.senior_tint'))
+}
+
 // Taken / Skip answer for one dose. The backend keeps the first answer, so each one is confirmed first.
 @Component
 export struct DoseAction {

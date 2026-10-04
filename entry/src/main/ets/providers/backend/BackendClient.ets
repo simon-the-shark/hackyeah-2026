@@ -8,6 +8,12 @@ const LOG_TAG = 'BackendClient';
 const CONNECT_TIMEOUT_MS = 10000;
 const READ_TIMEOUT_MS = 15000;
 
+/**
+ * AppStorage key set to true when an authenticated request is refused with 401: the device token
+ * no longer exists on the server, so the phone must sign out and pair again.
+ */
+export const PAIRING_EXPIRED_KEY = 'pairingExpired';
+
 export enum ApiErrorKind {
   // The request never got an HTTP response (offline, timeout, unreachable host). Safe to retry later.
   Network,
@@ -156,6 +162,9 @@ export class BackendClient {
 
     const status = response.responseCode as number;
     const text = typeof response.result === 'string' ? response.result : '';
+    if (status === 401 && deviceToken !== '') {
+      AppStorage.setOrCreate<boolean>(PAIRING_EXPIRED_KEY, true);
+    }
     if (status < 200 || status >= 300) {
       throw this.httpError(method, path, status, text);
     }

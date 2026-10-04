@@ -13,13 +13,18 @@ import {
 import {
   AlertType,
   CareAlert,
-  deliveryLabel,
   formatAlertTime,
   remoteAlertCopy,
 } from '../models/Safety';
 import { http } from '@kit.NetworkKit';
 import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession, careApi } from '../services/CareApi';
+import { apiSessionStore } from '../services/ApiSessionStore';
+import { seniorStatusApi } from '../services/SeniorStatusApi';
+import { describeBackendError } from '../services/BackendErrors';
+import { contactPhoneError } from '../services/ContactForm';
+import { dialableNumber } from '../services/ContactList';
+import { DialResult, openDialer } from '../platform/PhoneDialer';
 import { guardianAlertWatcher } from '../services/GuardianAlertWatcher';
 import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 import { WELLBEING_REPORT_ROUTE, WELLBEING_REPORTS_ROUTE, WellbeingReportTarget } from './WellbeingReportsPage';
@@ -30,6 +35,8 @@ interface RemoteAlert {
   createdAt: string;
   // The care service sends null, not an absent field, for an unacknowledged alert.
   acknowledgedAt?: string | null;
+  cancelledAt?: string | null;
+  seniorName?: string | null;
   // Null for server-raised alerts such as a missed dose.
   event?: RemoteEvent | null;
   details?: RemoteAlertDetails | null;
@@ -44,6 +51,32 @@ interface RemoteEvent {
   type: string;
   occurredAt: string;
   location?: RemoteGeoPoint | null;
+  // `device` (default), `trace_replay` or `simulated`.
+  source?: string | null;
+}
+
+function present(value: string | null | undefined): boolean {
+  return value !== undefined && value !== null && value !== '';
+}
+
+function isSimulatedSource(event: RemoteEvent | null | undefined): boolean {
+  return event !== undefined && event !== null && present(event.source) && event.source !== 'device';
+}
+
+function alertSubtitle(alert: CareAlert): string {
+  const parts: string[] = [formatAlertTime(alert.createdAt)];
+  if (alert.cancelled) {
+    parts.push('Cancelled by the senior');
+  }
+  if (alert.simulated) {
+    parts.push('Simulated');
+  }
+  return parts.join(' · ');
+}
+
+/** Alerts that still need the guardian: not seen yet and not called off by the senior. */
+function needsAttention(alert: CareAlert): boolean {
+  return !alert.acknowledged && !alert.cancelled;
 }
 
 enum LocationLoad {
@@ -122,12 +155,12 @@ export struct AlertsList {
       const response = await careApi.request('/alerts?limit=50', http.RequestMethod.GET) as RemoteAlertList;
       if (seq !== this.requestSeq) return;
       this.alerts = response.items.map((item: RemoteAlert) => this.fromRemote(item));
-      this.pendingCount = this.alerts.filter((alert: CareAlert) => !alert.acknowledged).length;
+      this.pendingCount = this.alerts.filter(needsAttention).length;
       this.loadError = '';
     } catch (error) {
       if (seq !== this.requestSeq) return;
       this.loadError = this.alerts.length > 0 ? 'Could not refresh alerts. Showing the last loaded list. Try again.' :
-        'Could not load alerts from the care service. Check your connection and try again.';
+        describeBackendError(error as Object, 'Could not load alerts.');
     } finally {
       if (seq === this.requestSeq) {
         this.loading = false;
@@ -140,7 +173,12 @@ export struct AlertsList {
     const copy = remoteAlertCopy(item.kind);
     const alert = new CareAlert(item.id, copy.type, copy.title, copy.detail, 'Care service');
     alert.createdAt = Date.parse(item.createdAt);
-    alert.acknowledged = item.acknowledgedAt !== undefined && item.acknowledgedAt !== null;
+    alert.acknowledged = present(item.acknowledgedAt);
+    alert.cancelled = present(item.cancelledAt);
+    alert.simulated = isSimulatedSource(item.event);
+    if (alert.type === AlertType.Sos && present(item.seniorName)) {
+      alert.detail = `${item.seniorName} requested help.`;
+    }
     alert.remote = true;
     return alert;
   }
@@ -150,10 +188,10 @@ export struct AlertsList {
     Text(alert.acknowledged ? 'Seen' : 'New')
       .fontSize(13)
       .fontWeight(FontWeight.Bold)
-      .fontColor(alert.acknowledged ? $r('app.color.text_secondary') : Color.White)
+      .fontColor(needsAttention(alert) ? Color.White : $r('app.color.text_secondary'))
       .padding({ left: 10, right: 10, top: 4, bottom: 4 })
       .borderRadius(12)
-      .backgroundColor(alert.acknowledged ? $r('app.color.page_background') : $r('app.color.action_danger'))
+      .backgroundColor(needsAttention(alert) ? $r('app.color.action_danger') : $r('app.color.page_background'))
   }
 
   @Builder
@@ -164,15 +202,18 @@ export struct AlertsList {
         Column({ space: 3 }) {
           Text(alert.title)
             .fontSize(18)
-            .fontWeight(alert.acknowledged ? FontWeight.Medium : FontWeight.Bold)
+            .fontWeight(needsAttention(alert) ? FontWeight.Bold : FontWeight.Medium)
             .fontColor($r('app.color.text_primary'))
-          Text(formatAlertTime(alert.createdAt))
+          Text(alertSubtitle(alert))
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
-        this.statusPill(alert)
+        // A cancelled alert says so in its subtitle; a pill would only squeeze the title.
+        if (!alert.cancelled) {
+          this.statusPill(alert)
+        }
         SymbolGlyph($r('sys.symbol.chevron_right'))
           .fontSize(18)
           .fontColor([$r('app.color.text_secondary')])
@@ -231,10 +272,6 @@ export struct AlertsList {
           Text('Loading alerts…').fontSize(19).fontColor($r('app.color.text_secondary'))
         } else if (this.loadError !== '' && this.alerts.length === 0) {
           NoticeBanner({ text: this.loadError })
-          Button('Retry loading alerts')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle())
-            .onClick(() => this.reload())
         } else if (this.alerts.length === 0) {
           this.emptyState()
         } else {
@@ -254,7 +291,7 @@ export struct AlertsList {
             ForEach(this.alerts, (alert: CareAlert, index: number) => {
               this.alertRow(alert, index < this.alerts.length - 1)
             }, (alert: CareAlert, index: number) =>
-              `${alert.id}-${alert.acknowledged}-${alert.deliveryState}-${index === this.alerts.length - 1}`)
+              `${alert.id}-${alert.acknowledged}-${alert.cancelled}-${index === this.alerts.length - 1}`)
           }
           .width('100%')
           .borderRadius(20)
@@ -303,6 +340,13 @@ export struct AlertDetailPage {
   @State private acknowledged: boolean = false;
   @State private acknowledging: boolean = false;
   @State private acknowledgementError: string = '';
+  @State private cancelled: boolean = false;
+  @State private simulated: boolean = false;
+  @State private seniorName: string = '';
+  @State private seniorPhone: string = '';
+  @State private phoneDraft: string = '';
+  @State private editingPhone: boolean = false;
+  @State private phoneError: string = '';
   @State private location: AlertLocation | undefined = undefined;
   @State private locationScene: MapScene = new MapScene();
   @State private locationLoad: LocationLoad = LocationLoad.Loading;
@@ -311,7 +355,45 @@ export struct AlertDetailPage {
 
   aboutToAppear(): void {
     this.acknowledged = this.alert.acknowledged;
+    this.cancelled = this.alert.cancelled;
+    this.simulated = this.alert.simulated;
     this.loadLocation();
+    this.loadSeniorPhone();
+  }
+
+  private hostContext(): common.UIAbilityContext {
+    return this.getUIContext().getHostContext() as common.UIAbilityContext;
+  }
+
+  private async loadSeniorPhone(): Promise<void> {
+    this.seniorPhone = await apiSessionStore.seniorPhone(this.hostContext());
+    if (this.seniorName === '' && apiSession.role === 'guardian') {
+      this.seniorName = await seniorStatusApi.loadSeniorName();
+    }
+  }
+
+  private async saveSeniorPhone(): Promise<void> {
+    const error = contactPhoneError(this.phoneDraft);
+    this.phoneError = error;
+    if (error !== '') {
+      return;
+    }
+    const phone = this.phoneDraft.trim();
+    await apiSessionStore.saveSeniorPhone(this.hostContext(), phone);
+    this.seniorPhone = phone;
+    this.editingPhone = false;
+  }
+
+  private async callSenior(): Promise<void> {
+    const result = await openDialer(dialableNumber(this.seniorPhone));
+    if (result !== DialResult.Opened) {
+      this.phoneError = result === DialResult.Unavailable ? 'This device cannot make phone calls.' :
+        'Could not open the phone app.';
+    }
+  }
+
+  private seniorLabel(): string {
+    return this.seniorName !== '' ? this.seniorName : 'the senior';
   }
 
   /** Every entry point (inbox, SOS banner, notification) passes only the alert id, so read the event here. */
@@ -325,6 +407,12 @@ export struct AlertDetailPage {
         http.RequestMethod.GET) as RemoteAlert;
       const reportId = item.details?.reportId;
       this.reportId = typeof reportId === 'string' ? reportId : '';
+      this.cancelled = present(item.cancelledAt);
+      this.acknowledged = this.acknowledged || present(item.acknowledgedAt);
+      this.simulated = isSimulatedSource(item.event);
+      if (present(item.seniorName)) {
+        this.seniorName = item.seniorName as string;
+      }
       const event = item.event;
       if (event !== undefined && event !== null) {
         const occurredAt = Date.parse(event.occurredAt);
@@ -511,16 +599,17 @@ export struct AlertDetailPage {
 
           Column() {
             this.infoRow('Time', formatAlertTime(this.alert.createdAt), true)
-            this.infoRow('Source', this.alert.source, true)
-            this.infoRow('Delivery', deliveryLabel(this.alert.deliveryState), true)
+            if (this.simulated) {
+              this.infoRow('Origin', 'Simulated, not a real event', true)
+            }
             Row({ space: 16 }) {
               Text('Status')
                 .fontSize(16)
                 .fontColor($r('app.color.text_secondary'))
-              Text(this.acknowledged ? 'Seen by you' : 'Not yet seen')
+              Text(this.statusText())
                 .fontSize(16)
                 .fontWeight(FontWeight.Medium)
-                .fontColor(this.acknowledged ? $r('app.color.text_primary') : $r('app.color.sos'))
+                .fontColor(this.acknowledged || this.cancelled ? $r('app.color.text_primary') : $r('app.color.sos'))
                 .layoutWeight(1)
                 .textAlign(TextAlign.End)
             }
@@ -557,22 +646,7 @@ export struct AlertDetailPage {
             NoticeBanner({ text: this.acknowledgementError })
           }
 
-          Column({ space: 8 }) {
-            Button('Call senior')
-              .width('100%')
-              .height(56)
-              .fontSize(18)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_primary'))
-              .backgroundColor($r('app.color.surface'))
-              .attributeModifier(new CareButtonStyle('secondary'))
-              .enabled(false)
-              .opacity(0.5)
-            Text('Calling is not set up yet.')
-              .fontSize(14)
-              .fontColor($r('app.color.text_secondary'))
-          }
-          .width('100%')
+          this.callSection()
         }
         .width('100%')
         .padding({ left: 20, right: 20, top: 8, bottom: 32 })
@@ -584,6 +658,72 @@ export struct AlertDetailPage {
     }
     .title(this.alert.title)
     .backgroundColor($r('app.color.page_background'))
+  }
+
+  private statusText(): string {
+    if (this.cancelled) {
+      return this.acknowledged ? 'Cancelled by the senior · seen' : 'Cancelled by the senior';
+    }
+    return this.acknowledged ? 'Seen by you' : 'Not yet seen';
+  }
+
+  /** Calling is the fastest answer to an SOS; the number lives only on this guardian phone. */
+  @Builder
+  callSection() {
+    Column({ space: 10 }) {
+      if (this.seniorPhone !== '' && !this.editingPhone) {
+        Button() {
+          Row({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.phone_fill'))
+              .fontSize(20)
+              .fontColor([$r('app.color.guardian_accent')])
+            Text(`Call ${this.seniorLabel()}`)
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.guardian_accent'))
+          }
+        }
+        .width('100%')
+        .height(56)
+        .attributeModifier(new CareButtonStyle('secondary'))
+        .accessibilityText(`Call ${this.seniorLabel()} at ${this.seniorPhone}`)
+        .onClick(() => this.callSenior())
+        Text(`${this.seniorPhone} · Change number`)
+          .fontSize(15)
+          .fontColor($r('app.color.text_secondary'))
+          .accessibilityRole(AccessibilityRoleType.BUTTON)
+          .accessibilityText('Change the senior\'s phone number')
+          .onClick(() => {
+            this.phoneDraft = this.seniorPhone;
+            this.phoneError = '';
+            this.editingPhone = true;
+          })
+      } else {
+        Text(`Save ${this.seniorLabel()}'s phone number to call them from here. It is stored only on this phone.`)
+          .fontSize(16)
+          .fontColor($r('app.color.text_secondary'))
+          .width('100%')
+        TextInput({ text: this.phoneDraft, placeholder: 'e.g. +48 600 100 200' })
+          .type(InputType.PhoneNumber)
+          .height(56)
+          .fontSize(18)
+          .onChange((value: string) => {
+            this.phoneDraft = value;
+            this.phoneError = '';
+          })
+        Button('Save number')
+          .width('100%')
+          .attributeModifier(new CareButtonStyle('secondary'))
+          .onClick(() => this.saveSeniorPhone())
+      }
+      if (this.phoneError !== '') {
+        Text(this.phoneError)
+          .fontSize(15)
+          .fontColor($r('app.color.sos'))
+          .width('100%')
+      }
+    }
+    .width('100%')
   }
 
   private async acknowledge(): Promise<void> {

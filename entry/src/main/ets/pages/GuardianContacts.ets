@@ -138,11 +138,14 @@ export struct GuardianContactsList {
               .fontSize(19)
               .fontWeight(FontWeight.Medium)
               .fontColor($r('app.color.text_primary'))
-              .maxLines(2)
+              .maxLines(3)
               .textOverflow({ overflow: TextOverflow.Ellipsis })
             Text(contact.phone)
               .fontSize(16)
               .fontColor($r('app.color.text_secondary'))
+              .maxLines(1)
+              .minFontSize(13)
+              .maxFontSize(16)
           }
           .layoutWeight(1)
           .alignItems(HorizontalAlign.Start)
@@ -154,15 +157,16 @@ export struct GuardianContactsList {
         .accessibilityRole(AccessibilityRoleType.BUTTON)
         .onClick(() => this.openEditor(contact))
 
+        // Icon-only, so the name and number keep the row's width.
         Button() {
-          Row({ space: 6 }) {
-            SymbolGlyph($r('sys.symbol.phone_fill'))
-              .fontSize(22)
-              .fontColor([$r('app.color.guardian_accent')])
-            Text('Call').fontSize(19).fontColor($r('app.color.guardian_accent'))
-          }
+          SymbolGlyph($r('sys.symbol.phone_fill'))
+            .fontSize(24)
+            .fontColor([$r('app.color.guardian_accent')])
         }
         .attributeModifier(new CareButtonStyle('secondary'))
+        .padding(0)
+        .width(56)
+        .height(56)
         .accessibilityText(`Call ${contact.name}`)
         .onClick(() => {
           callContact(this.getUIContext(), contact);
@@ -270,8 +274,12 @@ export struct GuardianContactsList {
                 'Add the people your senior should be able to call with one tap.')
             } else {
               Column({ space: 8 }) {
-                sectionTitle(this.contacts.length === 1 ? '1 trusted contact' :
-                  `${this.contacts.length} trusted contacts`)
+                // Inline rather than the shared sectionTitle builder, whose by-value text would not update.
+                Text(this.contacts.length === 1 ? '1 trusted contact' : `${this.contacts.length} trusted contacts`)
+                  .fontSize(19)
+                  .fontWeight(FontWeight.Medium)
+                  .fontColor($r('app.color.text_secondary'))
+                  .padding({ left: 4 })
                 Column() {
                   ForEach(this.contacts, (contact: Contact, index: number) => {
                     this.contactRow(contact, index < this.contacts.length - 1)

@@ -1,3 +1,4 @@
+import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { ageMs, HeartRateAlertSummary, WatchVitalsSnapshot } from '../models/WatchVitals';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
 import { BackendConfig } from '../providers/backend/BackendConfig';
@@ -98,7 +99,7 @@ export function describeWatchVitalsError(error: Object): string {
     return 'Cannot reach the Carely server. Check the internet connection and try again.';
   }
   if (error.status === 401) {
-    return 'This phone\'s pairing is no longer valid. Sign out and pair it again.';
+    return PAIRING_EXPIRED_DETAIL;
   }
   if (error.status === 403) {
     return error.message === NOT_GUARDIAN_MESSAGE ? NOT_GUARDIAN_MESSAGE : 'This phone cannot see this senior\'s watch.';

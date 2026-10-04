@@ -9,7 +9,8 @@ import {
   ScheduledDoseStatus,
   scheduledDoseFrom,
   scheduledDosesFrom,
-  tallyOf
+  tallyOf,
+  withRecordedDoses
 } from '../main/ets/models/CareOverview';
 
 function item(occurrenceId: string, scheduledFor: string, status: string): RemoteScheduledDose {
@@ -26,6 +27,22 @@ function item(occurrenceId: string, scheduledFor: string, status: string): Remot
 
 export default function careOverviewTest() {
   describe('careOverview', () => {
+    it('addsAnswersTheScheduleNoLongerLists', 0, () => {
+      const schedule = scheduledDosesFrom([item('med-1@2026-10-04T20:00', '2026-10-04T18:00:00Z', 'pending')]);
+      const taken: RemoteScheduledDose = {
+        occurrenceId: 'med-1@2026-10-04T06:30',
+        medicationName: 'Aspirin',
+        scheduledFor: '2026-10-04T04:30:00Z',
+        status: 'taken',
+        recordedAt: '2026-10-04T04:54:00Z'
+      };
+      const merged = withRecordedDoses(schedule, [taken, item('med-1@2026-10-04T20:00', '2026-10-04T18:00:00Z', 'pending')]);
+      expect(merged.length).assertEqual(2);
+      expect(merged[1].localTime).assertEqual('06:30');
+      expect(merged[1].localDate).assertEqual('2026-10-04');
+      expect(tallyOf(merged).taken).assertEqual(1);
+    });
+
     it('readsTheLocalDateFromTheOccurrenceId', 0, () => {
       // 23:30 in Warsaw is already the next day in UTC; the occurrence id keeps the scheduled local date.
       const dose = scheduledDoseFrom(item('med-1@2026-10-02T23:30', '2026-10-02T21:30:00Z', 'taken')) as ScheduledDose;

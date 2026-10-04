@@ -86,7 +86,6 @@ export struct MedicationFormPage {
   @State private scanning: boolean = false;
   @State private scanUnavailable: boolean = false;
 
-  @State private newTime: string = '';
   @State private timeError: string = '';
   @State private showErrors: boolean = false;
   @State private saving: boolean = false;
@@ -200,8 +199,20 @@ export struct MedicationFormPage {
     this.timeError = result.error;
     if (result.error === '') {
       this.times = result.times;
-      this.newTime = '';
     }
+  }
+
+  /** The system time picker avoids typing "HH:MM" on a letter keyboard. */
+  private pickTime(): void {
+    const selected = new Date();
+    selected.setHours(8, 0, 0, 0);
+    this.getUIContext().showTimePickerDialog({
+      selected: selected,
+      useMilitaryTime: true,
+      onAccept: (value: TimePickerResult) => {
+        this.addTime(`${value.hour.toString().padStart(2, '0')}:${value.minute.toString().padStart(2, '0')}`);
+      }
+    });
   }
 
   private removeTime(time: string): void {
@@ -497,7 +508,7 @@ export struct MedicationFormPage {
   timeChip(time: string) {
     Button() {
       Row({ space: 6 }) {
-        Text(`Remove ${time}`)
+        Text(time)
           .fontSize(19)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.guardian_accent'))
@@ -524,7 +535,7 @@ export struct MedicationFormPage {
         SymbolGlyph($r('sys.symbol.plus'))
           .fontSize(20)
           .fontColor([$r('app.color.senior_accent')])
-        Text(`Add ${time}`)
+        Text(time)
           .fontSize(19)
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.senior_accent'))
@@ -559,27 +570,22 @@ export struct MedicationFormPage {
           .width('100%')
         }
 
-        Row({ space: 8 }) {
-          TextInput({ text: this.newTime, placeholder: 'HH:MM' })
-            .layoutWeight(1)
-            .height(52)
-            .fontSize(18)
-            .maxLength(5)
-            .backgroundColor($r('app.color.page_background'))
-            .border({ width: this.timeError !== '' ? 2 : 0, color: $r('app.color.sos') })
-            .attributeModifier(new CareInputStyle('Dose time, 24-hour format HH:MM', this.timeError))
-            .onChange((value: string) => {
-              this.newTime = value;
-              this.timeError = '';
-            })
-            .onSubmit(() => this.addTime(this.newTime))
-          Button('Add time')
-            .height(52)
-            .fontSize(17)
-            .attributeModifier(new CareButtonStyle())
-            .onClick(() => this.addTime(this.newTime))
+        Button() {
+          Row({ space: 8 }) {
+            SymbolGlyph($r('sys.symbol.clock'))
+              .fontSize(22)
+              .fontColor([Color.White])
+            Text('Choose a time')
+              .fontSize(18)
+              .fontWeight(FontWeight.Medium)
+              .fontColor(Color.White)
+          }
         }
         .width('100%')
+        .height(56)
+        .attributeModifier(new CareButtonStyle())
+        .accessibilityText('Choose a dose time')
+        .onClick(() => this.pickTime())
         if (this.timeError !== '') {
           Text(this.timeError)
             .fontSize(14)

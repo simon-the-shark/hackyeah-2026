@@ -144,7 +144,8 @@ export struct DoseHistoryPage {
           .fontWeight(FontWeight.Medium)
           .fontColor($r('app.color.text_primary'))
           .width(56)
-        Column({ space: 2 }) {
+        // The status sits under the name so long medicine names keep the full width.
+        Column({ space: 6 }) {
           Text(dose.medicationName)
             .fontSize(18)
             .fontWeight(FontWeight.Medium)
@@ -154,23 +155,23 @@ export struct DoseHistoryPage {
               .fontSize(15)
               .fontColor($r('app.color.text_secondary'))
           }
+          Row({ space: 6 }) {
+            SymbolGlyph(statusIcon(dose.status))
+              .fontSize(18)
+              .fontColor([statusAccent(dose.status)])
+            Text(doseStatusText(dose, this.now))
+              .fontSize(15)
+              .fontWeight(FontWeight.Medium)
+              .fontColor($r('app.color.text_primary'))
+          }
+          .padding({ left: 10, right: 10, top: 6, bottom: 6 })
+          .borderRadius(14)
+          .backgroundColor(statusTint(dose.status))
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Start)
-        Row({ space: 6 }) {
-          SymbolGlyph(statusIcon(dose.status))
-            .fontSize(18)
-            .fontColor([statusAccent(dose.status)])
-          Text(doseStatusText(dose, this.now))
-            .fontSize(15)
-            .fontWeight(FontWeight.Medium)
-            .fontColor($r('app.color.text_primary'))
-            .constraintSize({ maxWidth: 150 })
-        }
-        .padding({ left: 10, right: 10, top: 6, bottom: 6 })
-        .borderRadius(14)
-        .backgroundColor(statusTint(dose.status))
       }
+      .alignItems(VerticalAlign.Top)
       .width('100%')
       .constraintSize({ minHeight: 68 })
       .padding({ left: 16, right: 16, top: 10, bottom: 10 })
@@ -222,7 +223,7 @@ export struct DoseHistoryPage {
             this.daySection(day)
           }, (day: DoseDay) => `${day.date}:${day.doses.map((dose: ScheduledDose) =>
             `${dose.occurrenceId}:${dose.status}`).join(',')}`)
-          Text('Doses from before the last schedule change are not listed.')
+          Text('Unanswered doses from before a medicine\'s last schedule change are not listed.')
             .fontSize(14)
             .fontColor($r('app.color.text_secondary'))
             .padding({ left: 4 })

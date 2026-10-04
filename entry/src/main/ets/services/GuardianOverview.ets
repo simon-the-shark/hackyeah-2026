@@ -1,10 +1,12 @@
+import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import {
   CareOverview,
   overviewFrom,
   RemoteDoseSchedule,
   RemoteOverview,
   ScheduledDose,
-  scheduledDosesFrom
+  scheduledDosesFrom,
+  withRecordedDoses
 } from '../models/CareOverview';
 import { ApiError, ApiErrorKind, BackendClient, invalidResponse } from '../providers/backend/BackendClient';
 import { BackendConfig } from '../providers/backend/BackendConfig';
@@ -25,16 +27,23 @@ export class GuardianOverview {
     return overviewFrom(dto, Date.now());
   }
 
-  /** Every scheduled dose of the last `DOSE_HISTORY_DAYS` days up to now, with the server's status. */
+  /**
+   * Every scheduled dose of the last `DOSE_HISTORY_DAYS` days up to now, with the server's status, plus answers
+   * the schedule no longer lists because the medication's times changed afterwards.
+   */
   async doseHistory(): Promise<ScheduledDose[]> {
     const to = new Date();
     const from = new Date(to.getTime() - DOSE_HISTORY_DAYS * DAY_MS);
-    const list = await this.client().get<RemoteDoseSchedule>(`${this.senior()}/dose-schedule` +
-      `?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`);
-    if (!Array.isArray(list.items)) {
+    const range = `?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`;
+    const client = this.client();
+    const lists = await Promise.all([
+      client.get<RemoteDoseSchedule>(`${this.senior()}/dose-schedule${range}`),
+      client.get<RemoteDoseSchedule>(`${this.senior()}/doses${range}`)
+    ]);
+    if (!Array.isArray(lists[0].items) || !Array.isArray(lists[1].items)) {
       throw invalidResponse('dose schedule');
     }
-    return scheduledDosesFrom(list.items);
+    return withRecordedDoses(scheduledDosesFrom(lists[0].items), lists[1].items);
   }
 
   // Built per call so pairing again or signing out takes effect immediately.
@@ -61,7 +70,7 @@ export function describeOverviewError(error: Object, what: string): string {
     return 'Cannot reach the Carely server. Check the internet connection and try again.';
   }
   if (error.status === 401) {
-    return 'This phone\'s pairing is no longer valid. Sign out and pair it again.';
+    return PAIRING_EXPIRED_DETAIL;
   }
   if (error.status === 403) {
     return error.message === NOT_GUARDIAN_MESSAGE ? NOT_GUARDIAN_MESSAGE : 'This phone cannot see this senior.';
