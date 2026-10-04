@@ -2,9 +2,9 @@ import { sectionTitle } from '../components/Common';
 import { WatchPairingCard } from '../components/WatchPairingCard';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
-import common from '@ohos.app.ability.common';
 import { apiSession, careApi } from '../services/CareApi';
-import { apiSessionStore } from '../services/ApiSessionStore';
+import { formatClockTime } from '../models/Safety';
+import { confirmSignOut } from '../components/SignOut';
 import { CareButtonStyle } from '../components/DesignSystem';
 
 @Component
@@ -29,8 +29,10 @@ export struct SettingsPage {
       const path = rotate ? '/pairing/codes?rotate=true' : '/pairing/codes';
       const result = await careApi.request(path, http.RequestMethod.POST) as Record<string, string>;
       this.pairingCode = result['pairingCode'];
-      this.pairingMessage = rotate ? 'New code ready. The old code no longer works.' :
-        'Share this code with your guardian.';
+      const expires = Date.parse(result['pairingExpiresAt']);
+      const until = isFinite(expires) ? ` It works until ${formatClockTime(expires)}.` : '';
+      this.pairingMessage = rotate ? `New code ready. The old code no longer works.${until}` :
+        `Share this code with your guardian.${until}`;
     } catch (error) {
       this.pairingCode = '';
       this.pairingMessage = rotate ? 'Could not create a new code. Try again.' :
@@ -52,13 +54,6 @@ export struct SettingsPage {
     });
   }
 
-  /** Clears pairing, then returns to setup. Signing out must always take effect. */
-  private async signOut(): Promise<void> {
-    await apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
-    AppStorage.set('paired', false);
-    this.navStack.clear();
-  }
-
   build() {
     NavDestination() {
       Scroll() {
@@ -75,8 +70,11 @@ export struct SettingsPage {
                   .fontSize(36)
                   .fontWeight(FontWeight.Bold)
                   .fontColor($r('app.color.senior_accent'))
+                  .letterSpacing(4)
                   .width('100%')
                   .textAlign(TextAlign.Center)
+                  .accessibilityText(this.pairingCode === '' ? 'No pairing code yet' :
+                    `Pairing code ${this.pairingCode.split('').join(' ')}`)
                 Text(this.pairingMessage)
                   .fontSize(19)
                   .fontColor($r('app.color.text_secondary'))
@@ -117,7 +115,7 @@ export struct SettingsPage {
             .fontColor($r('app.color.sos'))
             .attributeModifier(new CareButtonStyle('danger-secondary'))
             .onClick(() => {
-              this.signOut();
+              confirmSignOut(this.getUIContext(), this.navStack);
             })
         }
         .width('100%')

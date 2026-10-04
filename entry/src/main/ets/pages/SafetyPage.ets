@@ -1,6 +1,6 @@
 import { common } from '@kit.AbilityKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
-import { GeofenceStatus, safetyStore } from '../models/Safety';
+import { formatDistance, GeofenceStatus, safetyStore } from '../models/Safety';
 import { apiSession } from '../services/CareApi';
 import { locationSharing } from '../services/LocationSharing';
 import { pendingSafetyEvents } from '../services/PendingSafetyEvents';
@@ -14,6 +14,7 @@ export struct SafetyPage {
   @State private starting: boolean = locationSharing.starting;
   @State private locationPermissionDenied: boolean = locationSharing.permissionDenied;
   @State private locationSwitchOff: boolean = locationSharing.locationSwitchOff;
+  @State private radiusMeters: number = safetyStore.homeRadiusMeters;
   @State private errorMessage: string = locationSharing.errorMessage;
   @State private configMessage: string = locationSharing.configMessage;
   private readonly locationStateListener: () => void = () => this.syncFromStore();
@@ -31,6 +32,7 @@ export struct SafetyPage {
     this.locationSwitchOff = locationSharing.locationSwitchOff;
     this.errorMessage = locationSharing.errorMessage;
     this.configMessage = locationSharing.configMessage;
+    this.radiusMeters = safetyStore.homeRadiusMeters;
   }
 
   private startLocationMonitoring(): void {
@@ -131,7 +133,7 @@ export struct SafetyPage {
       Divider()
         .color($r('app.color.divider'))
 
-      Text(safetyStore.safeAreaConfigured ? `Safe area: ${safetyStore.homeRadiusMeters} m around home` : 'Safe area not available')
+      Text(safetyStore.safeAreaConfigured ? `Safe area: ${formatDistance(this.radiusMeters)} around home` : 'Safe area not available')
         .fontSize(15)
         .fontColor($r('app.color.text_secondary'))
     }

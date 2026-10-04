@@ -5,6 +5,36 @@ import { CareButtonStyle } from '../components/DesignSystem';
 import { locationSharing } from '../services/LocationSharing';
 
 const COUNTDOWN_SECONDS: number = 5;
+/** How often the sent screen checks whether a guardian has seen the SOS. */
+const ACK_POLL_MS: number = 10000;
+
+interface SeniorAlertEvent {
+  id?: string;
+}
+
+interface SeniorAlert {
+  acknowledgedAt?: string | null;
+  acknowledgedBy?: string | null;
+  cancelledAt?: string | null;
+  event?: SeniorAlertEvent | null;
+}
+
+interface SeniorAlertList {
+  items?: SeniorAlert[];
+}
+
+interface LinkedGuardian {
+  id?: string;
+  displayName?: string;
+}
+
+interface LinkedPeople {
+  guardians?: LinkedGuardian[];
+}
+
+interface SeniorMe {
+  linked?: LinkedPeople | null;
+}
 
 @Component
 export struct SosPage {
@@ -14,7 +44,11 @@ export struct SosPage {
   @State private sendState: string = '';
   /** Fix time of the location attached to the SOS; 0 when none was available. */
   @State private locationAt: number = 0;
+  /** "Anna has seen your SOS at 07:12."; empty until a guardian acknowledges it. */
+  @State private seenMessage: string = '';
+  @State private cancelState: string = '';
   private timerId: number = -1;
+  private ackTimerId: number = -1;
   private sosEventId: string = '';
 
   aboutToAppear(): void {
@@ -29,6 +63,85 @@ export struct SosPage {
 
   aboutToDisappear(): void {
     this.stopTimer();
+    this.stopAckPolling();
+  }
+
+  private stopAckPolling(): void {
+    if (this.ackTimerId !== -1) {
+      clearInterval(this.ackTimerId);
+      this.ackTimerId = -1;
+    }
+  }
+
+  private startAckPolling(): void {
+    this.stopAckPolling();
+    this.ackTimerId = setInterval(() => this.checkSeen(), ACK_POLL_MS);
+  }
+
+  /** Reads this SOS's alert; the backend records which guardian acknowledged it first. */
+  private async checkSeen(): Promise<void> {
+    try {
+      const since = new Date(this.sentAt - 60000).toISOString();
+      const list = await careApi.request(`/seniors/${apiSession.seniorId}/alerts?since=${encodeURIComponent(since)}&limit=20`,
+        http.RequestMethod.GET) as SeniorAlertList;
+      const alert = (list.items ?? []).find((item: SeniorAlert) =>
+        item.event !== undefined && item.event !== null && item.event.id === this.sosEventId);
+      if (alert === undefined || alert.acknowledgedAt === undefined || alert.acknowledgedAt === null) {
+        return;
+      }
+      this.stopAckPolling();
+      const name = await this.guardianName(alert.acknowledgedBy ?? '');
+      this.seenMessage = `${name} has seen your SOS at ${formatClockTime(Date.parse(alert.acknowledgedAt))}.`;
+    } catch (error) {
+      // Keep polling; the SOS itself was delivered.
+    }
+  }
+
+  private async guardianName(guardianId: string): Promise<string> {
+    try {
+      const me = await careApi.request('/me', http.RequestMethod.GET) as SeniorMe;
+      const guardian = (me.linked?.guardians ?? []).find((item: LinkedGuardian) => item.id === guardianId);
+      if (guardian !== undefined && typeof guardian.displayName === 'string' && guardian.displayName !== '') {
+        return guardian.displayName;
+      }
+    } catch (error) {
+      // Fall back to a generic name.
+    }
+    return 'Your guardian';
+  }
+
+  private confirmCancel(): void {
+    this.getUIContext().showAlertDialog({
+      title: 'Cancel your SOS?',
+      message: 'Your guardian will be told that you are OK and no longer need help.',
+      autoCancel: true,
+      primaryButton: {
+        value: 'Keep SOS',
+        action: () => {
+        }
+      },
+      secondaryButton: {
+        value: 'I\'m OK, cancel',
+        fontColor: $r('app.color.sos'),
+        action: () => {
+          this.cancelSos();
+        }
+      }
+    });
+  }
+
+  private async cancelSos(): Promise<void> {
+    if (this.cancelState === 'sending' || this.cancelState === 'cancelled') return;
+    this.cancelState = 'sending';
+    try {
+      const event = new SafetyEventRequest(generateEventId(), 'cancel');
+      event.cancelsEventId = this.sosEventId;
+      await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+      this.stopAckPolling();
+      this.cancelState = 'cancelled';
+    } catch (error) {
+      this.cancelState = 'failed';
+    }
   }
 
   private stopTimer(): void {
@@ -56,6 +169,7 @@ export struct SosPage {
       await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
       this.locationAt = location !== undefined ? Date.parse(location.sampledAt) : 0;
       this.sendState = 'sent';
+      this.startAckPolling();
     } catch (error) {
       this.sendState = 'failed';
     }
@@ -64,6 +178,9 @@ export struct SosPage {
   private screenTitle(): string {
     if (this.sentAt === 0) {
       return 'Requesting help';
+    }
+    if (this.cancelState === 'cancelled') {
+      return 'SOS cancelled';
     }
     return this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' : 'SOS not sent';
   }
@@ -130,7 +247,8 @@ export struct SosPage {
         if (this.sendState === 'sending') {
           LoadingProgress().width(72).height(72).color($r('app.color.senior_accent'))
         } else {
-        SymbolGlyph(this.sendState === 'sent' ? $r('sys.symbol.checkmark_circle_fill') : $r('sys.symbol.exclamationmark_circle_fill'))
+        SymbolGlyph(this.sendState === 'sent' ? $r('sys.symbol.checkmark_circle_fill') :
+          $r('sys.symbol.exclamationmark_circle_fill'))
           .fontSize(72)
           .fontColor([$r('app.color.sos')])
         }
@@ -142,7 +260,20 @@ export struct SosPage {
       .backgroundColor($r('app.color.sos_tint'))
 
       Column({ space: 8 }) {
-        Text(this.sendState === 'sent' ? `Care service accepted your SOS at ${formatClockTime(this.sentAt)}. This does not confirm that your guardian has seen it.` :
+        if (this.cancelState === 'cancelled') {
+          Text('Your SOS was cancelled. Your guardian is being told that you are OK.')
+            .fontSize(20)
+            .fontWeight(FontWeight.Medium)
+            .fontColor($r('app.color.text_primary'))
+        } else if (this.seenMessage !== '') {
+          Text(this.seenMessage)
+            .fontSize(22)
+            .fontWeight(FontWeight.Bold)
+            .fontColor($r('app.color.text_primary'))
+        }
+        Text(this.sendState === 'sent' ? (this.seenMessage !== '' ?
+          `Care service accepted your SOS at ${formatClockTime(this.sentAt)}.` :
+          `Care service accepted your SOS at ${formatClockTime(this.sentAt)}. Waiting for your guardian to see it…`) :
           this.sendState === 'sending' ? 'Please wait while we contact the care service.' : 'Could not send your SOS. Check your connection and try again.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
@@ -169,6 +300,21 @@ export struct SosPage {
             this.navStack.pop();
           }
         })
+
+      if (this.sendState === 'sent' && this.cancelState !== 'cancelled') {
+        Button(this.cancelState === 'sending' ? 'Cancelling…' : 'I\'m OK, cancel SOS')
+          .width('100%')
+          .height(64)
+          .fontSize(20)
+          .attributeModifier(new CareButtonStyle('danger-secondary'))
+          .enabled(this.cancelState !== 'sending')
+          .onClick(() => this.confirmCancel())
+        if (this.cancelState === 'failed') {
+          Text('Could not cancel the SOS. Check the internet connection and try again, or call your guardian.')
+            .fontSize(17)
+            .fontColor($r('app.color.sos'))
+        }
+      }
     }
     .width('100%')
   }

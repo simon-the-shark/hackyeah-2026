@@ -78,7 +78,7 @@ export function seniorNameOf(item: GuardianInboxAlert): string {
 /** Builds the detail-page model for an SOS known only by id, name and time. */
 export function sosCareAlert(alertId: string, seniorName: string, createdAt: number): CareAlert {
   const name = seniorName !== '' ? seniorName : 'your senior';
-  const alert = new CareAlert(alertId, AlertType.Sos, `SOS from ${name}`, `${name} requested help.`, 'Care service');
+  const alert = new CareAlert(alertId, AlertType.Sos, 'SOS requested', `${name} requested help.`, 'Care service');
   alert.createdAt = createdAt;
   alert.remote = true;
   return alert;

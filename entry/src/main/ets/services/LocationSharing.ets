@@ -9,6 +9,7 @@ import { SafePreferences } from './SafePreferences';
 import { BackgroundLocation } from '../platform/BackgroundLocation';
 import { ApiError } from '../providers/backend/BackendClient';
 import { notifications } from '../platform/Notifications';
+import { batteryPercent } from '../platform/Battery';
 
 type StateListener = () => void;
 
@@ -40,10 +41,15 @@ function pointFrom(location: geoLocationManager.Location): LocationPoint | undef
 class StatusReport {
   monitoringState: string;
   location?: LocationPoint;
+  battery?: number;
 
   constructor(state: string, point?: LocationPoint) {
     this.monitoringState = state;
     this.location = point;
+    const battery = batteryPercent();
+    if (battery >= 0) {
+      this.battery = battery;
+    }
   }
 }
 
@@ -206,7 +212,9 @@ export class LocationSharing {
         try { await this.background.stop(context); } catch (_) { /* Retry on explicit stop. */ }
         if (epoch === this.generation) {
           this.requested = false;
-          this.errorMessage = `Sharing did not start. ${(error as Error).message}`;
+          // The Safe Area page has its own banner and button for missing permission or a switched-off Location.
+          this.errorMessage = this.permissionDenied || this.locationSwitchOff ? '' :
+            `Sharing did not start. ${(error as Error).message}`;
           await this.persistIntent();
         }
       } finally {
@@ -239,7 +247,8 @@ export class LocationSharing {
       const enabled = await abilityAccessCtrl.createAtManager().requestGlobalSwitch(context, abilityAccessCtrl.SwitchType.LOCATION);
       if (enabled) this.start(context);
     } catch (error) {
-      const code = (error as BusinessError).code;
+      // Error codes can arrive as strings, so compare numerically.
+      const code = Number((error as BusinessError).code);
       if (code === 12100013) this.start(context);
       else {
         this.errorMessage = `Could not open the location switch (error ${code}).`;

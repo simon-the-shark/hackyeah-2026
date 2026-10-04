@@ -48,25 +48,27 @@ struct ContactCard {
     Row({ space: 16 }) {
       // The backend stores no photos yet, so every contact gets an initials avatar.
       Text(contactInitials(this.contact.name))
-        .width(64)
-        .height(64)
-        .borderRadius(32)
+        .width(56)
+        .height(56)
+        .borderRadius(28)
         .textAlign(TextAlign.Center)
-        .fontSize(24)
+        .fontSize(22)
         .fontWeight(FontWeight.Bold)
         .fontColor(avatarColors(this.contact).foreground)
         .backgroundColor(avatarColors(this.contact).background)
 
       Column({ space: 4 }) {
+        // Never cut a name short: the senior must recognise who they are calling.
         Text(this.contact.name)
           .fontSize(22)
           .fontWeight(FontWeight.Bold)
           .fontColor($r('app.color.text_primary'))
-          .maxLines(2)
-          .textOverflow({ overflow: TextOverflow.Ellipsis })
         Text(this.contact.phone)
           .fontSize(17)
           .fontColor($r('app.color.text_secondary'))
+          .maxLines(1)
+          .minFontSize(14)
+          .maxFontSize(17)
       }
       .layoutWeight(1)
       .alignItems(HorizontalAlign.Start)

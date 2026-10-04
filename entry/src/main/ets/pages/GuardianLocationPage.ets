@@ -22,6 +22,7 @@ import {
 import { MapsHandOff, openInMaps } from '../platform/MapsLauncher';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
+import { describeBackendError } from '../services/BackendErrors';
 
 /** Light polling while the tab is visible; the senior's phone and watch report on their own schedules. */
 const POLL_INTERVAL_MS: number = 30000;
@@ -118,7 +119,7 @@ export struct GuardianLocationView {
       this.loadError = '';
     } catch (error) {
       this.loadError = this.snapshot === undefined
-        ? 'Could not reach the care service. Check the connection and try again.'
+        ? describeBackendError(error as Object, 'Could not load the location.')
         : 'Could not refresh. Showing the last location loaded on this phone.';
     } finally {
       this.loading = false;

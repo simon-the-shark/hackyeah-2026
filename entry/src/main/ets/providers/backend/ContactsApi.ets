@@ -8,6 +8,7 @@ interface ContactDto {
   phone?: string;
   sortOrder?: number;
   version?: number;
+  isEmergency?: boolean;
 }
 
 interface ContactListDto {
@@ -19,12 +20,14 @@ class ContactBody {
   name: string;
   phone: string;
   sortOrder: number;
+  isEmergency: boolean;
   version?: number;
 
-  constructor(name: string, phone: string, sortOrder: number, version?: number) {
+  constructor(name: string, phone: string, sortOrder: number, isEmergency: boolean, version?: number) {
     this.name = name;
     this.phone = phone;
     this.sortOrder = sortOrder;
+    this.isEmergency = isEmergency;
     if (version !== undefined) {
       this.version = version;
     }
@@ -36,7 +39,7 @@ function toContact(dto: ContactDto): Contact {
     throw invalidResponse('contact');
   }
   return new Contact(dto.id, dto.name, dto.phone, typeof dto.sortOrder === 'number' ? dto.sortOrder : 0,
-    typeof dto.version === 'number' ? dto.version : 1);
+    typeof dto.version === 'number' ? dto.version : 1, dto.isEmergency === true);
 }
 
 // The stored contact a 409 version_conflict carries in `details.current`; undefined when it is unreadable.
@@ -74,13 +77,13 @@ export class ContactsApi {
 
   async create(seniorId: string, name: string, phone: string, sortOrder: number): Promise<Contact> {
     return toContact(await this.client.post<ContactDto>(ContactsApi.collection(seniorId),
-      new ContactBody(name, phone, sortOrder)));
+      new ContactBody(name, phone, sortOrder, false)));
   }
 
   // Sends the version the edit started from; a newer stored version fails with 409 version_conflict.
   async update(seniorId: string, original: Contact, name: string, phone: string): Promise<Contact> {
     return toContact(await this.client.put<ContactDto>(ContactsApi.item(seniorId, original.id),
-      new ContactBody(name, phone, original.sortOrder, original.version)));
+      new ContactBody(name, phone, original.sortOrder, original.isEmergency, original.version)));
   }
 
   async remove(seniorId: string, contactId: string): Promise<void> {

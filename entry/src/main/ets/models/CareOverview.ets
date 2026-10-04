@@ -143,6 +143,38 @@ export function scheduledDosesFrom(items: RemoteScheduledDose[] | undefined): Sc
   return doses;
 }
 
+const OCCURRENCE_TIME = new RegExp('T(\\d{2}:\\d{2})$');
+
+/**
+ * Adds stored answers (`GET /doses`) whose occurrence the schedule no longer lists. `/dose-schedule` leaves out
+ * occurrences from before a medication's last schedule change, but the senior's answers for them still count.
+ */
+export function withRecordedDoses(schedule: ScheduledDose[], records: RemoteScheduledDose[] | undefined): ScheduledDose[] {
+  const known = new Set<string>(schedule.map((dose: ScheduledDose) => dose.occurrenceId));
+  const merged = schedule.slice();
+  (records ?? []).forEach((record: RemoteScheduledDose) => {
+    if (typeof record.occurrenceId !== 'string' || known.has(record.occurrenceId)) {
+      return;
+    }
+    const time = OCCURRENCE_TIME.exec(record.occurrenceId);
+    const item: RemoteScheduledDose = {
+      occurrenceId: record.occurrenceId,
+      medicationName: record.medicationName,
+      doseText: null,
+      localTime: time !== null ? time[1] : undefined,
+      scheduledFor: record.scheduledFor,
+      status: record.status,
+      recordedAt: record.recordedAt
+    };
+    const dose = scheduledDoseFrom(item);
+    if (dose !== undefined) {
+      merged.push(dose);
+      known.add(dose.occurrenceId);
+    }
+  });
+  return merged;
+}
+
 /** Newest day first, and the latest dose first within a day. */
 export function groupByDay(doses: ScheduledDose[]): DoseDay[] {
   const sorted = doses.slice().sort((a: ScheduledDose, b: ScheduledDose) =>

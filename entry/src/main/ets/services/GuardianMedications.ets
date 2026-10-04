@@ -1,3 +1,4 @@
+import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { CatalogProduct, DoseRecord, Medication } from '../models/Medication';
 import { MedicationDraft, MedicationRequestBody } from '../models/MedicationDraft';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
@@ -5,7 +6,7 @@ import { BackendConfig } from '../providers/backend/BackendConfig';
 import { MedicationApi, MedicationConflictError } from '../providers/backend/MedicationApi';
 import { apiSession } from './CareApi';
 
-export const NOT_GUARDIAN_MESSAGE = 'This phone is not paired as a guardian. Pair it from the start screen first.';
+export const NOT_GUARDIAN_MESSAGE = 'This phone is not paired as a guardian. Sign out and set it up again as a guardian.';
 
 const HISTORY_DAYS = 14;
 const HISTORY_LIMIT = 5;
@@ -22,9 +23,12 @@ export function describeGuardianError(err: Object, fallback: string): string {
   }
   if (err instanceof ApiError) {
     if (err.kind === ApiErrorKind.Network) {
-      return 'Cannot reach the Carely server. Check the connection and try again.';
+      return 'Cannot reach the Carely server. Check the internet connection and try again.';
     }
-    if (err.status === 401 || err.status === 403) {
+    if (err.status === 401) {
+      return err.message === NOT_GUARDIAN_MESSAGE ? NOT_GUARDIAN_MESSAGE : PAIRING_EXPIRED_DETAIL;
+    }
+    if (err.status === 403) {
       return NOT_GUARDIAN_MESSAGE;
     }
     if (err.status === 400) {

@@ -4,6 +4,7 @@ import { SafePreferences } from './SafePreferences';
 import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 import { guardianAlertWatcher } from './GuardianAlertWatcher';
 import { locationSharing } from './LocationSharing';
+import { PAIRING_EXPIRED_KEY } from '../providers/backend/BackendClient';
 
 const STORE_NAME = 'carely_api_session';
 /**
@@ -23,6 +24,7 @@ export class ApiSessionStore {
   }
 
   async save(context: common.Context): Promise<void> {
+    AppStorage.setOrCreate<boolean>(PAIRING_EXPIRED_KEY, false);
     await this.store.putStrings(context, {
       'baseUrl': apiSession.baseUrl,
       'token': apiSession.token,
@@ -32,6 +34,15 @@ export class ApiSessionStore {
     });
   }
 
+  /** Guardian only: the senior's phone number, kept on this phone so an SOS can be answered with a call. */
+  async seniorPhone(context: common.Context): Promise<string> {
+    return this.store.getString(context, 'seniorPhone', '');
+  }
+
+  async saveSeniorPhone(context: common.Context, phone: string): Promise<void> {
+    await this.store.putStrings(context, { 'seniorPhone': phone });
+  }
+
   /**
    * Clears the in-memory session before touching storage, so signing out always
    * takes effect even when persistence fails. Leaving a token in memory after an
@@ -39,6 +50,7 @@ export class ApiSessionStore {
    */
   async clear(context: common.Context): Promise<void> {
     apiSession.clear();
+    AppStorage.setOrCreate<boolean>(PAIRING_EXPIRED_KEY, false);
     const locationCleanup = locationSharing.reset(context as common.UIAbilityContext);
     // Erase the saved session without waiting for an in-flight location request.
     await this.store.clear(context);

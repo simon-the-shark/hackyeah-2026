@@ -1,5 +1,4 @@
 import { Camera, EnvironmentBackgroundType, Light, LightType, Scene } from '@kit.ArkGraphics3D';
-import { CareButtonStyle } from './DesignSystem';
 
 // Framing is specific to the supplied bottle: x=-0.55, y=-0.038..2.794.
 // Keep the model intact and orbit the camera around its centre.
@@ -133,19 +132,15 @@ export struct MedicineModelViewer {
               )
             )
         } else if (this.failed) {
-          Column({ space: 12 }) {
-            Text('The 3D view could not be loaded.')
-              .fontSize(18)
-              .fontColor($r('app.color.text_primary'))
-              .textAlign(TextAlign.Center)
-            Button('Try again')
-              .fontSize(18)
-              .constraintSize({ minHeight: 56 })
-              .attributeModifier(new CareButtonStyle())
-              .onClick(() => this.loadModel())
-          }
-          .padding(20)
-        } else {
+          // Some targets (for example the DevEco emulator) cannot start the 3D engine, so retrying cannot help.
+          // A still picture rendered from the same model keeps the comparison possible.
+          Image($r('app.media.medicine_bottle_preview'))
+            .width('100%')
+            .height('100%')
+            .objectFit(ImageFit.Contain)
+            .padding(16)
+            .accessibilityText('Picture of the demo medicine bottle: white bottle, blue cap, blue tablet symbol.')
+                } else {
           Column({ space: 12 }) {
             LoadingProgress()
               .width(40)
@@ -163,7 +158,8 @@ export struct MedicineModelViewer {
       .borderRadius(20)
       .clip(true)
 
-      Text('Drag left or right to turn the bottle. Double-tap to reset.')
+      Text(this.failed ? 'Still picture · 3D view is not available on this device.' :
+        'Drag left or right to turn the bottle. Double-tap to reset.')
         .fontSize(17)
         .fontColor($r('app.color.text_secondary'))
 

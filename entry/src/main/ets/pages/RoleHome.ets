@@ -1,7 +1,5 @@
 import { Feature, FeatureSection, RoleProfile, SENIOR_PROFILE } from '../models/Features';
 import { ContactsList } from './ContactsList';
-import common from '@ohos.app.ability.common';
-import { apiSessionStore } from '../services/ApiSessionStore';
 import { FeaturePlaceholder } from './FeaturePage';
 import { MedicationToday } from './MedicationToday';
 import { AlertsList } from './AlertsPage';
@@ -14,10 +12,13 @@ import { GUARDIAN_OVERVIEW_ROUTE } from './GuardianOverviewPage';
 import { DOSE_HISTORY_ROUTE } from './DoseHistoryPage';
 import { WellbeingCheckIn } from './WellbeingCheckIn';
 import { WELLBEING_REPORTS_ROUTE } from './WellbeingReportsPage';
-import { CareFocusStyle } from '../components/DesignSystem';
+import { CareButtonStyle, CareFocusStyle } from '../components/DesignSystem';
 import { apiSession } from '../services/CareApi';
 import { seniorStatusApi } from '../services/SeniorStatusApi';
 import { greeting } from '../models/Greeting';
+import { NoticeBanner } from '../components/Common';
+import { confirmSignOut, PAIRING_EXPIRED_MESSAGE } from '../components/SignOut';
+import { PAIRING_EXPIRED_KEY } from '../providers/backend/BackendClient';
 
 @Component
 export struct RoleHome {
@@ -28,17 +29,11 @@ export struct RoleHome {
   /** Bumped whenever a tab or this page becomes visible, so tab content can reload. */
   @State tabRefresh: number = 0;
   @State private seniorName: string = '';
-
-  /** Clears pairing, then returns to setup. Signing out must always take effect. */
-  private async signOut(): Promise<void> {
-    await apiSessionStore.clear(this.getUIContext().getHostContext() as common.UIAbilityContext);
-    AppStorage.set('paired', false);
-    this.navStack.clear();
-  }
+  @StorageProp(PAIRING_EXPIRED_KEY) private pairingExpired: boolean = false;
 
   private open(feature: Feature): void {
     if (feature.id === 'sign-out') {
-      this.signOut();
+      confirmSignOut(this.getUIContext(), this.navStack);
     } else if (feature.id === 'sos') {
       this.navStack.pushPathByName('sos', null);
     } else if (feature.id === 'safe-area') {
@@ -332,8 +327,31 @@ export struct RoleHome {
     .expandSafeArea([SafeAreaType.SYSTEM], [SafeAreaEdge.BOTTOM])
   }
 
+  /** One place to act on an expired pairing, shown above every tab instead of each screen's own wording. */
+  @Builder
+  pairingExpiredBanner() {
+    Column({ space: 10 }) {
+      NoticeBanner({
+        icon: $r('sys.symbol.exclamationmark_circle_fill'),
+        text: PAIRING_EXPIRED_MESSAGE,
+        accent: $r('app.color.sos'),
+        tint: $r('app.color.sos_tint')
+      })
+      Button('Sign out and pair again')
+        .width('100%')
+        .attributeModifier(new CareButtonStyle('danger'))
+        .onClick(() => confirmSignOut(this.getUIContext(), this.navStack))
+    }
+    .width('100%')
+    .padding({ left: 20, right: 20, top: 8, bottom: 8 })
+  }
+
   build() {
     NavDestination() {
+      Column() {
+      if (this.pairingExpired) {
+        this.pairingExpiredBanner()
+      }
       if (this.profile.tabs.length > 0) {
         Column() {
           Tabs({ barPosition: BarPosition.End, index: this.selectedTab, controller: this.tabsController }) {
@@ -358,10 +376,16 @@ export struct RoleHome {
           this.bottomBar()
         }
         .width('100%')
-        .height('100%')
+        .layoutWeight(1)
       } else {
-        this.homeContent()
+        Column() {
+          this.homeContent()
+        }
+        .layoutWeight(1)
       }
+      }
+      .width('100%')
+      .height('100%')
     }
     .title(this.screenTitle())
     .backgroundColor($r('app.color.page_background'))

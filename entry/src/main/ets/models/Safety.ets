@@ -97,6 +97,10 @@ export class CareAlert {
   createdAt: number;
   deliveryState: DeliveryState;
   acknowledged: boolean = false;
+  /** The senior called off this SOS or fall after sending it. */
+  cancelled: boolean = false;
+  /** Raised by a simulated or replayed source, not by a real sensor or button press. */
+  simulated: boolean = false;
   remote: boolean = false;
 
   constructor(id: string, type: AlertType, title: string, detail: string, source: string) {
@@ -108,6 +112,18 @@ export class CareAlert {
     this.createdAt = Date.now();
     this.deliveryState = DeliveryState.Queued;
   }
+}
+
+/** Short, readable distance: metres up to 1 km, then kilometres with thousands separators. */
+export function formatDistance(meters: number): string {
+  if (meters < 1000) {
+    return `${Math.round(meters)} m`;
+  }
+  const km = meters / 1000;
+  if (km < 10) {
+    return `${km.toFixed(1)} km`;
+  }
+  return `${Math.round(km).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',')} km`;
 }
 
 export function formatClockTime(timestamp: number): string {
@@ -172,7 +188,7 @@ export class SafetyStore {
       : this.tracker.confirmed === BoundaryState.Outside ? GeofenceStatus.Outside : GeofenceStatus.Unknown;
     this.didLeaveSafeArea = this.lastTransition === 'area_exit';
     this.lastLocationMessage = accuracy > this.homeRadiusMeters ? 'Location is not precise enough to confirm a crossing.'
-      : `About ${Math.round(distance)} m from home. Boundary changes need two clear readings.`;
+      : `About ${formatDistance(distance)} from home. Boundary changes need two clear readings.`;
     if (this.didLeaveSafeArea && createLocalAlert) {
       const alert = new CareAlert(`area-${this.nextId++}`, AlertType.SafeAreaExit, 'Safe area exit',
         'The senior moved outside the configured home circle.', 'Phone location');

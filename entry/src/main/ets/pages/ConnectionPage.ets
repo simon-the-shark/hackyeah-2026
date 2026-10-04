@@ -4,6 +4,23 @@ import { apiSession, BootstrapRequest, careApi } from '../services/CareApi';
 import { apiSessionStore } from '../services/ApiSessionStore';
 import { CareButtonStyle, CareInputStyle } from '../components/DesignSystem';
 import { NoticeBanner } from '../components/Common';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
+
+/** The claim answers 410 for a wrong, used or expired code and 429 after too many guesses. */
+function pairingErrorMessage(error: Object): string {
+  if (error instanceof ApiError && error.kind === ApiErrorKind.Http) {
+    if (error.status === 410 || error.status === 404) {
+      return 'This code is wrong or has expired. On the senior\'s phone open Settings, tap New code, and enter that code.';
+    }
+    if (error.status === 429) {
+      return 'Too many attempts. Wait a few minutes, then try again with a new code.';
+    }
+  }
+  if (error instanceof ApiError && error.kind === ApiErrorKind.Network) {
+    return 'Cannot reach the Carely server. Check the internet connection and try again.';
+  }
+  return 'Could not pair this phone. Check the code and your internet connection, then try again.';
+}
 
 @Component
 export struct ConnectionPage {
@@ -37,7 +54,7 @@ export struct ConnectionPage {
       await apiSessionStore.save(this.getUIContext().getHostContext() as common.UIAbilityContext);
       this.onConnected(apiSession.role);
     } catch (error) {
-      this.message = this.guardian ? 'Could not pair this phone. Check the code and your internet connection, then try again.' :
+      this.message = this.guardian ? pairingErrorMessage(error as Object) :
         'Could not set up this phone. Check your internet connection, then try again.';
     } finally {
       this.busy = false;

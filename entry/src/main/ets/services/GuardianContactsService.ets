@@ -1,3 +1,4 @@
+import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { Contact } from '../models/Contact';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
 import { BackendConfig } from '../providers/backend/BackendConfig';
@@ -62,7 +63,7 @@ export function describeGuardianContactsError(err: Object, fallback: string): st
     return `${fallback} The server sent a response this app cannot read.`;
   }
   if (err.status === 401) {
-    return 'This phone\'s pairing is no longer valid. Sign out and pair it again.';
+    return PAIRING_EXPIRED_DETAIL;
   }
   if (err.status === 403) {
     return err.message === NOT_GUARDIAN_MESSAGE ? NOT_GUARDIAN_MESSAGE :
