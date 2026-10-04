@@ -1,156 +1,116 @@
-# HackYeah 2026
+# Carely: an elderly-care companion for HarmonyOS
 
-An elderly-care companion for HarmonyOS, built with ArkTS, ArkUI,
-and the Stage model. It helps an older person stay within a designated safe
-area, ask for help, follow a medication schedule, and contact trusted people.
-A guardian receives alerts and wellbeing updates. The smartwatch is the
-primary intended SOS surface; a phone provides the full companion experience.
+Carely helps an older person stay independent. They can ask for help (SOS) from
+their phone or watch, stay within a safe area, take their medication on time and
+call trusted people with one tap. A guardian is alerted and gets a daily
+AI-written wellbeing summary from a hands-free spoken check-in.
 
-## Product Scope And Status
+- **Theme:** Human-Centric Technology, supported by Intelligent Experiences
+  (voice check-in through the OpenAI Realtime model)
+- **Demo video:** TODO link
+- **Ready-built `.hap` files (phone and watch):** TODO Google Drive link
+- **Stack:** ArkTS, ArkUI, Stage model; HarmonyOS SDK `6.1.1(24)`, compatible
+  with API 20; Hono + PostgreSQL backend in [`backend/`](backend/)
 
-- Core: safe-area exit alerts, SOS on phone/watch, medication reminders,
-  barcode-assisted medication entry, 3D medication references, and easy calling.
-- Intelligence: a hands-free spoken wellbeing check-in with the OpenAI Realtime
-  model through the backend; when it ends, a summary goes to the guardian.
-- Stretch: guardian-defined trips, learned routine deviations, voice interaction,
-  and fall detection.
+## Quickstart
 
-The repository currently contains the starter application and a verified API 24
-build, not these product features. Watch support, background monitoring, remote
-push delivery, and real OpenAI calls from the deployed backend require
-verification.
-The backend (Hono + Drizzle + PostgreSQL API, with HarmonyOS Push Kit for
-guardian alerts) lives in `backend/`; see `backend/README.md`.
+**Prerequisites:** macOS with DevEco Studio 6.1.1 (bundled HarmonyOS SDK
+`6.1.1(24)`), and a phone emulator created in DevEco Studio's Device Manager
+(we test on HarmonyOS 6.1.0(23)). The app uses the hosted backend, which stays up
+during judging, so no backend setup is needed.
 
-## Requirements
+1. **Build** both HAPs (phone and watch):
 
-- DevEco Studio with its bundled HarmonyOS SDK `6.1.1(24)`
-- A HarmonyOS API 24 emulator (DevEco Studio Device Manager) for runtime testing
+   ```zsh
+   ./scripts/build-hap.sh   # set DEVECO_STUDIO_HOME if DevEco Studio is not in /Applications
+   ```
 
-`build-profile.json5` sets `runtimeOS: "HarmonyOS"`, compiles and targets
-`6.1.1(24)`, and declares `6.0.0(20)` as the compatible SDK, so the app keeps
-API 20 compatibility (the hackathon minimum).
+   Output: `entry/build/default/outputs/default/entry-default-unsigned.hap`
+   (phone) and `watch/build/default/outputs/default/watch-default-unsigned.hap`
+   (watch).
 
-## Build
+2. **Install** on the running emulator. The emulator accepts the unsigned HAP,
+   as DevEco Studio's Run does. `hdc` ships with DevEco Studio in
+   `Contents/sdk/default/openharmony/toolchains/`; add it to your `PATH`.
 
-On macOS, run:
+   ```zsh
+   hdc shell mkdir -p data/local/tmp/carely
+   hdc file send entry/build/default/outputs/default/entry-default-unsigned.hap data/local/tmp/carely/
+   hdc shell bm install -p data/local/tmp/carely
+   ```
+
+   Or open the project in DevEco Studio and Run the `entry` module. A physical
+   device needs the HAP signed with your own DevEco debug signature (File →
+   Project Structure → Signing Configs); no signing material is committed.
+
+3. **Launch:**
+
+   ```zsh
+   hdc shell aa start -a EntryAbility -b pl.solvro.hackyeah26
+   ```
+
+**Optional watch:** create a wearable emulator (we use HarmonyOS 6.1.0(23)). If
+a phone emulator already uses hdc port 5555, start the watch on another port
+with `Emulator -start <name> -hdcPort 5557` (`Emulator` is in DevEco Studio's
+`Contents/tools/emulator/`). Install
+`watch-default-unsigned.hap` the same way (pick the device with `hdc -t <serial>`),
+then launch with `hdc shell aa start -a WatchAbility -b pl.solvro.hackyeah26 -m watch`.
+
+## Demo Path
+
+Use two phone emulators, or set up one role, sign out, then the other.
+
+1. **Senior phone:** I am a senior → enter a name → Set up senior phone. Then
+   Settings → copy the Guardian pairing code.
+2. **Guardian phone:** I am a guardian → enter a name and the code → Pair with
+   senior.
+3. **Guardian:** set the Safe Area. **Senior:** Safe Area → Turn on sharing; move
+   the position outside the area in the emulator's GPS panel. The guardian's
+   Alerts tab shows the safe-area exit.
+4. **Senior:** SOS → after the 3-second countdown the guardian sees the SOS with
+   its location and can call the senior.
+5. **Senior:** Medication → mark a dose Taken. **Wellbeing:** Talk with Carely,
+   then Finish. The guardian reads the summary under Insights → Wellbeing
+   Reports.
+6. **Optional watch:** senior Settings → Smartwatch → Pair a watch, enter the
+   code on the watch, then set a heart rate in the emulator's Virtual Sensor
+   panel. The guardian sees it under Watch & vitals.
+
+## What Is Real vs Simulated
+
+The phone app was verified on the emulator and on two real phones; the watch
+app only on the emulator.
+
+| Feature | On the emulator |
+| --- | --- |
+| Pairing, SOS, safe-area alerts, medication, contacts, calling | Real app and backend; location comes from the emulator's GPS panel |
+| Watch heart rate and location | Emulator sensor values, labelled **SIMULATED** in the app |
+| Wellbeing voice check-in | Real OpenAI Realtime model through the backend; a full spoken conversation on the emulator is not yet verified |
+| Guardian notifications | Foreground polling plus local notifications; Push Kit delivery is implemented in the backend but unverified (needs a verified Huawei developer account) |
+| Barcode scan, 3D medicine model | Scan Kit and ArkGraphics 3D unverified on the emulator; a labelled simulated scan and a still render are shown |
+
+Full list: [Known limitations](AI_WORKFLOW.md#known-limitations).
+
+## Tests
 
 ```zsh
-./scripts/build-hap.sh
+# ArkTS unit tests (66 tests)
+DEVECO_SDK_HOME=/Applications/DevEco-Studio.app/Contents/sdk \
+  /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw test -p module=entry@default -p product=default
+
+# Backend integration tests (needs Docker for PostgreSQL)
+cd backend && docker compose up -d && pnpm install && pnpm test
 ```
 
-The script uses DevEco Studio's bundled hvigor wrapper and SDK. If DevEco Studio
-is installed elsewhere, set `DEVECO_STUDIO_HOME` to its `.app` directory before
-running the script. Use Previewer for fast ArkUI iteration and the DevEco Studio
-HarmonyOS emulator for runtime, lifecycle, permission, and platform-integration
-verification.
+To run the backend locally instead of the hosted one, see
+[`backend/README.md`](backend/README.md#setup) and change `BACKEND_BASE_URL` in
+`entry/src/main/ets/providers/backend/BackendUrl.ets` and
+`watch/src/main/ets/services/BackendUrl.ets`.
 
-## Run
+## Docs
 
-Create and boot a compatible virtual device in DevEco Studio's Device Manager,
-then run the `entry` module on it. The starter screen displays `Hello World`
-and changes to `Welcome` when tapped.
-
-### Connect The App To The Backend
-
-The Carely production backend address is built into the app. Create a senior
-account and pair the guardian in the Connection screen; both phones then retain
-their own authenticated session.
-
-### Phone Background Location
-
-On the paired senior phone, open **Safe Area → Turn on sharing** and grant
-precise location and notifications. Sharing uses a HarmonyOS location continuous
-task so it can continue with another app open or the screen locked, with a system
-notification. The requested update interval is 30 seconds. Explicit stop or a
-system cancellation ends monitoring; force-stop/reboot do not self-restart it.
-
-See [background location behavior and runtime checks](docs/BACKGROUND_LOCATION.md)
-for configuration caching, confirmed exit/re-entry detection, offline retries,
-build/test commands, and validation limits. Background execution still needs
-verification with a signed build on the target device. Guardian background push
-delivery is a separate integration; its current local polling is foreground-only.
-
-### Smartwatch App
-
-The `watch` module is a separate HarmonyOS app entry for a wearable
-(`deviceTypes: ["wearable"]`, round 466×466 screen) in the same bundle.
-`./scripts/build-hap.sh` builds both HAPs:
-`entry/build/default/outputs/default/entry-default-unsigned.hap` and
-`watch/build/default/outputs/default/watch-default-unsigned.hap`. Sign them with
-your own DevEco Studio debug signature before installing; signing material is
-local and never committed.
-
-The watch pairs to the senior with a 6-digit code, then:
-
-- sends SOS (3-second countdown to cancel) with its own last location;
-- reports its own location heartbeat (`measuredBy: "watch"`, never the phone's);
-- reads heart rate with Sensor Service Kit (`ohos.permission.READ_HEALTH_DATA`),
-  uploads one median sample per 30 s, and sends one alert event when the reading
-  stays above 120 or below 45 bpm for 2 minutes (resolved after 2 minutes back in
-  range). Readings are informational, not a medical assessment.
-
-Sensors and location run only while Carely is open on the watch (sensor use in
-the background is not allowed). On an emulator, or when the sensor reports
-itself as a mock, data is sent with `source: "simulated"` and shown as
-SIMULATED on both watch and guardian screens.
-
-To try it on the DevEco Studio emulator (team images use API 23):
-
-1. Install and create a wearable emulator, for example
-   `Emulator -install -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
-   then `Emulator -create Carely_Watch_23 -deviceType wearable -osVersion "HarmonyOS 6.1.0(23)"`
-   (`Emulator` lives in `DevEco-Studio.app/Contents/tools/emulator/`), or use
-   the Device Manager. When a phone emulator already runs on the default hdc
-   port 5555, start the watch on another one: `Emulator -start Carely_Watch_23 -hdcPort 5557`.
-2. The watch uses the same built-in production backend address as the phone
-   (`watch/src/main/ets/services/BackendUrl.ets`). The watch endpoints must be
-   deployed there first (see `backend/README.md`).
-3. On the senior phone: Settings, Smartwatch, Pair a watch. Enter the code on
-   the watch within 5 minutes and allow heart rate and location.
-4. Set a heart rate in the emulator's Virtual Sensor panel and a position in
-   its GPS panel.
-5. On the guardian phone: Home, Safety, Watch & vitals.
-
-### Wellbeing Check-in
-
-The senior's Wellbeing tab is a short spoken conversation with an AI assistant
-about how they feel. They tap Talk with Carely once (the phone asks for the
-microphone) and then just talk: the phone streams the microphone to the backend,
-which relays it to the OpenAI Realtime model and plays its spoken answers. The
-model notices when the senior has finished speaking, so nothing else is pressed.
-When Carely says goodbye, or the senior presses Finish, the backend writes a
-summary and sends it to the guardian, who reads it under Home, Insights,
-Wellbeing Reports (or from the notification while Carely is open). The guardian
-sees the summary, not the conversation; the senior only sees that it was
-sent.
-
-The backend calls OpenAI and needs `OPENAI_API_KEY` in its runtime environment
-(never in the app or the repository). Without a key the check-in shows as
-unavailable. See `backend/README.md` for the configuration and the voice
-protocol.
-
-## Project Documents
-
-- `HACKATHON_BRIEF.md` records the agreed product scope and demo path.
-- `MOBILE_PLAN.md` defines mobile priorities, screens, architecture, feasibility
-  gates, integration needs, and acceptance tests.
-- `docs/TECH_STACK.md` records platform choices and unresolved capabilities.
-- `docs/DESIGN_SYSTEM_AUDIT.md` records the app-wide control, navigation, color,
-  accessibility and validation audit.
-- `backend/README.md` is the backend setup guide and the API contract for the
-  mobile app; `backend/PLAN.md` records the backend scope.
-- `AI_WORKFLOW.md` records AI-assisted development and validation.
-- `hackathon-resources/` contains challenge-provided emulator and DevEco CLI
-  guidance.
-- `docs/challenge/` contains the challenge statement, setup references, and the
-  upstream template agent guide.
-- `hackathon-skills/` vendors the challenge-provided agent skills for local
-  reference. They must be installed or configured separately to become active
-  in a coding agent.
-
-## Submission
-
-Before submission, provide reproducible setup/build/install/launch instructions,
-a working `.hap`, a short demo recording, an architecture summary, and the
-completed AI workflow disclosure.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): components, platform capabilities used, key flows, failure handling
+- [`AI_WORKFLOW.md`](AI_WORKFLOW.md): AI tools, workflow, limitations, AI feature disclosure ([full work log](docs/AI_WORK_LOG.md))
+- [`backend/README.md`](backend/README.md): backend setup and API contract
+- [`docs/BACKGROUND_LOCATION.md`](docs/BACKGROUND_LOCATION.md): background location behavior
+- [`HACKATHON_BRIEF.md`](HACKATHON_BRIEF.md), [`MOBILE_PLAN.md`](MOBILE_PLAN.md): product scope and the original plan

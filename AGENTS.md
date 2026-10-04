@@ -209,7 +209,7 @@ without actually verifying it.
 
 At the start of an AI-assisted session, read `AI_WORKFLOW.md` and record any
 new model, coding agent, MCP server, or agent skill before substantive work.
-Update its work log after material work and before handoff. Keep descriptions
+Update its work log (`docs/AI_WORK_LOG.md`) after material work and before handoff. Keep descriptions
 public-safe and record validation, failures, limitations, and lessons learned.
 
 If AI is part of the product, document the model or service, inference flow,
