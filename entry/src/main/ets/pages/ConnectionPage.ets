@@ -46,9 +46,15 @@ export struct ConnectionPage {
       const body = new BootstrapRequest(this.name.trim());
       if (this.guardian) body.code = this.code.trim();
       const path = this.guardian ? '/pairing/claim' : '/seniors';
-      const result = await careApi.publicRequest(apiSession.baseUrl, path, http.RequestMethod.POST, body) as Record<string, string>;
-      apiSession.token = result['token'];
-      apiSession.seniorId = result['seniorId'];
+      const result = await careApi.publicRequest(apiSession.baseUrl, path, http.RequestMethod.POST, body) as Record<string, Object>;
+      const token = result['token'];
+      const seniorId = result['seniorId'];
+      // A malformed answer must not leave a half-paired phone with an `undefined` token.
+      if (typeof token !== 'string' || token === '' || typeof seniorId !== 'string' || seniorId === '') {
+        throw new Error('Invalid pairing response');
+      }
+      apiSession.token = token;
+      apiSession.seniorId = seniorId;
       apiSession.role = this.guardian ? 'guardian' : 'senior';
       apiSession.displayName = this.name.trim();
       await apiSessionStore.save(this.getUIContext().getHostContext() as common.UIAbilityContext);

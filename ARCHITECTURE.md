@@ -52,9 +52,11 @@ The `watch` module follows the same layering in its own module.
 
 ## Key Flows
 
-- **SOS:** phone or watch → 3-second countdown → event with last known location
-  → backend stores an alert → guardian sees it, acknowledges and can call.
-  Unsent events are queued on the device and retried.
+- **SOS:** phone (5-second countdown) or watch (3-second countdown) → event
+  with last known location → backend stores an alert → guardian sees it,
+  acknowledges and can call. An SOS that cannot reach the backend is queued
+  (on the phone in the safety-event outbox, on the watch in memory) and resent
+  every 30 seconds under the same id, so the backend never alerts twice.
 - **Safe area:** the senior phone checks each location fix against the
   guardian-set circle and confirms an exit or re-entry before sending it, so one
   noisy fix does not raise an alert.
@@ -67,7 +69,14 @@ The `watch` module follows the same layering in its own module.
 ## Failure Handling
 
 - No network: safety events and dose answers are queued and retried; cached
-  contacts stay usable.
+  contacts stay usable. An event the backend rejects for good (4xx other than
+  401/408/429) is dropped so it cannot block later alerts.
+- Sign-out: asks for confirmation, then clears the token, the queues, the
+  contact cache and the in-memory services, so a re-paired phone never shows
+  the previous senior's data. App backup is disabled because the stored token
+  must not be restored onto another device.
+- Time zone: care times use Europe/Warsaw, and dose times are computed in the
+  device's local time, so the device must be set to that zone.
 - Location off or permission revoked: sharing stops and the app asks the senior
   to turn it back on.
 - The AI is never on the safety path. If OpenAI fails, the check-in shows as

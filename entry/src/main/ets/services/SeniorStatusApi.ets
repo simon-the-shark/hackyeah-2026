@@ -1,6 +1,7 @@
 import { http } from '@kit.NetworkKit';
 import { RemoteStatusResponse, SeniorSnapshot, snapshotFromStatus } from '../models/SeniorLocation';
 import { apiSession, careApi } from './CareApi';
+import { ApiError } from '../providers/backend/BackendClient';
 
 interface RemoteSafeArea {
   lat: number;
@@ -57,9 +58,8 @@ export class SeniorStatusApi {
         snapshot.areaRadiusM = area.radiusM;
       }
     } catch (error) {
-      // 404 `not_found` means the guardian has not set up a safe area yet.
-      const message = error instanceof Error ? error.message : '';
-      snapshot.safeAreaKnown = message.includes('not_found');
+      // 404 means the guardian has not set up a safe area yet; anything else leaves it unknown.
+      snapshot.safeAreaKnown = error instanceof ApiError && error.status === 404;
     }
   }
 

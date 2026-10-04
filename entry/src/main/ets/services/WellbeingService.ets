@@ -3,10 +3,9 @@ import { i18n } from '@kit.LocalizationKit';
 import { CheckInState, WellbeingReport } from '../models/Wellbeing';
 import { deviceTimeZone } from '../platform/DeviceTimeZone';
 import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
 import { FinishReason, StartedSession, WellbeingApi } from '../providers/backend/WellbeingApi';
 import { NOT_CONFIGURED_MESSAGE } from './BackendErrors';
-import { apiSession } from './CareApi';
+import { apiSession, sessionClient } from './CareApi';
 import { guardianSessionReady, NOT_GUARDIAN_MESSAGE } from './GuardianContactsService';
 import { SafePreferences } from './SafePreferences';
 
@@ -15,23 +14,8 @@ const AI_TIMEOUT_MS = 60000;
 const STORE_NAME = 'carely_wellbeing';
 const REPORT_PAGE = 50;
 
-/** What this phone last shared, kept on the phone because the senior cannot read reports back. */
-export class SharedSummary {
-  id: string = '';
-  summary: string = '';
-  createdAt: number = 0;
-  guardians: string = '';
-}
-
-interface StoredSummary {
-  id?: string;
-  summary?: string;
-  createdAt?: number;
-  guardians?: string;
-}
-
 function client(): BackendClient {
-  return new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token), AI_TIMEOUT_MS);
+  return sessionClient(AI_TIMEOUT_MS);
 }
 
 /** BCP 47 tag of the phone's language, a hint for the assistant's first message. */
@@ -65,39 +49,9 @@ export class WellbeingCheckIn {
     return this.api().finish(this.seniorId(), sessionId, reason);
   }
 
-  async withdraw(context: common.Context, reportId: string): Promise<void> {
-    await this.api().withdraw(this.seniorId(), reportId);
-    await this.store.putStrings(context, { 'lastShared': '' });
-  }
-
-  async lastShared(context: common.Context): Promise<SharedSummary | undefined> {
-    const raw = await this.store.getString(context, 'lastShared', '');
-    if (raw === '') {
-      return undefined;
-    }
-    try {
-      const stored = JSON.parse(raw) as StoredSummary;
-      if (typeof stored.id !== 'string' || typeof stored.createdAt !== 'number') {
-        return undefined;
-      }
-      const shared = new SharedSummary();
-      shared.id = stored.id;
-      shared.summary = typeof stored.summary === 'string' ? stored.summary : '';
-      shared.createdAt = stored.createdAt;
-      shared.guardians = typeof stored.guardians === 'string' ? stored.guardians : '';
-      return shared;
-    } catch (error) {
-      return undefined;
-    }
-  }
-
-  async rememberShared(context: common.Context, report: WellbeingReport, guardians: string): Promise<void> {
-    const shared = new SharedSummary();
-    shared.id = report.id;
-    shared.summary = report.summary;
-    shared.createdAt = report.createdAt;
-    shared.guardians = guardians;
-    await this.store.putStrings(context, { 'lastShared': JSON.stringify(shared) });
+  /** Removes what earlier versions kept on the phone (the last shared summary); called on sign-out. */
+  async clearLocal(context: common.Context): Promise<void> {
+    await this.store.clear(context);
   }
 
   private api(): WellbeingApi {
@@ -128,7 +82,7 @@ export class GuardianWellbeing {
     if (!guardianSessionReady()) {
       throw new ApiError(ApiErrorKind.Http, 403, 'forbidden', NOT_GUARDIAN_MESSAGE);
     }
-    return new WellbeingApi(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
+    return new WellbeingApi(sessionClient());
   }
 }
 

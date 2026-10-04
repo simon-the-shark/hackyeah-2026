@@ -1,10 +1,9 @@
 import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { CatalogProduct, DoseRecord, Medication } from '../models/Medication';
 import { MedicationDraft, MedicationRequestBody } from '../models/MedicationDraft';
-import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
 import { MedicationApi, MedicationConflictError } from '../providers/backend/MedicationApi';
-import { apiSession } from './CareApi';
+import { apiSession, sessionClient } from './CareApi';
 
 export const NOT_GUARDIAN_MESSAGE = 'This phone is not paired as a guardian. Sign out and set it up again as a guardian.';
 
@@ -47,7 +46,7 @@ export class GuardianMedications {
     if (!isGuardianPaired()) {
       throw new ApiError(ApiErrorKind.Http, 401, 'unauthorized', NOT_GUARDIAN_MESSAGE);
     }
-    return new MedicationApi(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
+    return new MedicationApi(sessionClient());
   }
 
   async list(): Promise<Medication[]> {

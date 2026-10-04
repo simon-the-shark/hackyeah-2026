@@ -1,8 +1,9 @@
+import { common } from '@kit.AbilityKit';
 import { http } from '@kit.NetworkKit';
 import { formatClockTime } from '../models/Safety';
 import { apiSession, careApi, generateEventId, SafetyEventRequest } from '../services/CareApi';
 import { CareButtonStyle } from '../components/DesignSystem';
-import { locationSharing } from '../services/LocationSharing';
+import { SosOutcome, sosService } from '../services/SosService';
 
 const COUNTDOWN_SECONDS: number = 5;
 /** How often the sent screen checks whether a guardian has seen the SOS. */
@@ -153,25 +154,16 @@ export struct SosPage {
 
   private async send(): Promise<void> {
     if (this.sendState === 'sending' || this.sendState === 'sent') return;
+    // A queued SOS keeps its id, so retrying it now cannot alert the guardian twice.
     this.stopTimer();
     this.sentAt = Date.now();
     this.sendState = 'sending';
-    if (!apiSession.configured() || apiSession.role !== 'senior') {
-      this.sendState = 'failed';
-      return;
-    }
-    try {
-      const event = new SafetyEventRequest(this.sosEventId, 'sos');
-      const location = locationSharing.lastKnownLocation();
-      if (location !== undefined) {
-        event.location = location;
-      }
-      await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
-      this.locationAt = location !== undefined ? Date.parse(location.sampledAt) : 0;
-      this.sendState = 'sent';
+    const result = await sosService.send(this.getUIContext().getHostContext() as common.Context, this.sosEventId);
+    this.locationAt = result.locationAt;
+    this.sendState = result.outcome === SosOutcome.Sent ? 'sent' : result.outcome === SosOutcome.Queued ? 'queued' :
+      'failed';
+    if (this.sendState === 'sent') {
       this.startAckPolling();
-    } catch (error) {
-      this.sendState = 'failed';
     }
   }
 
@@ -182,7 +174,8 @@ export struct SosPage {
     if (this.cancelState === 'cancelled') {
       return 'SOS cancelled';
     }
-    return this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' : 'SOS not sent';
+    return this.sendState === 'sent' ? 'Help requested' : this.sendState === 'sending' ? 'Sending SOS' :
+      this.sendState === 'queued' ? 'SOS waiting to send' : 'SOS not sent';
   }
 
   @Builder
@@ -274,7 +267,9 @@ export struct SosPage {
         Text(this.sendState === 'sent' ? (this.seenMessage !== '' ?
           `Care service accepted your SOS at ${formatClockTime(this.sentAt)}.` :
           `Care service accepted your SOS at ${formatClockTime(this.sentAt)}. Waiting for your guardian to see it…`) :
-          this.sendState === 'sending' ? 'Please wait while we contact the care service.' : 'Could not send your SOS. Check your connection and try again.')
+          this.sendState === 'sending' ? 'Please wait while we contact the care service.' :
+          this.sendState === 'queued' ? 'The care service cannot be reached right now. Your SOS is saved on this phone and will be sent automatically when the connection returns. If you are in danger, call emergency services.' :
+          'Could not send your SOS. Check your connection and try again.')
           .fontSize(18)
           .fontColor($r('app.color.text_secondary'))
         if (this.sendState === 'sent') {
@@ -286,7 +281,7 @@ export struct SosPage {
         }
       }
 
-      Button(this.sendState === 'failed' ? 'Retry SOS' : this.sendState === 'sending' ? 'Sending SOS…' : 'Return home')
+      Button(this.sendState === 'failed' || this.sendState === 'queued' ? 'Retry SOS now' : this.sendState === 'sending' ? 'Sending SOS…' : 'Return home')
         .width('100%')
         .height(64)
         .fontSize(22)
@@ -294,7 +289,7 @@ export struct SosPage {
         .attributeModifier(new CareButtonStyle())
         .enabled(this.sendState !== 'sending')
         .onClick(() => {
-          if (this.sendState === 'failed') {
+          if (this.sendState === 'failed' || this.sendState === 'queued') {
             this.send();
           } else {
             this.navStack.pop();

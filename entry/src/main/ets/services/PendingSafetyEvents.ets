@@ -1,10 +1,14 @@
 import { common } from '@kit.AbilityKit';
 import { http } from '@kit.NetworkKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { isPermanentRejection } from '../providers/backend/BackendClient';
 import { apiSession, careApi, SafetyEventRequest } from './CareApi';
 import { SafePreferences } from './SafePreferences';
 
 const STORE_NAME = 'carely_pending_events';
 const QUEUE_KEY = 'queue';
+const DOMAIN = 0x0000;
+const TAG = 'PendingSafetyEvents';
 
 class QueuedSafetyEvent {
   seniorId: string;
@@ -23,7 +27,7 @@ class QueuedSafetyEvent {
 }
 
 /**
- * Holds safe-area exit events that could not reach the care service and replays
+ * Holds SOS and safe-area events that could not reach the care service and replays
  * them later. Event ids are reused, so a replay that the backend already accepted
  * is deduplicated instead of alerting the guardian twice.
  */
@@ -91,8 +95,17 @@ export class PendingSafetyEvents {
         const item = queue[0];
         const event = new SafetyEventRequest(item.id, item.type, item.occurredAt);
         if (item.locationJson !== '') event.location = JSON.parse(item.locationJson) as Object;
-        // Stop on the first failure: never deliver a re-entry ahead of its exit.
-        await careApi.request(`/seniors/${apiSession.seniorId}/events`, http.RequestMethod.POST, event);
+        try {
+          await careApi.request(`/seniors/${encodeURIComponent(apiSession.seniorId)}/events`,
+            http.RequestMethod.POST, event);
+        } catch (error) {
+          // Stop on a retryable failure: never deliver a re-entry ahead of its exit. An event the backend
+          // rejects for good is dropped, or it would block every later alert.
+          if (!isPermanentRejection(error as Object)) {
+            throw error as Error;
+          }
+          hilog.warn(DOMAIN, TAG, 'Dropping rejected %{public}s event', item.type);
+        }
         queue.shift();
         await this.writeQueue(context, queue);
       }

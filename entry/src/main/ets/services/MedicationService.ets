@@ -2,7 +2,7 @@ import { common } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { CatalogProduct, DoseOccurrence, DoseRecord, DoseStatus, Medication } from '../models/Medication';
 import { DoseOutboxStore } from '../platform/DoseOutboxStore';
-import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
+import { ApiError, ApiErrorKind, isPermanentRejection } from '../providers/backend/BackendClient';
 import { MedicationApi } from '../providers/backend/MedicationApi';
 import { mergeDoseRecords, startOfDay } from './MedicationSchedule';
 import { SeniorAccount, seniorAccount } from './SeniorAccount';
@@ -25,30 +25,32 @@ function isNetworkError(err: Object): boolean {
   return err instanceof ApiError && err.kind === ApiErrorKind.Network;
 }
 
-// A rejected record that can never succeed (for example its medication was deleted) is dropped;
-// server errors and timeouts are retried later.
-function isPermanentRejection(err: Object): boolean {
-  return err instanceof ApiError && err.kind === ApiErrorKind.Http && err.status >= 400 && err.status < 500 &&
-    err.status !== 401 && err.status !== 408 && err.status !== 429;
-}
-
 // Senior medication data from the backend, with dose answers queued on the device while offline.
 export class MedicationService {
   private readonly account: SeniorAccount;
   private readonly api: MedicationApi;
   private readonly outbox: DoseOutboxStore;
-  private pending: DoseRecord[];
+  private pending: DoseRecord[] = [];
+  // Resolves once the answers saved on this phone by an earlier run are back in `pending`.
+  private readonly restored: Promise<void>;
   private delivering: Promise<void> | undefined = undefined;
 
   constructor(account: SeniorAccount, outbox: DoseOutboxStore) {
     this.account = account;
     this.api = new MedicationApi(account.client);
     this.outbox = outbox;
-    this.pending = outbox.load();
+    this.restored = outbox.load().then((saved: DoseRecord[]) => {
+      this.pending = saved.concat(this.pending);
+    });
+  }
+
+  belongsTo(account: SeniorAccount): boolean {
+    return this.account === account;
   }
 
   async loadToday(now: Date): Promise<MedicationOverview> {
     const seniorId = await this.currentSeniorId();
+    await this.restored;
     await this.deliverPending();
     const medications = await this.api.medications(seniorId);
     const server = await this.api.doseRecords(seniorId, startOfDay(now));
@@ -80,10 +82,18 @@ export class MedicationService {
     return this.account.currentSeniorId();
   }
 
+  // Throws when the answer could not be stored on the phone, so the senior is asked to try again.
   private async enqueue(record: DoseRecord): Promise<void> {
+    await this.restored;
     if (!this.pending.some((queued: DoseRecord) => queued.occurrenceId === record.occurrenceId)) {
+      const previous = this.pending;
       this.pending = this.pending.concat([record]);
-      await this.outbox.save(this.pending);
+      try {
+        await this.outbox.save(this.pending);
+      } catch (err) {
+        this.pending = previous;
+        throw new Error('The server cannot be reached and this phone could not save your answer.');
+      }
     }
   }
 
@@ -113,6 +123,7 @@ export class MedicationService {
       try {
         await this.api.recordDose(seniorId, record);
       } catch (err) {
+        // A record that can never succeed (for example its medication was deleted) is dropped.
         if (isPermanentRejection(err as Object)) {
           hilog.warn(LOG_DOMAIN, LOG_TAG, `Dropping rejected dose record: ${(err as ApiError).code}`);
         } else {
@@ -124,19 +135,24 @@ export class MedicationService {
     // Keep answers queued by recordDose while this batch was being delivered.
     const queuedMeanwhile = this.pending.filter((record: DoseRecord) => batch.indexOf(record) < 0);
     this.pending = remaining.concat(queuedMeanwhile);
-    await this.outbox.save(this.pending);
+    try {
+      await this.outbox.save(this.pending);
+    } catch (err) {
+      // Delivered answers are deduplicated by the backend, so a stale outbox only causes a harmless resend.
+      hilog.warn(LOG_DOMAIN, LOG_TAG, 'Could not update the dose outbox after delivery');
+    }
   }
 }
 
 let sharedService: MedicationService | undefined = undefined;
 
-// Undefined until this phone is paired with a Carely care plan.
+// Undefined until this phone is paired with a Carely care plan; rebuilt when the pairing changes.
 export function medicationService(context: common.Context): MedicationService | undefined {
-  if (sharedService === undefined) {
-    const account = seniorAccount();
-    if (account !== undefined) {
-      sharedService = new MedicationService(account, new DoseOutboxStore(context));
-    }
+  const account = seniorAccount();
+  if (account === undefined) {
+    sharedService = undefined;
+  } else if (sharedService === undefined || !sharedService.belongsTo(account)) {
+    sharedService = new MedicationService(account, new DoseOutboxStore(context));
   }
   return sharedService;
 }

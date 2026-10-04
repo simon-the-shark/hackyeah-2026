@@ -16,7 +16,7 @@ export function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-// Times are interpreted in the device's time zone; see Medication.timezone.
+// Times are interpreted in the device's time zone, which must match the care time zone (see DeviceTimeZone).
 export function todaysDoses(medications: Medication[], today: Date): DoseOccurrence[] {
   const day = dateKey(today);
   const doses: DoseOccurrence[] = [];

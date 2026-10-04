@@ -1,6 +1,7 @@
 import { BusinessError } from '@kit.BasicServicesKit';
 import { http } from '@kit.NetworkKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
+import { isPermanentRejectionStatus } from '../../models/Delivery';
 import { BackendConfig } from './BackendConfig';
 
 const LOG_DOMAIN = 0x0000;
@@ -64,6 +65,11 @@ class RawResponse {
 
 class EmptyResponse {}
 
+// A rejection that can never succeed on retry; queued deliveries drop it instead of retrying forever.
+export function isPermanentRejection(err: Object): boolean {
+  return err instanceof ApiError && err.kind === ApiErrorKind.Http && isPermanentRejectionStatus(err.status);
+}
+
 // For a 2xx response whose payload does not have the documented shape.
 export function invalidResponse(what: string): ApiError {
   return new ApiError(ApiErrorKind.InvalidResponse, 200, '', `The server sent an unreadable ${what}.`);
@@ -122,7 +128,7 @@ export class BackendClient {
     try {
       return JSON.parse(response.text) as T;
     } catch (err) {
-      hilog.error(LOG_DOMAIN, LOG_TAG, `${method} ${path} returned invalid JSON`);
+      hilog.error(LOG_DOMAIN, LOG_TAG, '%{public}s %{private}s returned invalid JSON', method, path);
       throw new ApiError(ApiErrorKind.InvalidResponse, response.status, '',
         'The server sent a response this app cannot read.');
     }
@@ -154,7 +160,7 @@ export class BackendClient {
       response = await request.request(`${this.config.baseUrl}${path}`, options);
     } catch (err) {
       const error = err as BusinessError;
-      hilog.warn(LOG_DOMAIN, LOG_TAG, `${method} ${path} failed: ${error.code} ${error.message}`);
+      hilog.warn(LOG_DOMAIN, LOG_TAG, '%{public}s %{private}s failed: %{public}d', method, path, error.code);
       throw new ApiError(ApiErrorKind.Network, 0, '', 'Cannot reach the Carely server.');
     } finally {
       request.destroy();
@@ -185,7 +191,8 @@ export class BackendClient {
     } catch (err) {
       // Not the backend's JSON error shape (for example a proxy page); keep the generic message.
     }
-    hilog.warn(LOG_DOMAIN, LOG_TAG, `${method} ${path} -> ${status} ${code}`);
+    // The path carries senior, report and medicine identifiers, so it stays private in the system log.
+    hilog.warn(LOG_DOMAIN, LOG_TAG, '%{public}s %{private}s -> %{public}d %{public}s', method, path, status, code);
     return new ApiError(ApiErrorKind.Http, status, code, message, extra);
   }
 }

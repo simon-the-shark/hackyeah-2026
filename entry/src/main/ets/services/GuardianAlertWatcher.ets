@@ -117,6 +117,8 @@ export class GuardianAlertWatcher {
   private notifiedKeys: string[] = [];
   /** Notifications posted by this process, so they can be withdrawn once acknowledged. */
   private readonly shownKeys: Set<string> = new Set<string>();
+  /** Bumped on sign-out, so a poll that was already in flight publishes and stores nothing. */
+  private generation: number = 0;
 
   start(context: common.UIAbilityContext): void {
     this.context = context;
@@ -137,6 +139,7 @@ export class GuardianAlertWatcher {
 
   /** Called on sign-out: forgets the baseline, clears the banner and withdraws this app's notifications. */
   async reset(context: common.Context): Promise<void> {
+    this.generation++;
     this.notifiedKeys = [];
     this.baselineSet = false;
     this.reportBaselineSet = false;
@@ -170,13 +173,19 @@ export class GuardianAlertWatcher {
       return;
     }
     this.polling = true;
+    const generation = this.generation;
     try {
       await this.load(context);
       const inbox = await careApi.request(`/alerts?unacknowledged=true&limit=${INBOX_LIMIT}`,
         http.RequestMethod.GET) as GuardianInbox;
+      if (!this.isCurrent(generation)) {
+        return;
+      }
       const items = Array.isArray(inbox.items) ? inbox.items : [];
-      await this.process(context, items);
-      await this.pollReports(context);
+      await this.process(context, items, generation);
+      if (this.isCurrent(generation)) {
+        await this.pollReports(context, generation);
+      }
     } catch (error) {
       // Network or server failure: keep the last known banner and try again on the next tick.
       hilog.warn(DOMAIN, TAG, 'Alert poll failed');
@@ -185,10 +194,19 @@ export class GuardianAlertWatcher {
     }
   }
 
-  private async process(context: common.UIAbilityContext, items: GuardianInboxAlert[]): Promise<void> {
+  /** False once the guardian signed out (or paired again) after the poll `generation` started. */
+  private isCurrent(generation: number): boolean {
+    return generation === this.generation && apiSession.configured() && apiSession.role === 'guardian';
+  }
+
+  private async process(context: common.UIAbilityContext, items: GuardianInboxAlert[],
+    generation: number): Promise<void> {
     const firstRun = !this.baselineSet;
     let changed = firstRun;
     for (const item of items) {
+      if (!this.isCurrent(generation)) {
+        return;
+      }
       if (!this.notifiedKeys.includes(item.id)) {
         this.remember(item.id);
         changed = true;
@@ -219,6 +237,9 @@ export class GuardianAlertWatcher {
       }
     }
 
+    if (!this.isCurrent(generation)) {
+      return;
+    }
     this.publishBanner(items.find((item: GuardianInboxAlert) => item.kind === 'sos' && !present(item.cancelledAt)));
     this.baselineSet = true;
     if (changed) {
@@ -255,7 +276,7 @@ export class GuardianAlertWatcher {
     }
   }
 
-  private async pollReports(context: common.UIAbilityContext): Promise<void> {
+  private async pollReports(context: common.UIAbilityContext, generation: number): Promise<void> {
     const seniorId = apiSession.seniorId;
     let list: GuardianReportList;
     try {
@@ -263,6 +284,9 @@ export class GuardianAlertWatcher {
         http.RequestMethod.GET) as GuardianReportList;
     } catch (error) {
       hilog.warn(DOMAIN, TAG, 'Report poll failed');
+      return;
+    }
+    if (!this.isCurrent(generation)) {
       return;
     }
     const firstRun = !this.reportBaselineSet;
@@ -275,8 +299,11 @@ export class GuardianAlertWatcher {
       this.remember(key);
       changed = true;
       if (!firstRun && Date.now() - Date.parse(item.createdAt) < REPORT_NOTIFY_WINDOW_MS) {
-        await this.notifyReport(context, item);
+        await this.notifyReport(context, item, generation);
       }
+    }
+    if (!this.isCurrent(generation)) {
+      return;
     }
     this.reportBaselineSet = true;
     if (changed) {
@@ -284,8 +311,12 @@ export class GuardianAlertWatcher {
     }
   }
 
-  private async notifyReport(context: common.UIAbilityContext, item: GuardianReportItem): Promise<void> {
+  private async notifyReport(context: common.UIAbilityContext, item: GuardianReportItem,
+    generation: number): Promise<void> {
     const name = await this.pairedSeniorName();
+    if (!this.isCurrent(generation)) {
+      return;
+    }
     const attention = item.structured?.attention;
     const needsAttention = attention === 'soon' || attention === 'urgent';
     const notification = new LocalAlertNotification(`report:${item.id}`,

@@ -9,8 +9,7 @@ import {
   withRecordedDoses
 } from '../models/CareOverview';
 import { ApiError, ApiErrorKind, BackendClient, invalidResponse } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
-import { apiSession } from './CareApi';
+import { apiSession, sessionClient } from './CareApi';
 import { guardianSessionReady, NOT_GUARDIAN_MESSAGE } from './GuardianContactsService';
 
 /** The backend accepts at most 7 days per `/dose-schedule` request. */
@@ -51,7 +50,7 @@ export class GuardianOverview {
     if (!guardianSessionReady()) {
       throw new ApiError(ApiErrorKind.Http, 403, 'forbidden', NOT_GUARDIAN_MESSAGE);
     }
-    return new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token));
+    return sessionClient();
   }
 
   private senior(): string {

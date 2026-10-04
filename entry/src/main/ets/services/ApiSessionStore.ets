@@ -5,6 +5,9 @@ import { BACKEND_BASE_URL } from '../providers/backend/BackendUrl';
 import { guardianAlertWatcher } from './GuardianAlertWatcher';
 import { locationSharing } from './LocationSharing';
 import { PAIRING_EXPIRED_KEY } from '../providers/backend/BackendClient';
+import { ContactsCacheStore } from '../platform/ContactsCacheStore';
+import { DoseOutboxStore } from '../platform/DoseOutboxStore';
+import { wellbeingCheckIn } from './WellbeingService';
 
 const STORE_NAME = 'carely_api_session';
 /**
@@ -56,6 +59,10 @@ export class ApiSessionStore {
     await this.store.clear(context);
     await locationCleanup;
     await guardianAlertWatcher.reset(context);
+    // None of these stores is tied to a senior, so they must not outlive the pairing.
+    await new ContactsCacheStore(context).clear();
+    await new DoseOutboxStore(context).clear();
+    await wellbeingCheckIn.clearLocal(context);
   }
 }
 

@@ -2,6 +2,7 @@ import alertLocationTest from './AlertLocation.test';
 import careOverviewTest from './CareOverview.test';
 import contactFormTest from './ContactForm.test';
 import contactListTest from './ContactList.test';
+import deliveryTest from './Delivery.test';
 import greetingTest from './Greeting.test';
 import geofenceTrackerTest from './GeofenceTracker.test';
 import localUnitTest from './LocalUnit.test';
@@ -17,6 +18,7 @@ export default function testsuite() {
   careOverviewTest();
   contactFormTest();
   contactListTest();
+  deliveryTest();
   greetingTest();
   geofenceTrackerTest();
   localUnitTest();

@@ -1,14 +1,13 @@
 import { PAIRING_EXPIRED_DETAIL } from './BackendErrors';
 import { ageMs, HeartRateAlertSummary, WatchVitalsSnapshot } from '../models/WatchVitals';
-import { ApiError, ApiErrorKind, BackendClient } from '../providers/backend/BackendClient';
-import { BackendConfig } from '../providers/backend/BackendConfig';
+import { ApiError, ApiErrorKind } from '../providers/backend/BackendClient';
 import {
   RemoteDeviceStatus,
   RemoteHeartRateAlert,
   RemoteHeartRateSample,
   WatchVitalsApi
 } from '../providers/backend/WatchVitalsApi';
-import { apiSession } from './CareApi';
+import { apiSession, sessionClient } from './CareApi';
 import { guardianSessionReady, NOT_GUARDIAN_MESSAGE } from './GuardianContactsService';
 
 /** The trend shown to the guardian. */
@@ -85,7 +84,7 @@ export class GuardianWatchVitals {
     if (!guardianSessionReady()) {
       throw new ApiError(ApiErrorKind.Http, 403, 'forbidden', NOT_GUARDIAN_MESSAGE);
     }
-    return new WatchVitalsApi(new BackendClient(new BackendConfig(apiSession.baseUrl, apiSession.token)));
+    return new WatchVitalsApi(sessionClient());
   }
 }
 

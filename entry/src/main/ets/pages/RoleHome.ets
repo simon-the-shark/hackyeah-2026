@@ -30,6 +30,10 @@ export struct RoleHome {
   @State tabRefresh: number = 0;
   @State private seniorName: string = '';
   @StorageProp(PAIRING_EXPIRED_KEY) private pairingExpired: boolean = false;
+  /** False while another page (SOS, Settings…) covers this one, so tabs pause the microphone and polling. */
+  @State private pageShown: boolean = true;
+  /** Set by EntryAbility; false while Carely is in the background. */
+  @StorageProp('appForeground') private appForeground: boolean = true;
 
   private open(feature: Feature): void {
     if (feature.id === 'sign-out') {
@@ -246,6 +250,12 @@ export struct RoleHome {
   }
 
   /** Content of a bottom-bar tab; features without a screen yet show a placeholder. */
+  /** The tab is selected and actually on screen. */
+  private tabVisible(id: string): boolean {
+    return this.pageShown && this.appForeground && this.selectedTab > 0 &&
+      this.profile.tabs[this.selectedTab - 1].id === id;
+  }
+
   @Builder
   tabContent(feature: Feature) {
     if (feature.id === 'alerts') {
@@ -261,12 +271,12 @@ export struct RoleHome {
     } else if (feature.id === 'wellbeing') {
       WellbeingCheckIn({
         refreshKey: this.tabRefresh,
-        visible: this.selectedTab > 0 && this.profile.tabs[this.selectedTab - 1].id === 'wellbeing'
+        visible: this.tabVisible('wellbeing')
       })
     } else if (feature.id === 'location') {
       GuardianLocationView({
         refreshKey: this.tabRefresh,
-        visible: this.selectedTab > 0 && this.profile.tabs[this.selectedTab - 1].id === 'location'
+        visible: this.tabVisible('location')
       })
     } else {
       FeaturePlaceholder({ feature: feature })
@@ -391,8 +401,12 @@ export struct RoleHome {
     .backgroundColor($r('app.color.page_background'))
     .hideBackButton(true)
     .onShown(() => {
+      this.pageShown = true;
       this.tabRefresh++;
       this.loadSeniorName();
+    })
+    .onHidden(() => {
+      this.pageShown = false;
     })
     .onBackPressed(() => this.navStack.size() <= 1)
   }
