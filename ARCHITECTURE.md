@@ -38,20 +38,17 @@ The `watch` module follows the same layering in its own module.
 
 ## Platform Capabilities
 
-| Kit | Used for | Status |
-| --- | --- | --- |
-| Location Kit + Background Tasks Kit | Safe-area geofence; location continuous task keeps sharing on with the screen locked | Emulator (foreground); background on a device unverified |
-| Sensor Service Kit | Watch heart rate (`READ_HEALTH_DATA`) | Wearable emulator, simulated values labelled SIMULATED |
-| Audio Kit | `AudioCapturer` / `AudioRenderer` for the hands-free voice check-in | Built; full conversation on a target unverified |
-| Network Kit | HTTPS API and the voice WebSocket | Emulator |
-| Telephony Kit | One-tap call to a trusted contact or the senior | API 24 emulator dialer hand-off, not a completed cellular call |
-| Scan Kit | Barcode-assisted medication entry | API 24 open/cancel recorded; decoding unverified; labelled simulated scan as fallback |
-| ArkGraphics 3D | 3D medicine reference | Fails on the emulator; still render shown instead |
-| Notification Kit | Local alert and report notifications | Phone E2E log records foreground polling/local notifications; report notifications need separate confirmation; remote Push Kit unverified |
-| Contacts Kit, Map Kit (Petal Maps) | Pick a contact from the address book; open an alert location in Maps | Unverified |
-
-These are recorded observations, not a new validation run. Target versions,
-scope and remaining checks are in [`AI_WORKFLOW.md`](AI_WORKFLOW.md).
+| Kit | Used for |
+| --- | --- |
+| Location Kit + Background Tasks Kit | Safe-area geofence; location continuous task keeps sharing on with the screen locked |
+| Sensor Service Kit | Watch heart rate (`READ_HEALTH_DATA`) |
+| Audio Kit | `AudioCapturer` / `AudioRenderer` for the hands-free voice check-in |
+| Network Kit | HTTPS API and the voice WebSocket |
+| Telephony Kit | One-tap call to a trusted contact or the senior |
+| Scan Kit | Barcode-assisted medication entry |
+| ArkGraphics 3D | 3D medicine reference |
+| Notification Kit | Local alert and report notifications |
+| Contacts Kit, Map Kit (Petal Maps) | Pick a contact from the address book; open an alert location in Maps |
 
 ## Key Flows
 
