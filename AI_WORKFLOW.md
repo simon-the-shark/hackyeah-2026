@@ -22,6 +22,7 @@ endpoints, or confidential prompts.
 | Cursor Agent | Composer 2.5 | SOS UX polish, pairing-aware navigation, and AI workflow logging |
 | `hmos-arkui-develop-skill` Agent Skill | Local `hackathon-skills/` | ArkUI coding rules consulted for the pairing-code fix |
 | Claude Code | Claude Opus 5.5 (with a forked backend subagent) | Wellbeing check-in chat: OpenAI integration, senior and guardian screens, emulator validation |
+| Cursor Agent | Grok 4.7 | Senior wellbeing screen: remove the summary removal button |
 
 ## Important Prompts And Instructions
 
@@ -126,6 +127,7 @@ than date alone because multiple entries often share a calendar day.
 | 2026-10-04 | OpenCode / `openai/gpt-6-luna` | Skip the Daily check-in introduction | Removed the Wellbeing intro/explainer screen; opening the tab now starts a new check-in or resumes an open one directly, requesting microphone access only while the tab is visible. Startup/unavailable states retain retry guidance. | `./scripts/build-hap.sh` passed for phone and watch HAPs; `git diff --check` passed. No emulator runtime check. |
 | 2026-10-04 | Cursor Agent / Composer 2.5 | Re-sort the AI workflow work log using git commit history | Mapped each work-log row to its implementing commit (or first `AI_WORKFLOW.md` pickaxe match), ordered by `git log --reverse`, and fixed same-day mis-ordering (for example planned-trips removal and wellbeing intro placement). Updated the ordering note; refreshed the earlier sort entry’s description. | All 72 historical rows preserved; `git diff --check` passed. Documentation only. |
 | 2026-10-04 | Claude Code / Claude Opus 5.5 | Hide the wellbeing summary from the senior after a check-in; only the guardian should read it (user request) | The senior's finished check-in screen now only confirms that the summary was sent to the guardian. The summary text, ratings and attention label are no longer shown there. The senior can still remove the summary. Updated the privacy wording in `README.md`, `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and this file. | `./scripts/build-hap.sh` passed. Installed on the emulators; the finished check-in screen was not reached on an emulator because that needs a full spoken conversation. |
+| 2026-10-04 | Cursor Agent / Grok 4.7 | Remove the "Remove this summary" button from the senior wellbeing screen (user request) | The finished check-in screen now only confirms that the summary was sent and offers "Start a new check-in". The senior removal flow on that screen is gone. Privacy wording in `README.md`, `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and this file no longer says the senior can remove the summary. The guardian still sees a report that was withdrawn earlier. | `./scripts/build-hap.sh` passed. Not checked on an emulator. |
 
 ## Workflow
 
@@ -265,7 +267,7 @@ handled:
   the conversation. The transcript is deleted from the server once the summary
   exists; responses use `store: false`. Push notifications never contain the
   summary or health details. Only the guardian reads the summary; the senior
-  sees a confirmation that it was sent and can remove it. Account deletion removes sessions and reports.
+  sees a confirmation that it was sent. Account deletion removes sessions and reports.
 - **Failure behavior:** Any OpenAI failure ends the voice connection with
   `assistant_unavailable`; the check-in stays open and Continue talking
   resumes it. A summary that

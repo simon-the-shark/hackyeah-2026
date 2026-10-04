@@ -49,8 +49,7 @@ function describeLiveEnd(code: string): string {
  * The senior's Wellbeing tab: a short spoken check-in with Carely. The senior just talks; the
  * backend relays the conversation to the voice model, notices when they have finished speaking, and
  * writes a summary for the guardian when Carely says goodbye. This screen shows the transcript and
- * confirms the summary was sent; only the guardian reads it. The senior can still remove it. SOS
- * never depends on this screen.
+ * confirms the summary was sent; only the guardian reads it. SOS never depends on this screen.
  */
 @Component
 export struct WellbeingCheckIn {
@@ -72,9 +71,6 @@ export struct WellbeingCheckIn {
   /** The conversation is running: the microphone streams and Carely answers aloud. */
   @State private live: boolean = false;
   @State private liveState: LiveState = LiveState.Connecting;
-  @State private report: WellbeingReport | undefined = undefined;
-  @State private removed: boolean = false;
-  @State private removing: boolean = false;
   private liveSession: LiveVoiceSession | undefined = undefined;
   private loadingState: boolean = false;
   private liveStarting: boolean = false;
@@ -171,8 +167,6 @@ export struct WellbeingCheckIn {
       this.sessionId = started.session.id;
       this.messages = started.messages;
       this.safetyConcern = false;
-      this.report = undefined;
-      this.removed = false;
       this.phase = Phase.Talk;
       if (this.visible) {
         this.startLive();
@@ -292,7 +286,7 @@ export struct WellbeingCheckIn {
     }
   }
 
-  /** Shows what was shared, whether the senior pressed Finish or Carely ended the conversation. */
+  /** Confirms the summary was sent, whether the senior pressed Finish or Carely ended the conversation. */
   private async completeWithReport(report: WellbeingReport | undefined): Promise<void> {
     this.sessionId = '';
     this.messages = [];
@@ -301,47 +295,8 @@ export struct WellbeingCheckIn {
       this.phase = Phase.Failed;
       return;
     }
-    this.report = report;
-    this.removed = false;
     await this.refreshDetails();
     this.phase = Phase.Done;
-  }
-
-  private confirmRemove(): void {
-    this.getUIContext().showAlertDialog({
-      title: 'Remove this summary?',
-      message: `${this.guardians} will no longer be able to read it.`,
-      autoCancel: true,
-      primaryButton: {
-        value: 'Keep it',
-        action: () => {
-        }
-      },
-      secondaryButton: {
-        value: 'Remove',
-        fontColor: $r('app.color.sos'),
-        action: () => {
-          this.remove();
-        }
-      }
-    });
-  }
-
-  private async remove(): Promise<void> {
-    const report = this.report;
-    if (report === undefined || this.removing) {
-      return;
-    }
-    this.removing = true;
-    this.notice = '';
-    try {
-      await wellbeingCheckIn.withdraw(this.context(), report.id);
-      this.removed = true;
-    } catch (error) {
-      this.notice = describeCheckInError(error as Object, 'The summary could not be removed. Please try again.');
-    } finally {
-      this.removing = false;
-    }
   }
 
   @Builder
@@ -589,17 +544,16 @@ export struct WellbeingCheckIn {
       Column({ space: 20 }) {
         Column({ space: 10 }) {
           IconBadge({
-            icon: this.removed ? $r('sys.symbol.trash') : $r('sys.symbol.checkmark_circle_fill'),
-            accent: this.removed ? $r('app.color.text_secondary') : $r('app.color.success'),
+            icon: $r('sys.symbol.checkmark_circle_fill'),
+            accent: $r('app.color.success'),
             tint: $r('app.color.surface'),
             badgeSize: 56
           })
-          Text(this.removed ? 'Summary removed' : `Summary sent to ${this.guardians}`)
+          Text(`Summary sent to ${this.guardians}`)
             .fontSize(26)
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
-          Text(this.removed ? `${this.guardians} can no longer read it.` :
-            'Thank you for checking in.')
+          Text('Thank you for checking in.')
             .fontSize(18)
             .fontColor($r('app.color.text_primary'))
             .opacity(0.85)
@@ -608,29 +562,17 @@ export struct WellbeingCheckIn {
         .padding(20)
         .alignItems(HorizontalAlign.Start)
         .borderRadius(24)
-        .backgroundColor(this.removed ? $r('app.color.surface') : $r('app.color.success_tint'))
+        .backgroundColor($r('app.color.success_tint'))
         .accessibilityGroup(true)
-
-        if (this.notice !== '') {
-          NoticeBanner({ text: this.notice })
-        }
 
         Button('Start a new check-in')
           .width('100%')
           .height(60)
           .attributeModifier(new CareButtonStyle())
           .onClick(() => {
-            this.notice = '';
             this.phase = Phase.Loading;
             this.load();
           })
-        if (!this.removed) {
-          Button(this.removing ? 'Removing…' : 'Remove this summary')
-            .width('100%')
-            .attributeModifier(new CareButtonStyle('danger-secondary'))
-            .enabled(!this.removing)
-            .onClick(() => this.confirmRemove())
-        }
       }
       .width('100%')
       .alignItems(HorizontalAlign.Start)
