@@ -182,7 +182,7 @@ on the server; the app never talks to OpenAI directly.
   (mood/energy/sleep/pain, things mentioned, attention level, 2-4 sentences)
   and sends it to the guardian automatically. The conversation itself is
   deleted from the server; only the guardian reads the summary; the senior
-  sees that it was sent and can remove it.
+  sees that it was sent.
 - Safety: the assistant never diagnoses or advises on medication. If the senior
   describes an emergency it tells them to press SOS or call 112 and the app
   shows a large SOS button; it never sends an SOS itself. A possible emergency

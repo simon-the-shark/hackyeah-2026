@@ -48,7 +48,7 @@ At least one real platform integration must be verified in the final demo.
 6. Have a short spoken wellbeing conversation with the assistant (hands-free:
    no buttons while talking). When it ends, the backend writes a summary that
    is sent to the guardian; only the guardian reads it; the senior sees
-   that it was sent and can remove it.
+   that it was sent.
 
 ## Acceptance Checks
 

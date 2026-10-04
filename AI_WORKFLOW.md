@@ -27,7 +27,7 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 | Tool | Model or source | Role in the project |
 | --- | --- | --- |
 | Claude Code | Claude Opus 5.5, Claude Sonnet 5.5 (incl. forked subagents) | Backend, wellbeing voice check-in, navigation, end-to-end emulator testing and fixes, documentation |
-| Cursor Agent | Claude Opus 5.5, Composer 2.5 | Navigation baseline, SOS UX, pairing-aware navigation |
+| Cursor Agent | Claude Opus 5.5, Composer 2.5, Grok 4.7 | Navigation baseline, SOS UX, pairing-aware navigation, senior wellbeing screen |
 | OpenCode | `openai/gpt-5.6-terra`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna` | Project setup, planning, deployment fix, 3D medication viewer, accessibility/design-system audit |
 | Prelint | GitHub app (prelint.com) | Automated AI code and product-decision review on pull requests |
 | Context7 MCP | Context7 | Current HarmonyOS and third-party library documentation |
@@ -101,7 +101,7 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
   the conversation. The transcript is deleted from the server once the summary
   exists; responses use `store: false`. Push notifications never contain the
   summary or health details. Only the guardian reads the summary; the senior
-  sees a confirmation that it was sent and can remove it. Account deletion removes sessions and reports.
+  sees a confirmation that it was sent. Account deletion removes sessions and reports.
 - **Failure behavior:** Any OpenAI failure ends the voice connection with
   `assistant_unavailable`; the check-in stays open and Continue talking
   resumes it. A summary that
