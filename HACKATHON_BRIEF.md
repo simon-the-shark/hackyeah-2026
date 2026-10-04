@@ -47,8 +47,8 @@ At least one real platform integration must be verified in the final demo.
    demonstrate barcode-assisted entry with a known sample medication.
 6. Have a short spoken wellbeing conversation with the assistant (hands-free:
    no buttons while talking). When it ends, the backend writes a summary that
-   is sent to the guardian; the senior sees exactly what was shared and can
-   remove it.
+   is sent to the guardian; only the guardian reads it; the senior sees
+   that it was sent and can remove it.
 
 ## Acceptance Checks
 

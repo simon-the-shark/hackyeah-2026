@@ -125,6 +125,7 @@ than date alone because multiple entries often share a calendar day.
 | 2026-10-04 | Claude Code / Claude Opus 5.5, Context7 MCP (HarmonyOS safe-area guide) | Fix the bottom navigation bar: a strip of different color and empty space below it; keep it clear of the system gesture bar and improve its look (user request) | Replaced the built-in `Tabs` bar with a custom bottom bar. Its surface background reaches behind the system gesture area via `expandSafeArea`, while the items stay above it. The selected tab is now a compact tinted pill behind the icon instead of a full-height bordered box, labels went from 11 to 13 fp, and the bar is 72 vp instead of 88 vp. | `./scripts/build-hap.sh` passed. Installed on the API 23 emulator (senior role): the bar background reaches the bottom edge with no strip of different color, the items sit above the gesture indicator, and switching tabs works. Guardian role (5 tabs) and dark mode were not checked on the emulator. |
 | 2026-10-04 | OpenCode / `openai/gpt-6-luna` | Skip the Daily check-in introduction | Removed the Wellbeing intro/explainer screen; opening the tab now starts a new check-in or resumes an open one directly, requesting microphone access only while the tab is visible. Startup/unavailable states retain retry guidance. | `./scripts/build-hap.sh` passed for phone and watch HAPs; `git diff --check` passed. No emulator runtime check. |
 | 2026-10-04 | Cursor Agent / Composer 2.5 | Re-sort the AI workflow work log using git commit history | Mapped each work-log row to its implementing commit (or first `AI_WORKFLOW.md` pickaxe match), ordered by `git log --reverse`, and fixed same-day mis-ordering (for example planned-trips removal and wellbeing intro placement). Updated the ordering note; refreshed the earlier sort entry’s description. | All 72 historical rows preserved; `git diff --check` passed. Documentation only. |
+| 2026-10-04 | Claude Code / Claude Opus 5.5 | Hide the wellbeing summary from the senior after a check-in; only the guardian should read it (user request) | The senior's finished check-in screen now only confirms that the summary was sent to the guardian. The summary text, ratings and attention label are no longer shown there. The senior can still remove the summary. Updated the privacy wording in `README.md`, `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and this file. | `./scripts/build-hap.sh` passed. Installed on the emulators; the finished check-in screen was not reached on an emulator because that needs a full spoken conversation. |
 
 ## Workflow
 
@@ -263,8 +264,8 @@ handled:
   starting that a summary goes to the guardian and that the guardian does not see
   the conversation. The transcript is deleted from the server once the summary
   exists; responses use `store: false`. Push notifications never contain the
-  summary or health details. The senior sees exactly what was shared and can
-  remove it. Account deletion removes sessions and reports.
+  summary or health details. Only the guardian reads the summary; the senior
+  sees a confirmation that it was sent and can remove it. Account deletion removes sessions and reports.
 - **Failure behavior:** Any OpenAI failure ends the voice connection with
   `assistant_unavailable`; the check-in stays open and Continue talking
   resumes it. A summary that

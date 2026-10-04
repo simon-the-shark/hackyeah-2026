@@ -2,11 +2,8 @@ import { common } from '@kit.AbilityKit';
 import { IconBadge, NoticeBanner } from '../components/Common';
 import { CareButtonStyle } from '../components/DesignSystem';
 import { LoadingMessage, StatusMessage } from '../components/StatusMessage';
-import { WellbeingReportView } from '../components/WellbeingReportView';
 import {
   AssistantInfo,
-  Attention,
-  attentionLabel,
   ChatMessage,
   ChatRole,
   guardianNamesText,
@@ -51,8 +48,9 @@ function describeLiveEnd(code: string): string {
 /**
  * The senior's Wellbeing tab: a short spoken check-in with Carely. The senior just talks; the
  * backend relays the conversation to the voice model, notices when they have finished speaking, and
- * writes a summary for the guardian when Carely says goodbye. This screen shows the transcript,
- * exactly what was shared, and lets the senior remove it. SOS never depends on this screen.
+ * writes a summary for the guardian when Carely says goodbye. This screen shows the transcript and
+ * confirms the summary was sent; only the guardian reads it. The senior can still remove it. SOS
+ * never depends on this screen.
  */
 @Component
 export struct WellbeingCheckIn {
@@ -601,7 +599,7 @@ export struct WellbeingCheckIn {
             .fontWeight(FontWeight.Bold)
             .fontColor($r('app.color.text_primary'))
           Text(this.removed ? `${this.guardians} can no longer read it.` :
-            'Thank you for checking in. Below is exactly what was shared.')
+            'Thank you for checking in.')
             .fontSize(18)
             .fontColor($r('app.color.text_primary'))
             .opacity(0.85)
@@ -612,27 +610,6 @@ export struct WellbeingCheckIn {
         .borderRadius(24)
         .backgroundColor(this.removed ? $r('app.color.surface') : $r('app.color.success_tint'))
         .accessibilityGroup(true)
-
-        if (this.report !== undefined && !this.removed) {
-          Column({ space: 14 }) {
-            Text(`What ${this.guardians} will read`)
-              .fontSize(17)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_secondary'))
-            if (this.report.attention !== Attention.None) {
-              Text(`Carely marked it: ${attentionLabel(this.report.attention)}.`)
-                .fontSize(17)
-                .fontWeight(FontWeight.Medium)
-                .fontColor($r('app.color.text_primary'))
-            }
-            WellbeingReportView({ report: this.report })
-          }
-          .width('100%')
-          .padding(16)
-          .alignItems(HorizontalAlign.Start)
-          .borderRadius(20)
-          .backgroundColor($r('app.color.surface'))
-        }
 
         if (this.notice !== '') {
           NoticeBanner({ text: this.notice })

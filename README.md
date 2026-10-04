@@ -122,8 +122,8 @@ model notices when the senior has finished speaking, so nothing else is pressed.
 When Carely says goodbye, or the senior presses Finish, the backend writes a
 summary and sends it to the guardian, who reads it under Home, Insights,
 Wellbeing Reports (or from the notification while Carely is open). The guardian
-sees the summary, not the conversation; the senior sees what was shared and can
-remove it.
+sees the summary, not the conversation; the senior only sees that it was
+sent and can remove it.
 
 The backend calls OpenAI and needs `OPENAI_API_KEY` in its runtime environment
 (never in the app or the repository). Without a key the check-in shows as
