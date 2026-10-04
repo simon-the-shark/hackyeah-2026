@@ -222,6 +222,7 @@ export struct ContactsList {
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .onRefreshing(() => {
+      this.refreshing = true;
       this.load();
     })
   }

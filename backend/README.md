@@ -19,7 +19,6 @@ cp .env.example .env          # defaults work with docker-compose; PUSH_PROVIDER
 docker compose up -d          # Postgres 17 on :5432 (databases elder_care, elder_care_test)
 pnpm install
 pnpm db:migrate
-pnpm db:seed                  # synthetic demo senior/guardian; prints device tokens once
 pnpm dev                      # http://localhost:8787
 ```
 

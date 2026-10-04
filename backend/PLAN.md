@@ -56,7 +56,7 @@ backend/
     index.ts            # serve() entry
     app.ts              # createApp({ db, push, clock }), so tests can inject deps
     config.ts           # zod-parsed env (DATABASE_URL, PORT, PUSH_PROVIDER, PUSH_KIT_*)
-    db/schema.ts  db/client.ts  db/migrate.ts  db/seed.ts   # seed = synthetic demo senior/guardian/catalog
+    db/schema.ts  db/client.ts  db/migrate.ts
     auth/tokens.ts  auth/middleware.ts        # opaque bearer tokens, sha256-hashed in DB
     push/provider.ts  push/harmony-push-kit.ts  push/log-provider.ts
     services/alerts.ts      # createAlertFromEvent + notify guardians (single place)
@@ -130,12 +130,12 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 **README rule (applies to every step, not only step 7):** `backend/README.md` is created in step 1. Any step that changes setup, env vars, scripts, migrations, endpoints, request/response shapes, auth or error codes updates the README **in the same commit**. The README's API section is the contract the mobile agent integrates against. Breaking changes, meaning a removed or renamed field or endpoint or a changed semantic, also get a dated entry in a "Breaking changes" section at the end of the README, so the mobile side can track them.
 
 1. Scaffold: `pnpm init`, deps, tsconfig (ESM, strict), docker-compose, `.env.example`, `/health`.
-2. Drizzle schema, `drizzle-kit generate`, migrate script, seed with synthetic data.
+2. Drizzle schema, `drizzle-kit generate`, and migrate script.
 3. Auth, pairing, devices, `/me`.
 4. P0: safe area, events (idempotent), alerts service, push providers, ack, status heartbeat, watchdog.
 5. P1: contacts, medications plus doses, catalog, reports.
 6. P2: trips plus watchdog window check.
-7. README final pass: check that setup (`docker compose up -d`, `pnpm i`, `pnpm db:migrate`, `pnpm db:seed`, `pnpm dev`), the note on how the emulator reaches the host (host LAN IP or `hdc rport`), and the curl examples still match the code.
+7. README final pass: check that setup (`docker compose up -d`, `pnpm i`, `pnpm db:migrate`, `pnpm dev`), the note on how the emulator reaches the host (host LAN IP or `hdc rport`), and the curl examples still match the code.
 8. Docs HarmonyOS switch plus `AI_WORKFLOW.md` update.
 
 ## Verification

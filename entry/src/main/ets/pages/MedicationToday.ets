@@ -313,6 +313,7 @@ export struct MedicationToday {
       .edgeEffect(EdgeEffect.Spring, { alwaysEnabled: true })
     }
     .onRefreshing(() => {
+      this.refreshing = true;
       this.load();
     })
   }

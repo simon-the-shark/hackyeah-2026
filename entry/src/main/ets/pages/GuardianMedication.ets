@@ -269,6 +269,7 @@ export struct GuardianMedicationList {
     .width('100%')
     .height('100%')
     .onRefreshing(() => {
+      this.refreshing = true;
       this.reload();
     })
   }
