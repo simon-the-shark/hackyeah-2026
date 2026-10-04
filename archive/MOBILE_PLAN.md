@@ -11,8 +11,8 @@ priorities and acceptance goals below are not claims of completed validation.
 As of 2026-10-04, phone and watch modules are implemented and builds are recorded.
 API 23 installation/UI checks and API 24 phone E2E checks are recorded separately.
 The project uses compile API 24, target API 23 and compatible API 20.
-Current implementation: [`ARCHITECTURE.md`](ARCHITECTURE.md). Current evidence
-and gaps: [`AI_WORKFLOW.md`](AI_WORKFLOW.md). These take precedence over
+Current implementation: [`ARCHITECTURE.md`](../ARCHITECTURE.md). Current evidence
+and gaps: [`AI_WORKFLOW.md`](../AI_WORKFLOW.md). These take precedence over
 historical assumptions in this plan.
 
 Backend development is owned by the parallel backend agent. This plan covers

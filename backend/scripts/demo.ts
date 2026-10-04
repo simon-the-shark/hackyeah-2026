@@ -1,5 +1,5 @@
 /**
- * Deterministic demo scenario (MOBILE_PLAN.md "Deterministic Demo Script") driven through the HTTP API.
+ * Deterministic demo scenario (archive/MOBILE_PLAN.md "Deterministic Demo Script") driven through the HTTP API.
  * Every event and heartbeat is sent with source "simulated", so guardians see it labelled as a
  * simulation. Run against a dev server: `pnpm dev` (ideally PUSH_PROVIDER=log), then `pnpm demo`.
  */

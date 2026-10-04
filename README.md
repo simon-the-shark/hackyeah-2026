@@ -113,5 +113,5 @@ demo; without an OpenAI key the wellbeing assistant is unavailable.
 - [`AI_WORKFLOW.md`](AI_WORKFLOW.md): AI tools, workflow, limitations, AI feature disclosure ([full work log](docs/AI_WORK_LOG.md))
 - [`backend/README.md`](backend/README.md): backend setup and API contract
 - [`docs/BACKGROUND_LOCATION.md`](docs/BACKGROUND_LOCATION.md): background location behavior
-- [`HACKATHON_BRIEF.md`](HACKATHON_BRIEF.md), [`MOBILE_PLAN.md`](MOBILE_PLAN.md): product scope and the original plan
+- [`HACKATHON_BRIEF.md`](archive/HACKATHON_BRIEF.md), [`MOBILE_PLAN.md`](archive/MOBILE_PLAN.md): product scope and the original plan
 - [`docs/ASSET_PROVENANCE.md`](docs/ASSET_PROVENANCE.md): asset sources and unresolved permissions

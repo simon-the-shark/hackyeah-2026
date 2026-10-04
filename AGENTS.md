@@ -1,8 +1,8 @@
 # Fixed Technical Scope
 
 The selected product is an elderly-care companion with senior phone/watch
-experiences and a guardian experience. See `HACKATHON_BRIEF.md` for scope and
-`MOBILE_PLAN.md` for implementation priorities. Backend implementation is a
+experiences and a guardian experience. See `archive/HACKATHON_BRIEF.md` for
+scope and `archive/MOBILE_PLAN.md` for implementation priorities. Backend implementation is a
 separate workstream. The core development stack is fixed.
 
 ## Hackathon Submission
@@ -18,7 +18,7 @@ The final public repository must not contain credentials, signing secrets,
 personal data, tokens, or private endpoints.
 
 Required deliverables are tracked in the root `README.md`,
-`HACKATHON_BRIEF.md`, and `AI_WORKFLOW.md`. Treat
+`archive/HACKATHON_BRIEF.md`, and `AI_WORKFLOW.md`. Treat
 `https://github.com/onirodeveloper/hackyeah2026-challenge/blob/main/hackathon_challenge.md`
 as the authoritative challenge statement.
 

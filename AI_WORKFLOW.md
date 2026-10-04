@@ -13,8 +13,8 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
   fixed HarmonyOS/ArkTS stack, verify platform APIs against official docs and
   the installed SDK, never claim unverified build or device results, label
   simulations, keep the repository public-safe.
-- Plans came first: [`HACKATHON_BRIEF.md`](HACKATHON_BRIEF.md),
-  [`MOBILE_PLAN.md`](MOBILE_PLAN.md) and [`backend/PLAN.md`](backend/PLAN.md).
+- Plans came first: [`HACKATHON_BRIEF.md`](archive/HACKATHON_BRIEF.md),
+  [`MOBILE_PLAN.md`](archive/MOBILE_PLAN.md) and [`backend/PLAN.md`](backend/PLAN.md).
   Agents then implemented the app and the backend in parallel workstreams.
 - Validation used `./scripts/build-hap.sh`, ArkTS (hypium) and backend (vitest)
   tests, and selected UI flows on the DevEco HarmonyOS emulator through `hdc`
@@ -60,7 +60,7 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 ### Planning
 
 1. The team described the product and the constraints in prompts.
-2. Agents drafted `HACKATHON_BRIEF.md`, `MOBILE_PLAN.md` and `backend/PLAN.md`,
+2. Agents drafted `archive/HACKATHON_BRIEF.md`, `archive/MOBILE_PLAN.md` and `backend/PLAN.md`,
    including feasibility checks for each platform capability.
 3. The team made the product decisions, recorded as dated user decisions in the
    brief (for example, moving the wellbeing assistant from on-device AI to the

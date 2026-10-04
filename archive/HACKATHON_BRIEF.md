@@ -70,7 +70,7 @@ At least one real platform integration must be verified in the final demo.
 - Core product: Safe-area monitoring on phone/watch, SOS (watch first as a UX
   goal), medication schedule/reminders, barcode scanning, medication 3D
   references, trusted contacts with easy dialing, and a wellbeing assistant
-  with guardian reporting. `MOBILE_PLAN.md` stages delivery by feasibility.
+  with guardian reporting. `archive/MOBILE_PLAN.md` stages delivery by feasibility.
 - Changed by user decision (2026-10-03): the wellbeing assistant is a chat with
   OpenAI models through the backend instead of on-device inference. The senior
   can write or speak (speech is transcribed by OpenAI and replies can be read

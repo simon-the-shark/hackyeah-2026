@@ -6,7 +6,7 @@ make geofence or heart-rate threshold decisions: geofencing, medication reminder
 barcode scanning and 3D models stay on the device. The one exception is the
 wellbeing check-in chat, which the backend relays to OpenAI (see
 [Wellbeing check-in](#wellbeing-check-in-openai)).
-See `PLAN.md` for scope and the backend/mobile split, and `../MOBILE_PLAN.md`
+See `PLAN.md` for scope and the backend/mobile split, and `../archive/MOBILE_PLAN.md`
 for the mobile side.
 
 ## Setup

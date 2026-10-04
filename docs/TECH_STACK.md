@@ -20,7 +20,7 @@
 Status updated 2026-10-04. Selected APIs are distinct from runtime validation;
 Recorded results are in the AI work log.
 
-- Elderly-care companion; scope and priorities are in `../MOBILE_PLAN.md`.
+- Elderly-care companion; scope and priorities are in `../archive/MOBILE_PLAN.md`.
 - Senior and guardian phone experiences; a standalone foreground-only watch
   module with SOS, location reporting and heart-rate episode detection. Phone
   geofencing is implemented; independent watch geofencing is not a verified feature.

@@ -6,12 +6,12 @@ This is a historical implementation plan, updated with selected later changes.
 For the current contract and behavior use [`README.md`](README.md); for validation
 status use [`../AI_WORKFLOW.md`](../AI_WORKFLOW.md).
 
-The mobile app (ArkTS, plan in `MOBILE_PLAN.md`, owned by a parallel agent) needs a
+The mobile app (ArkTS, plan in `../archive/MOBILE_PLAN.md`, owned by a parallel agent) needs a
 backend for the cross-device parts: senior ↔ guardian pairing, guardian-managed care
 configuration, safety events (SOS / safe-area exit), guardian alerts with push delivery,
 dose adherence records and approved wellbeing reports. This plan creates `/backend`
 from scratch and implements the "Backend Coordination: Mobile Needs Only" section of
-`MOBILE_PLAN.md` as a concrete API contract.
+`../archive/MOBILE_PLAN.md` as a concrete API contract.
 
 User decisions: **Hono (latest, 4.13.x) + pnpm**, **PostgreSQL**, guardian is a **second
 role/mode in the ArkTS app** (pure JSON API, no web UI), alerts go out via **HarmonyOS
@@ -174,7 +174,7 @@ Under AGENTS.md's AI transparency rule, `AI_WORKFLOW.md` gets a Claude Code / `c
 
 ## Gap work after the first release (2026-10-03)
 
-The gaps against `MOBILE_PLAN.md` were tracked as tiers A to C, one commit each, with the README updated in the same commit:
+The gaps against `../archive/MOBILE_PLAN.md` were tracked as tiers A to C, one commit each, with the README updated in the same commit:
 
 - Provenance: `source` on events and heartbeats (`device | trace_replay | simulated`) and `measuredBy` on locations; simulated pushes are titled `[Simulation]`.
 - Heartbeats are stored per device; `monitoring_lost` needs every device stale.
