@@ -124,51 +124,26 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 
 ## AI Feature Disclosure
 
-### Wellbeing Check-in Chat (Implemented, Partly Verified)
+### Wellbeing check-in
 
-- **Purpose:** A short daily check-in chat about mood, energy, sleep, pain and
-  worries; when it ends, a summary goes to the guardian so they know how the
-  senior feels. It supports wellbeing conversations; it is not a medical tool.
-- **Model/service:** OpenAI API called only by the backend. The senior's
-  conversation is spoken through the Realtime API (`OPENAI_REALTIME_MODEL`,
-  default `gpt-realtime-2.1-mini`, voice `marin`, input transcription with
-  `OPENAI_TRANSCRIBE_MODEL`). The guardian summary uses the Responses API with a
-  strict JSON schema (`OPENAI_CHAT_MODEL`, default `gpt-6-luna`, reasoning
-  medium). Text and push-to-talk endpoints remain in the backend but the app no
-  longer uses them. The prompts are in `backend/src/assistant/prompts.ts`.
-- **Inference flow:** The phone streams microphone PCM over a WebSocket to the
-  backend → the backend relays it to the Realtime model, whose voice-activity
-  detection ends each turn → spoken reply streamed back and played; both
-  transcripts stored in the open session; tools signal a possible emergency or
-  the end of the check-in. On finish (the model's goodbye, the Finish button, or
-  20 minutes idle) the transcript is summarised into ratings, up to 5 concerns,
-  an attention level and 2-4 sentences → report stored → push to guardians.
-- **Data/privacy:** The API key stays on the server; audio passes through the
-  backend to OpenAI and is not stored. Opening the Wellbeing tab automatically
-  starts or resumes a check-in and requests microphone access if needed; there
-  is no separate pre-start consent screen. The conversation screen includes
-  sharing information, but microphone permission is not a separate consent to
-  OpenAI processing or guardian summary sharing. The transcript is deleted from
-  the server once the summary
-  exists; responses use `store: false`. Push notifications never contain the
-  summary or health details. Only the guardian reads the summary; the senior
-  sees a confirmation that it was sent. Account deletion removes sessions and reports.
-- **Failure behavior:** Any OpenAI failure ends the voice connection with
-  `assistant_unavailable`; the check-in stays open and Continue talking
-  resumes it. A summary that
-  cannot be written within 24 hours becomes a report marked "summary
-  unavailable". Without a key the check-in shows as unavailable; there is no
-  scripted fallback. SOS never depends on the assistant: on a possible
-  emergency the assistant tells the senior to press SOS or call 112, the app
-  shows a large SOS button, and the guardian gets one informational `wellbeing`
-  alert; the AI never sends an SOS itself.
-- **Limitations:** No diagnosis, medication advice or medication changes are
-  allowed by the instructions, but generated replies and summaries can still be
-  wrong or omit things; every summary is labelled as AI-written and not a
-  medical assessment.
-- **Evaluation:** Automated tests use a fake assistant (flow, limits, safety
-  alert, finish, idle fallback) and a stubbed `fetch` for the OpenAI request and
-  response handling, plus a fake Realtime socket for the relay. One real typed
-  greeting (`gpt-6-luna`) and one real spoken greeting (`gpt-realtime-2.1`) were
-  received. No systematic evaluation of factuality, missing topics, emergency wording or
-  transcription of older voices has been run yet.
+- Once a day the senior can have a short voice chat with the app about how
+  they feel: mood, sleep, pain, worries. Afterwards the guardian gets a short
+  summary. It is not a medical tool.
+- The phone sends the senior's voice to our backend, which talks to OpenAI and
+  sends the reply back. The conversation runs on `gpt-realtime-2.1-mini`; when
+  it ends, `gpt-6-luna` writes the summary and the guardian is notified.
+- The OpenAI key never leaves the server.
+- We don't keep the audio, and the transcript is deleted as soon as the
+  summary is written.
+- Only the guardian reads the summary, and notifications never include it.
+- The app asks for microphone access, but there is no separate consent screen
+  for sending the conversation to OpenAI.
+- If OpenAI stops responding, the conversation pauses and the senior can tap
+  "Continue talking" to pick it up again.
+- The SOS button works without the AI. If the senior mentions something that
+  sounds like an emergency, the assistant asks them to press SOS or call 112,
+  the app shows a large SOS button, and the guardian gets a notice. The AI never
+  sends an SOS on its own.
+- The assistant is told not to give medical advice, but its replies and
+  summaries can still be wrong or miss things, so every summary is marked as
+  AI-written.
