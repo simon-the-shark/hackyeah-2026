@@ -1,5 +1,8 @@
 # Carely Design-System Audit
 
+This records the 2026-10-03 design pass. Later UI changes are noted below;
+the original validation describes that session, not the final app's full coverage.
+
 ## Direction
 
 The phone and guardian app follows the supplied references: warm off-white page
@@ -39,9 +42,9 @@ touch behavior still require manual evaluation.
 - Settings contains one session-only Developer Mode switch. Medication setup has
   a package-confirmation checkbox and selectable dose-time chips. Safe Area
   radius choices are exclusive buttons with a visible check on the current value.
-- Guardian alerts support both pull-to-refresh and a labelled refresh button;
-  retry is available on load failure. The footer explains that automatic checks
-  happen while the app is open and that remote push is not available.
+- Guardian alerts use pull-to-refresh; the separate Refresh button was removed
+  in the 2026-10-04 UI update. Retry remains available on load failure. Automatic checks
+  happen while the app is open; live remote push remains unverified.
 - Successful connection/pairing navigates directly to the appropriate role home.
   Senior pairing credentials remain available later under Settings.
 - No web-style sidebar, general-purpose checkbox inventory, or desktop shell
@@ -49,6 +52,10 @@ touch behavior still require manual evaluation.
   the corresponding navigation surfaces.
 
 ## Validation
+
+Later API 24 E2E/fix checks exercised populated medication/contact screens and
+the static medicine fallback, as recorded in the AI work log. The manual
+observations below are preserved as the scope of the original design audit.
 
 - `./scripts/build-hap.sh` builds the phone and watch HAPs.
 - `python3 scripts/check-design-contrast.py` validates semantic palette pairs.

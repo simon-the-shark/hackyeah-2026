@@ -17,36 +17,45 @@
 
 ## Selected Product And Planned Capabilities
 
+Status updated 2026-10-04. Selected APIs are distinct from runtime validation;
+Recorded results are in the AI work log.
+
 - Elderly-care companion; scope and priorities are in `../MOBILE_PLAN.md`.
-- Senior and guardian phone experiences; smartwatch SOS and safe-area monitoring
-  subject to compatible target verification.
-- Planned platform integrations: positioning, background execution,
+- Senior and guardian phone experiences; a standalone foreground-only watch
+  module with SOS, location reporting and heart-rate episode detection. Phone
+  geofencing is implemented; independent watch geofencing is not a verified feature.
+- Implemented platform adapters: positioning, background execution,
   notifications/reminders, camera/barcodes, calling, local persistence, 3D
   rendering, and microphone streaming/PCM playback (Audio Kit `AudioCapturer`
   and `AudioRenderer`) plus a Network Kit WebSocket for the wellbeing check-in.
 - AI: the spoken wellbeing check-in uses the OpenAI Realtime model, proxied by
   the backend, and the Responses API for the guardian summary; see
   `../backend/README.md`. No model runs on the device.
-- Start with two roles in the existing phone app for the demo; decide watch
-  packaging after checking its actual SDK/device support.
+- Two roles share the phone `entry` module; the watch has a separate `watch`
+  module with non-overlapping wearable device types.
 - Watch: a separate `watch` entry module for `wearable` devices in the same
   bundle. It uses Location Kit, Sensor Service Kit (heart rate,
   `READ_HEALTH_DATA`), Network Kit and ArkUI round-screen components
   (`ArcSwiper`), and talks to the backend directly after 6-digit pairing.
 - Backend: Hono + Drizzle ORM + PostgreSQL in `../backend/`; guardian alerts
-  are sent through HarmonyOS Push Kit.
+  currently use foreground polling and local notifications. A HarmonyOS Push
+  Kit sender exists but live remote delivery is unverified.
 
-## Not Selected Or Verified Yet
+## Remaining Validation And Decisions
 
-- Real OpenAI calls from the deployed backend (needs `OPENAI_API_KEY`), and
-  microphone streaming and playback on the emulator or a device.
-- Public SDK support, API levels, permissions, and background restrictions for
-  each planned platform integration.
+- Real typed and spoken greetings are recorded, but a full real-model spoken
+  check-in, summary and emergency tools on a target are unverified. The default
+  mini Realtime model has not received a systematic conversation evaluation.
+- Public SDK declarations and permissions were checked during implementation;
+  phone background/screen-lock survival and battery consumption still need
+  target-device checks.
 - Watch runtime on a real device; the watch currently assumes its own network
   connection (no phone relay) and runs monitoring only in the foreground.
 - Live HarmonyOS Push Kit delivery: the backend sender is implemented but has
   not been verified against a real AppGallery Connect project or emulator.
-- Barcode catalog and 3D asset source/licensing.
+- Actual barcode decoding and native 3D rendering on a supported target. The
+  catalog is synthetic and the model is a generic demo reference; see
+  [`ASSET_PROVENANCE.md`](ASSET_PROVENANCE.md) for unresolved asset permissions.
 - Voice control beyond the check-in chat, and fall-detection feasibility.
 
 ## SDK Compatibility Note

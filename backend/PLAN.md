@@ -2,6 +2,10 @@
 
 ## Context
 
+This is a historical implementation plan, updated with selected later changes.
+For the current contract and behavior use [`README.md`](README.md); for validation
+status use [`../AI_WORKFLOW.md`](../AI_WORKFLOW.md).
+
 The mobile app (ArkTS, plan in `MOBILE_PLAN.md`, owned by a parallel agent) needs a
 backend for the cross-device parts: senior ↔ guardian pairing, guardian-managed care
 configuration, safety events (SOS / safe-area exit), guardian alerts with push delivery,
@@ -30,8 +34,10 @@ Push Kit** (the DevEco Studio emulator supports push, per
 | Fall detection (P2) | Accepts `fall_detected` events, which must declare their `source`. Raises an urgent `fall` alert, which can be cancelled | Sensor feasibility spike, detection, false-positive evaluation |
 | Vital signs (watch, heart rate) | Watch pairing codes. Stores heart-rate readings (7 days) for linked guardians. Accepts `heart_rate_out_of_range` / `heart_rate_in_range` events and turns them into an informational `heart_rate` alert (no reading in the push) | Sensor access, thresholds and episode detection on the watch |
 
-Principle: the backend never evaluates raw location or health data. It stores configuration,
-relays events and delivers alerts, which keeps private data on the device as the mobile plan requires.
+Principle: the backend does not perform geofence or heart-rate threshold decisions.
+It does store latest heartbeat coordinates, event locations, heart-rate samples,
+dose records and wellbeing reports. On-device evaluation avoids uploading raw
+movement history for geofencing; it does not keep all private data on the device.
 
 ## Stack (versions checked with `npm view` on 2026-10-03)
 

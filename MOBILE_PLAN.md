@@ -1,15 +1,19 @@
 # Mobile Implementation Plan
 
-## Goal And Current State
+## Goal And Plan Status
 
 Build an accessible elderly-care companion for HarmonyOS using ArkTS,
 ArkUI, and the Stage model. The senior uses a phone and, where supported, a
 smartwatch; the guardian uses a phone. Human-Centric Technology leads the pitch.
 
-This is a plan, not an implementation report. The current application is a
-starter. The project uses compile API 24 and target API 23 with API 20
-compatibility; API 23 installation and a subsequent build remain unverified.
-No new platform API or dependency is selected by this document.
+This is the original delivery plan, with later product decisions appended;
+priorities and acceptance goals below are not claims of completed validation.
+As of 2026-10-04, phone and watch modules are implemented and builds are recorded.
+API 23 installation/UI checks and API 24 phone E2E checks are recorded separately.
+The project uses compile API 24, target API 23 and compatible API 20.
+Current implementation: [`ARCHITECTURE.md`](ARCHITECTURE.md). Current evidence
+and gaps: [`AI_WORKFLOW.md`](AI_WORKFLOW.md). These take precedence over
+historical assumptions in this plan.
 
 Backend development is owned by the parallel backend agent. This plan covers
 mobile UX, local logic, platform adapters, and integration requirements only.
@@ -58,8 +62,10 @@ packages are not required until deployment or pairing needs justify them.
 - Medication: schedule, detail/reference model, reminders and dose actions.
 - Contacts: recognizable names, large call buttons; “voice” initially means a
   voice call. Speech-controlled selection is the optional voice feature.
-- Wellbeing: a short check-in chat with the assistant by voice or text; when it
-  ends, the summary sent to the guardian is shown, with the option to remove it.
+- Wellbeing: voice-only hands-free check-in. Opening the tab starts/resumes it;
+  there is no separate introduction/consent screen. When it ends, the senior
+  sees a confirmation, not the report. The current senior UI has no
+  report-removal action; guardian reports are read separately.
 - Setup/status: permissions, relationship/pairing, safe area, and demo mode.
 
 ### Guardian Phone
@@ -174,9 +180,11 @@ on the server; the app never talks to OpenAI directly.
   while Carely speaks (half-duplex), so a loudspeaker without echo cancellation
   cannot make her interrupt herself; "Let me talk" stops her. The transcript is
   shown as text.
-- Before starting, the screen says that a summary goes to the guardian, that
-  the guardian does not see the conversation, that replies come from an AI
-  assistant that cannot give medical advice, and where SOS is.
+- Current behavior: opening the tab starts/resumes a check-in and requests
+  microphone access if needed. Sharing information and SOS are on the
+  conversation screen, not a pre-start consent screen. Microphone permission
+  is not separate consent to third-party audio processing or summary sharing;
+  this limitation is disclosed in `AI_WORKFLOW.md`.
 - When the assistant has said goodbye (or the senior presses Finish, or the
   chat is idle for 20 minutes) the backend writes a structured summary
   (mood/energy/sleep/pain, things mentioned, attention level, 2-4 sentences)
@@ -241,9 +249,11 @@ The backend now implements these needs; its API contract is
 - Errors: agreed handling of unauthorized access, expired pairing, validation
   errors, temporary outages, and offline recovery.
 
-Use synthetic fixtures behind the demo provider while backend work proceeds.
-No private endpoints or credentials belong in repository examples. Remote
-integration acceptance remains pending until both mobile roles run end to end.
+The original plan allowed synthetic fixtures during backend development.
+Phone integration now has recorded API 24 E2E checks with synthetic accounts
+and API-driven second-role actions. This does not establish closed-app push,
+watch integration or a real spoken AI conversation. No private endpoints or
+credentials belong in repository examples.
 
 ## Implementation Sequence
 
@@ -301,4 +311,5 @@ integration acceptance remains pending until both mobile roles run end to end.
 
 Completion evidence: build output and `.hap` location, installation/launch steps,
 target/API details, test results, video, real-versus-simulated capability list,
-and updated `AI_WORKFLOW.md`. None of these product checks has passed yet.
+and updated `AI_WORKFLOW.md`. Recorded results are in the AI work log;
+do not interpret this historical checklist as a current completion report.

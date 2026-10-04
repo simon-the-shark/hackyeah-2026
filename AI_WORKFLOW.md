@@ -16,9 +16,10 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 - Plans came first: [`HACKATHON_BRIEF.md`](HACKATHON_BRIEF.md),
   [`MOBILE_PLAN.md`](MOBILE_PLAN.md) and [`backend/PLAN.md`](backend/PLAN.md).
   Agents then implemented the app and the backend in parallel workstreams.
-- Each change was validated with `./scripts/build-hap.sh`, the ArkTS (hypium)
-  and backend (vitest) tests, and, for UI flows, runs on the DevEco HarmonyOS
-  emulator driven through `hdc` and `uitest`.
+- Validation used `./scripts/build-hap.sh`, ArkTS (hypium) and backend (vitest)
+  tests, and selected UI flows on the DevEco HarmonyOS emulator through `hdc`
+  and `uitest`. Not every change received every check; the dated work log
+  records actual results, blocked checks and remaining runtime gaps.
 - Pull requests were additionally reviewed by Prelint (AI code and product
   review) before a human merged them.
 
@@ -28,11 +29,11 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 | --- | --- | --- |
 | Claude Code | Claude Opus 5.5, Claude Sonnet 5.5 (incl. forked subagents) | Backend, wellbeing voice check-in, navigation, end-to-end emulator testing and fixes, documentation |
 | Cursor Agent | Claude Opus 5.5, Composer 2.5, Grok 4.7 | Navigation baseline, SOS UX, pairing-aware navigation, senior wellbeing screen |
-| OpenCode | `openai/gpt-5.6-terra`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna` | Project setup, planning, deployment fix, 3D medication viewer, accessibility/design-system audit |
+| OpenCode | `openai/gpt-5.6-terra`, `gpt-6-astra`, `gpt-6.1-sol`, `gpt-6-luna` | Project setup, planning, deployment fix, 3D medication viewer, accessibility/design-system audit, challenge documentation review and corrections |
 | Prelint | GitHub app (prelint.com) | Automated AI code and product-decision review on pull requests |
 | Context7 MCP | Context7 | Current HarmonyOS and third-party library documentation |
 | TypeUI MCP | Hosted MCP | Design-system guidance during the consistency audit |
-| context7-mcp Agent Skill | Local skill | pnpm configuration documentation for the deployment fix |
+| context7-mcp Agent Skill | Local skill | pnpm configuration documentation for the deployment fix; HarmonyOS tooling documentation during submission-doc corrections |
 | `hmos-arkui-develop-skill` Agent Skill | Local `hackathon-skills/` | ArkUI coding rules |
 
 
@@ -69,9 +70,9 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 
 1. Agents wrote the app and the backend in parallel workstreams, sometimes as
    forked subagents working to a fixed API contract.
-2. After each change the agent ran:
-   - the phone and watch HAP build (`./scripts/build-hap.sh`), whose ArkTS
-     static checks must pass with no new warnings;
+2. Depending on the change and available environment, agents used:
+   - the phone and watch HAP build (`./scripts/build-hap.sh`) and review of
+     ArkTS static-check warnings;
    - the ArkTS unit tests (`hvigorw test`);
    - backend `pnpm typecheck` and `pnpm test` (PostgreSQL, with fake push and
      OpenAI providers);
@@ -87,10 +88,11 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 ### Final Verification
 
 1. **End-to-end testing on the emulator:** Claude Code drove the app on the
-   DevEco HarmonyOS phone emulator through `hdc` and `uitest`:
+   DevEco HarmonyOS API 24 phone emulator through `hdc` and `uitest`:
    - installed the unsigned HAP and set up synthetic test accounts;
    - walked the senior and guardian flows (pairing, SOS, medication, contacts,
-     safe area, wellbeing), acting as the second role through the backend API;
+      safe area and wellbeing availability), acting as the second role through
+      the backend API; this did not verify a full spoken AI check-in;
    - used screenshots and UI layout dumps to check each screen;
    - reported findings first; after the team approved them, fixed each one
      and re-tested it on the emulator. It found 8 defects, for example a
@@ -100,8 +102,11 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 
 ## Known Limitations
 
-- Tested end to end on the HarmonyOS API 23 phone emulator (unsigned installs)
-  and verified on two real phones. Not run on a real watch (see below).
+- Detailed end-to-end checks and fix re-tests are recorded on the HarmonyOS
+  API 24 phone emulator (unsigned installs). API 23 installation and selected UI
+  checks are recorded separately. The team reports verification on two real
+  phones, but device models, OS versions and a per-flow physical-device record
+  are not yet documented. Not run on a real watch (see below).
 - Guardian alerts arrive by foreground polling (about every 20 s) plus local
   notifications. The backend's Push Kit sender is implemented but unverified:
   Push Kit needs an AppGallery Connect project, which requires a verified
@@ -110,7 +115,8 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
 - The watch app was installed and launched on an API 23 wearable emulator. We
   tried to connect a real hardware watch but did not succeed, so the watch app
   has run only on the emulator. Its heart rate and location run only while it
-  is open; emulator readings are labelled SIMULATED.
+  is open; emulator readings are labelled SIMULATED. Successful watch pairing,
+  sensor ingestion and SOS are not established by the recorded launch.
 - Maps use public OpenStreetMap tiles. Map Kit needs the same AppGallery Connect
   setup as Push Kit, and with it a verified Huawei developer account (passport).
 - Backend pairing and demo bootstrap are unauthenticated with in-memory rate
@@ -138,9 +144,12 @@ change, with its validation, is in [`docs/AI_WORK_LOG.md`](docs/AI_WORK_LOG.md).
   20 minutes idle) the transcript is summarised into ratings, up to 5 concerns,
   an attention level and 2-4 sentences → report stored → push to guardians.
 - **Data/privacy:** The API key stays on the server; audio passes through the
-  backend to OpenAI and is not stored. The senior is told before
-  starting that a summary goes to the guardian and that the guardian does not see
-  the conversation. The transcript is deleted from the server once the summary
+  backend to OpenAI and is not stored. Opening the Wellbeing tab automatically
+  starts or resumes a check-in and requests microphone access if needed; there
+  is no separate pre-start consent screen. The conversation screen includes
+  sharing information, but microphone permission is not a separate consent to
+  OpenAI processing or guardian summary sharing. The transcript is deleted from
+  the server once the summary
   exists; responses use `store: false`. Push notifications never contain the
   summary or health details. Only the guardian reads the summary; the senior
   sees a confirmation that it was sent. Account deletion removes sessions and reports.

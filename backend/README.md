@@ -1,8 +1,8 @@
 # Elder-care backend
 
 Hono + Drizzle ORM + PostgreSQL API for the elder-care companion app. It stores
-configuration, relays safety events and delivers guardian alerts. It never
-evaluates raw location or health data: geofencing, medication reminders,
+configuration, relays safety events and delivers guardian alerts. It does not
+make geofence or heart-rate threshold decisions: geofencing, medication reminders,
 barcode scanning and 3D models stay on the device. The one exception is the
 wellbeing check-in chat, which the backend relays to OpenAI (see
 [Wellbeing check-in](#wellbeing-check-in-openai)).
@@ -13,14 +13,28 @@ for the mobile side.
 
 Requirements: Node, pnpm, Docker. Developed and tested on Node 23.11; the dev scripts use `node --env-file-if-exists` through `tsx`, so use a recent Node 22 or newer (older 22.x releases were not tested).
 
+Use **pnpm 11.7.0** (pinned in `package.json`) and Docker with Compose.
+Run these commands from a fresh checkout's repository root:
+
 ```sh
 cd backend
 cp .env.example .env          # defaults work with docker-compose; PUSH_PROVIDER=log
 docker compose up -d          # Postgres 17 on :5432 (databases elder_care, elder_care_test)
-pnpm install
+pnpm install --frozen-lockfile
 pnpm db:migrate
 pnpm dev                      # http://localhost:8787
 ```
+
+The Compose credentials are synthetic local-development defaults, not hosted
+service credentials. `PUSH_PROVIDER=log` does not send remote notifications;
+the foreground guardian app can still poll alerts. Without `OPENAI_API_KEY`,
+the core safety/care flows work but wellbeing is unavailable. Keep any optional
+OpenAI/Push Kit credentials in the ignored local `.env` or runtime secret store.
+
+In another terminal, check `curl http://127.0.0.1:8787/health`; expect
+`{"status":"ok"}`. The Compose test database is created on the first initialization
+of its volume. If reusing an older volume without `elder_care_test`, create that
+database for the `elder` user rather than deleting data to reset the volume.
 
 Scripts: `pnpm test` (needs the compose DB), `pnpm typecheck`,
 `pnpm db:generate` (after editing `src/db/schema.ts`; commit the generated SQL).
@@ -55,8 +69,39 @@ Detailed HTTP request/response diagnostics are enabled only outside production
 and redact credential-like and heart-rate JSON fields. Set `NODE_ENV=production` to disable
 these per-request diagnostic logs.
 
-From a HarmonyOS emulator the host is not `localhost`; use the host's LAN IP
-(or an HDC port-forward) as the API base URL. Not yet verified on an emulator.
+### Connecting The Phone And Watch To A Local Backend
+
+The default clients use the hosted backend. To reproduce without that service:
+
+1. Change `BACKEND_BASE_URL` to `http://127.0.0.1:8787` in both
+   `entry/src/main/ets/providers/backend/BackendUrl.ets` and
+   `watch/src/main/ets/services/BackendUrl.ets` (paths relative to the repository
+   root), then rebuild/reinstall the modules using the root README.
+2. With the backend running on the development computer, forward **each** target's
+   port back to the host:
+
+   ```zsh
+   hdc list targets -v
+   hdc -t '<senior phone connect key>' rport tcp:8787 tcp:8787
+   hdc -t '<guardian phone connect key>' rport tcp:8787 tcp:8787
+   # Only if using the wearable:
+   hdc -t '<watch connect key>' rport tcp:8787 tcp:8787
+   ```
+
+   Without reverse forwarding, device `127.0.0.1` refers to the device itself.
+   Re-establish forwarding if the target or HDC connection restarts. `hdc -t
+   '<connect key>' fport ls` lists forwarding tasks.
+3. Use fresh synthetic pairing on the local backend. Tokens from the hosted
+   database will not authenticate locally; sign out of the old session and pair
+   again. Confirm that senior setup and guardian pairing succeed visibly and
+   appear in the local server logs. This checks device reachability in addition
+   to the host's `/health` request.
+
+The work log records phone testing through `hdc rport` against a local backend;
+the exact fresh-checkout phone/watch sequence above still needs a clean-run
+rehearsal. A host LAN address is an alternative only when routing/firewall access
+is established; it is not the documented tested path. Restore the hosted URL
+before building hosted-demo artifacts, and do not commit a private LAN address.
 
 ## Demo scenario
 
@@ -408,6 +453,11 @@ third of the threshold (5 min or less at the default). Tune it after emulator an
 device testing.
 
 ## Limitations
+
+- The backend stores latest heartbeat positions, locations attached to safety
+  events, heart-rate samples and wellbeing reports. On-device decision making
+  does not mean these data remain exclusively on-device. Audio is relayed, not
+  stored; open wellbeing transcripts are retained until summary/failure handling.
 
 - Pairing and the demo bootstrap are unauthenticated and meant for the hackathon
   demo, not production: no token rotation. A lost device can be revoked from

@@ -15,98 +15,97 @@ AI-written wellbeing summary from a hands-free spoken check-in.
 
 ## Quickstart
 
-**Prerequisites:** macOS with DevEco Studio 6.1.1 (bundled HarmonyOS SDK
-`6.1.1(24)`), and a phone emulator created in DevEco Studio's Device Manager
-(we test on HarmonyOS 6.1.0(23)). The app uses the hosted backend, which stays up
-during judging, so no backend setup is needed.
+**Prerequisites:** DevEco Studio 6.1.1, including the bundled HarmonyOS SDK
+`6.1.1(24)`. 
 
-1. **Build** both HAPs (phone and watch):
+1. **Clone and sync:**
 
    ```zsh
-   ./scripts/build-hap.sh   # set DEVECO_STUDIO_HOME if DevEco Studio is not in /Applications
+   git clone https://github.com/simon-the-shark/hackyeah-2026.git
+   cd hackyeah-2026
+   ```
+
+   Open this directory (the one containing `build-profile.json5`) in DevEco
+   Studio. Allow project sync and OHPM dependency installation to finish. Keep
+   the committed lockfiles. Confirm the HarmonyOS SDK `6.1.1(24)` is installed;
+   the root product uses `runtimeOS: "HarmonyOS"`, target `6.1.0(23)` and
+   compatible `6.0.0(20)`.
+
+2. **Create and start a target:** in DevEco Studio's Device Manager, create a
+   phone virtual device, download its API 23 or API 24 system image, then start
+   it and wait for the home screen. Image downloads can be several gigabytes.
+   Creating a device does not download or start it automatically. Set its time
+   zone to **Europe/Warsaw** for the medication demo.
+
+   If phone images are missing, follow the
+   organizer's [manual China-region setup](https://github.com/onirodeveloper/hackyeah2026-challenge/blob/main/FAQ.md#how-do-i-switch-the-deveco-studio-region-to-china-manually).
+   If no target appears, follow [No devices show up](https://github.com/onirodeveloper/hackyeah2026-challenge/blob/main/FAQ.md#no-devices-show-up-when-i-try-to-run-the-app-on-an-emulator-what-now).
+
+3. **Build** both HAPs: in DevEco Studio, build the `entry` and `watch` modules
+   for the `default` product. The repository also includes a zsh build helper
+   for the bundled toolchain:
+
+   ```zsh
+    ./scripts/build-hap.sh
    ```
 
    Output: `entry/build/default/outputs/default/entry-default-unsigned.hap`
    (phone) and `watch/build/default/outputs/default/watch-default-unsigned.hap`
    (watch).
 
-2. **Install** on the running emulator. The emulator accepts the unsigned HAP,
-   as DevEco Studio's Run does. `hdc` ships with DevEco Studio in
-   `Contents/sdk/default/openharmony/toolchains/`; add it to your `PATH`.
+4. **Select and install** on the running emulator.
 
    ```zsh
-   hdc shell mkdir -p data/local/tmp/carely
-   hdc file send entry/build/default/outputs/default/entry-default-unsigned.hap data/local/tmp/carely/
-   hdc shell bm install -p data/local/tmp/carely
+    hdc list targets -v
+    export PHONE_TARGET='<phone connect key from the list>'
+    hdc -t "$PHONE_TARGET" file send entry/build/default/outputs/default/entry-default-unsigned.hap /data/local/tmp/carely-phone.hap
+    hdc -t "$PHONE_TARGET" shell bm install -p /data/local/tmp/carely-phone.hap
    ```
 
    Or open the project in DevEco Studio and Run the `entry` module. A physical
    device needs the HAP signed with your own DevEco debug signature (File →
    Project Structure → Signing Configs); no signing material is committed.
 
-3. **Launch:**
+5. **Launch:**
 
    ```zsh
-   hdc shell aa start -a EntryAbility -b pl.solvro.hackyeah26
+    hdc -t "$PHONE_TARGET" shell aa start -a EntryAbility -b pl.solvro.hackyeah26 -m entry
    ```
 
-**Optional watch:** create a wearable emulator (we use HarmonyOS 6.1.0(23)). If
-a phone emulator already uses hdc port 5555, start the watch on another port
-with `Emulator -start <name> -hdcPort 5557` (`Emulator` is in DevEco Studio's
-`Contents/tools/emulator/`). Install
-`watch-default-unsigned.hap` the same way (pick the device with `hdc -t <serial>`),
-then launch with `hdc shell aa start -a WatchAbility -b pl.solvro.hackyeah26 -m watch`.
 
-## Demo Path
+**Optional watch:** create, download and start a wearable emulator (the recorded
+watch launch used API 23), then select its own connect key:
 
-Use two phone emulators, or set up one role, sign out, then the other.
-
-1. **Senior phone:** I am a senior → enter a name → Set up senior phone. Then
-   Settings → copy the Guardian pairing code.
-2. **Guardian phone:** I am a guardian → enter a name and the code → Pair with
-   senior.
-3. **Guardian:** set the Safe Area. **Senior:** Safe Area → Turn on sharing; move
-   the position outside the area in the emulator's GPS panel. The guardian's
-   Alerts tab shows the safe-area exit.
-4. **Senior:** SOS → after the 3-second countdown the guardian sees the SOS with
-   its location and can call the senior.
-5. **Senior:** Medication → mark a dose Taken. **Wellbeing:** Talk with Carely,
-   then Finish. The guardian reads the summary under Insights → Wellbeing
-   Reports.
-6. **Optional watch:** senior Settings → Smartwatch → Pair a watch, enter the
-   code on the watch, then set a heart rate in the emulator's Virtual Sensor
-   panel. The guardian sees it under Watch & vitals.
-
-## What Is Real vs Simulated
-
-The phone app was verified on the emulator and on two real phones; the watch
-app only on the emulator.
-
-| Feature | On the emulator |
-| --- | --- |
-| Pairing, SOS, safe-area alerts, medication, contacts, calling | Real app and backend; location comes from the emulator's GPS panel |
-| Watch heart rate and location | Emulator sensor values, labelled **SIMULATED** in the app |
-| Wellbeing voice check-in | Real OpenAI Realtime model through the backend; a full spoken conversation on the emulator is not yet verified |
-| Guardian notifications | Foreground polling plus local notifications; Push Kit delivery is implemented in the backend but unverified (needs a verified Huawei developer account) |
-| Barcode scan, 3D medicine model | Scan Kit and ArkGraphics 3D unverified on the emulator; a labelled simulated scan and a still render are shown |
-
-Full list: [Known limitations](AI_WORKFLOW.md#known-limitations).
+```zsh
+hdc list targets -v
+export WATCH_TARGET='<watch connect key from the list>'
+hdc -t "$WATCH_TARGET" file send watch/build/default/outputs/default/watch-default-unsigned.hap /data/local/tmp/carely-watch.hap
+hdc -t "$WATCH_TARGET" shell bm install -p /data/local/tmp/carely-watch.hap
+hdc -t "$WATCH_TARGET" shell aa start -a WatchAbility -b pl.solvro.hackyeah26 -m watch
+```
 
 ## Tests
 
 ```zsh
-# ArkTS unit tests (66 tests)
-DEVECO_SDK_HOME=/Applications/DevEco-Studio.app/Contents/sdk \
-  /Applications/DevEco-Studio.app/Contents/tools/hvigor/bin/hvigorw test -p module=entry@default -p product=default
+# ArkTS local unit tests (not a substitute for device checks)
+hvigorw test -p module=entry@default -p product=default
 
 # Backend integration tests (needs Docker for PostgreSQL)
-cd backend && docker compose up -d && pnpm install && pnpm test
+cd backend
+docker compose up -d
+pnpm install --frozen-lockfile
+pnpm typecheck
+pnpm test
 ```
 
-To run the backend locally instead of the hosted one, see
-[`backend/README.md`](backend/README.md#setup) and change `BACKEND_BASE_URL` in
-`entry/src/main/ets/providers/backend/BackendUrl.ets` and
-`watch/src/main/ets/services/BackendUrl.ets`.
+Run the ArkTS command with DevEco's `hvigorw` on `PATH` and `DEVECO_SDK_HOME`
+set to the installed SDK root.
+
+The backend requires Node 22+ (developed on 23.11), pnpm **11.7.0**, and Docker
+with Compose/PostgreSQL 17. Follow [local backend setup](backend/README.md#setup)
+for migration and emulator port-forwarding instructions, including both client
+URL changes. No OpenAI or Push Kit credentials are needed for the core local
+demo; without an OpenAI key the wellbeing assistant is unavailable.
 
 ## Docs
 
@@ -115,3 +114,4 @@ To run the backend locally instead of the hosted one, see
 - [`backend/README.md`](backend/README.md): backend setup and API contract
 - [`docs/BACKGROUND_LOCATION.md`](docs/BACKGROUND_LOCATION.md): background location behavior
 - [`HACKATHON_BRIEF.md`](HACKATHON_BRIEF.md), [`MOBILE_PLAN.md`](MOBILE_PLAN.md): product scope and the original plan
+- [`docs/ASSET_PROVENANCE.md`](docs/ASSET_PROVENANCE.md): asset sources and unresolved permissions

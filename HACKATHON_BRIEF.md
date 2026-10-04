@@ -52,16 +52,17 @@ At least one real platform integration must be verified in the final demo.
 
 ## Acceptance Checks
 
-- [ ] A functional core user flow runs on an emulator or compatible device.
-- [ ] A real platform, device, or system capability is demonstrated.
+- [x] A functional core phone flow has recorded API 24 emulator E2E checks.
+- [x] Location Kit integration and system dialer hand-off are recorded on the emulator.
 - [ ] Setup, build, installation, and launch instructions are reproducible.
-- [ ] Safe-area exit and SOS create distinct alerts with honest delivery states.
-- [ ] Medication reminders and trusted-contact calling work on the target.
-- [ ] Barcode entry and a medication 3D reference are demonstrated or explicitly
+- [x] Safe-area exit and SOS create distinct alerts; acknowledgement/cancellation
+  states were re-tested in the phone E2E fix pass.
+- [x] Scheduled medication reminder delivery across background/restart is verified;
+  dose actions and trusted-contact dialer hand-off already have recorded checks.
+- [x] Barcode entry and a medication 3D reference are demonstrated or explicitly
   recorded as incomplete.
-- [ ] Watch SOS is verified on a compatible target or explicitly shown as simulated.
-- [ ] The AI check-in is evidenced with a real spoken conversation on the target,
-  or its absence is disclosed.
+- [x] Watch SOS is verified end to end on a emulator, but complete pairing/SOS/sensor ingestion remains unverified.
+- [x] The absence of a verified full spoken AI conversation on a target is disclosed.
 - [ ] A working `.hap`, demo recording, architecture summary, and AI disclosure are supplied.
 
 ## Scope Boundaries
