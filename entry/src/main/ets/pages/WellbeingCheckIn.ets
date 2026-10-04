@@ -181,6 +181,7 @@ export struct WellbeingCheckIn {
     if (this.live || this.liveStarting || !this.visible || this.sessionId === '' || this.finishing) {
       return;
     }
+    const sessionId = this.sessionId;
     this.notice = '';
     this.liveStarting = true;
     const access = await requestMicrophone(this.context());
@@ -190,30 +191,48 @@ export struct WellbeingCheckIn {
       this.notice = 'Carely needs the microphone to hear you.';
       return;
     }
-    if (!this.visible) {
+    // Finish may have been pressed while the microphone was being requested; never connect to a check-in
+    // that is ending or already gone, or the backend refuses it and the senior sees a connection error.
+    if (!this.visible || this.finishing || this.phase !== Phase.Talk || this.sessionId !== sessionId) {
       return;
     }
     this.micDenied = false;
+    // Callbacks from a session the screen already stopped (Finish, tab change) are ignored.
+    const current = (): boolean => this.liveSession === session;
     const session = new LiveVoiceSession({
       onState: (state: LiveState) => {
+        if (!current()) {
+          return;
+        }
         this.liveState = state;
         this.scrollToEnd();
       },
       onMessage: (message: ChatMessage) => {
+        if (!current()) {
+          return;
+        }
         if (!this.messages.some((known: ChatMessage) => known.id === message.id)) {
           this.messages = this.messages.concat([message]);
           this.scrollToEnd();
         }
       },
       onSafetyConcern: () => {
-        this.safetyConcern = true;
+        if (current()) {
+          this.safetyConcern = true;
+        }
       },
       onFinished: (report: WellbeingReport | undefined) => {
+        if (!current()) {
+          return;
+        }
         this.liveSession = undefined;
         this.live = false;
         this.completeWithReport(report);
       },
       onEnded: (code: string) => {
+        if (!current() || this.finishing) {
+          return;
+        }
         this.liveSession = undefined;
         this.live = false;
         this.notice = describeLiveEnd(code);
@@ -226,8 +245,11 @@ export struct WellbeingCheckIn {
     this.liveState = LiveState.Connecting;
     this.live = true;
     try {
-      await session.start(wellbeingCheckIn.currentSeniorId(), this.sessionId);
+      await session.start(wellbeingCheckIn.currentSeniorId(), sessionId);
     } catch (error) {
+      if (!current()) {
+        return;
+      }
       this.liveSession = undefined;
       this.live = false;
       this.notice = 'The microphone or speaker does not work on this phone right now.';
